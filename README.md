@@ -1,4 +1,4 @@
-# Supergoop Seasonal Promotion Studio
+# Seasonal Promotion Studio
 
 **Market:** United States  
 **Version:** 3.1  
