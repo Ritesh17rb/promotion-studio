@@ -22,6 +22,14 @@ This **Pricing Optimisation Studio** is a demo for seasonal retail / D2C brands 
 
 **Tech Stack:** HTML5, Bootstrap 5, Vanilla JavaScript, D3.js, Chart.js (no React, no backend)
 
+## Promotion Optimization Dataset (v2)
+
+Regenerate the 17-week promotion optimization data (SKU x channel inventory, competitor pricing, social signals, and events):
+
+```bash
+python scripts/generate_promo_optimization_data.py
+```
+
 ---
 
 ## 📂 Project Structure

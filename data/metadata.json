@@ -1,11 +1,13 @@
 {
   "customers.csv": "Customer-level records with channel group, region, and purchase behavior.",
-  "channel_weekly.csv": "Weekly KPIs by channel group (mass vs prestige).",
-  "season_calendar.csv": "Season phases, demand index, and inventory position.",
+  "channel_weekly.csv": "Weekly KPIs by channel group (mass vs prestige), aggregated from SKU-channel data.",
+  "sku_channel_weekly.csv": "Core optimization table by week, SKU, and channel with inventory and competitor fields.",
+  "season_calendar.csv": "17-week season phases, demand index, inventory position, and markdown risk.",
   "price_calendar.csv": "Promo cadence and effective price by channel group.",
   "market_signals.csv": "Competitor pricing and macro signals aligned to season.",
-  "social_signals.csv": "Social listening proxy signals and influencer activity.",
-  "retail_events.csv": "Retail events, competitive price moves, and markdown starts.",
-  "segments.csv": "Behavioral segments mapped to channel group.",
-  "segment_kpis.csv": "Segment KPIs (AOV, repeat loss, CAC, promo redemption)."
+  "social_signals.csv": "Social listening and engagement trend used to modulate elasticity.",
+  "retail_events.csv": "Event timeline including competitor price changes and social spikes.",
+  "promo_metadata.json": "Historical promotions with SKU/channel effectiveness drill-down.",
+  "scenarios.json": "Priority promotion optimization scenarios.",
+  "elasticity-params.json": "Channel and segment elasticity coefficients with external factor modifiers."
 }

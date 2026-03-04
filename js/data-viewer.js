@@ -4,8 +4,8 @@
  */
 
 // Dataset configuration - CSV files only
-// Default date range matches generated data: 2024-03-04 to 2026-02-23 (generate_promo_data.py)
-const DEFAULT_DATE_RANGE = '2024-03-04 to 2026-02-23';
+// Default date range matches promotion optimization season data.
+const DEFAULT_DATE_RANGE = '2026-02-02 to 2026-05-25';
 
 const DATASETS = {
   customers: {
@@ -22,7 +22,7 @@ const DATASETS = {
     title: 'Channel Weekly KPIs',
     description: 'Weekly KPIs by channel group (mass vs prestige)',
     file: './data/channel_weekly.csv',
-    recordCount: 360,
+    recordCount: 34,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Core Data',
@@ -32,7 +32,7 @@ const DATASETS = {
     title: 'Season Calendar',
     description: 'Season phases, demand index, and inventory position',
     file: './data/season_calendar.csv',
-    recordCount: 180,
+    recordCount: 17,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Content Data',
@@ -42,7 +42,7 @@ const DATASETS = {
     title: 'Price Calendar',
     description: 'Promo cadence and effective price by channel group',
     file: './data/price_calendar.csv',
-    recordCount: 360,
+    recordCount: 34,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Pricing Data',
@@ -52,17 +52,27 @@ const DATASETS = {
     title: 'Market Signals',
     description: 'Competitor and macro signals aligned to season',
     file: './data/market_signals.csv',
-    recordCount: 180,
+    recordCount: 17,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'External Data',
     icon: 'bi-globe'
   },
+  competitor_price_feed: {
+    title: 'Competitor Price Feed',
+    description: 'Simulated website-scraped competitor prices with SKU matching',
+    file: './data/competitor_price_feed.csv',
+    recordCount: 408,
+    dateRange: DEFAULT_DATE_RANGE,
+    dateColumn: 'captured_at',
+    category: 'External Data',
+    icon: 'bi-radar'
+  },
   social_signals: {
     title: 'Social Signals',
     description: 'Social listening proxy signals (mentions, sentiment, spend)',
     file: './data/social_signals.csv',
-    recordCount: 180,
+    recordCount: 17,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Marketing Data',
@@ -72,11 +82,21 @@ const DATASETS = {
     title: 'Retail Events',
     description: 'Retail events and competitive price moves by channel',
     file: './data/retail_events.csv',
-    recordCount: 52,
+    recordCount: 23,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Event Data',
     icon: 'bi-calendar-event'
+  },
+  sku_channel_weekly: {
+    title: 'SKU Channel Weekly',
+    description: 'Core optimization table by week, SKU, and channel with inventory and competitor fields',
+    file: './data/sku_channel_weekly.csv',
+    recordCount: 408,
+    dateRange: DEFAULT_DATE_RANGE,
+    dateColumn: 'week_start',
+    category: 'Core Data',
+    icon: 'bi-grid-3x3-gap'
   },
   segments: {
     title: 'Segments',
@@ -100,13 +120,13 @@ const DATASETS = {
 
 // Group datasets by category
 const CATEGORIES = {
-  'Core Data': ['customers', 'channel_weekly'],
+  'Core Data': ['customers', 'channel_weekly', 'sku_channel_weekly'],
   'Pricing Data': ['price_calendar'],
   'Event Data': ['retail_events'],
   'Segmentation Data': ['segments', 'segment_kpis'],
   'Marketing Data': ['social_signals'],
   'Content Data': ['season_calendar'],
-  'External Data': ['market_signals']
+  'External Data': ['market_signals', 'competitor_price_feed']
 };
 
 // State

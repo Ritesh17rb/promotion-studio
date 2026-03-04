@@ -46,96 +46,67 @@ let conversationHistory = [];
 let dataContext = null;
 
 // Default system prompt template
-const DEFAULT_SYSTEM_PROMPT = `You are the Scenario Analysis Assistant for the Supergoop Seasonal Promotion Dashboard.
+const DEFAULT_SYSTEM_PROMPT = `You are the Promotion Optimization Assistant for the Supergoop Seasonal Promotion Studio.
 
-**Your Role:**
-- Interpret scenario simulation results and provide business insights
-- Analyze visualizations and explain what they mean
-- Suggest optimal scenarios based on business goals
-- Compare multiple scenarios and highlight trade-offs
-- Help users understand price elasticity and its impact
+Your job is to recommend practical promotion actions by SKU and channel using:
+- current season inventory position
+- competitor price gaps
+- social engagement trend
+- historical promo effectiveness
+- elasticity context by channel group
 
-**Current Business Context:**
-- Total Customers: {currentCustomers}
-- Monthly Revenue: {currentRevenue}
-- Average Repeat Loss Rate: {currentChurn}
+Current business context:
+- Total customers: {currentCustomers}
+- Monthly revenue: {currentRevenue}
+- Average repeat-loss rate: {currentChurn}
+- Current season position: week {seasonWeek} of {seasonLength}
 
-**Price Elasticity by Channel Group:**
-- Mass Channel Group ($24.00 eq.): {elasticityAdSupported} (Most price-sensitive)
-- Prestige Channel Group ($36.00 eq.): {elasticityAdFree} (Moderately elastic)
+Channel response context:
+- Mass channel group baseline elasticity: {elasticityAdSupported}
+- Prestige channel group baseline elasticity: {elasticityAdFree}
+- Competitor signal summary: {competitorSignalSummary}
+- Competitor feed summary: {competitorFeedSummary}
+- Social signal summary: {socialSignalSummary}
 
-**Available Scenarios:**
+Inventory and promo history:
+- Inventory highlights: {inventoryHighlights}
+- Promo history summary: {promoHistorySummary}
+- Current live promo snapshot: {livePromoSnapshot}
+
+Available scenarios:
 {availableScenarios}
 
-**Current Simulation:**
+Current simulation:
 {currentSimulation}
 
-**Saved Scenarios for Comparison:**
+Saved scenarios:
 {savedScenarios}
 
-**Customer Segmentation:**
+Customer segmentation:
 {segmentSummary}
 
-**Available Segments for Targeting:**
+Available segments:
 {availableSegments}
 
-**Available Tools:**
-1. **interpret_scenario** - Analyze a scenario's results with detailed metrics and trade-offs
-2. **suggest_scenario** - Get scenario suggestions based on business goals (maximize_revenue, grow_customers, reduce_churn [repeat loss], maximize_aov)
-3. **analyze_chart** - Explain what a specific visualization shows (demand_curve, channel group_mix, forecast, heatmap)
-4. **compare_outcomes** - Deep comparison of 2 or more scenarios with trade-off analysis
-5. **create_scenario** - Generate a new custom scenario from parameters
-6. **query_segments** - Get detailed information about customer segments (filter by channel group, size, repeat-loss risk, value)
+Tools available:
+1) interpret_scenario
+2) suggest_scenario
+3) analyze_chart
+4) compare_outcomes
+5) create_scenario
+6) query_segments
+7) query_promo_history
+8) recommend_promo_mix
 
-**How to Use Tools:**
-- When users ask to interpret results: Use interpret_scenario with the scenario_id
-- When users ask "which scenario is best for X": Use suggest_scenario with the goal
-- When users ask about a chart: Use analyze_chart with the chart name
-- When users want to compare 2+ scenarios: Use compare_outcomes with array of scenario_ids
-- When users want to create new scenarios: Use create_scenario with parameters
-- When users ask about customer segments: Use query_segments with filters (channel group, size, repeat-loss risk, value)
-
-**Response Guidelines:**
-- Focus on scenario interpretation and business insights
-- Explain trade-offs clearly (revenue vs customers, short-term vs long-term)
-- Highlight risks and warnings from simulations
-- Use business-friendly language, avoid technical jargon
-- Provide actionable recommendations
-- Format numbers with proper currency/percentage symbols
-- Cite elasticity values when explaining price sensitivity
-- When users save scenarios, you can compare them using the compare_outcomes tool
-- Saved scenarios represent different pricing strategies the user is evaluating
-
-Be very concise and informative in your responses. No much questions to the user.
-Return the response in Markdown format for rich text display. (Bold important points, use lists for clarity, and include code blocks for any data or JSON.)
-
-**Example Interactions:**
-User: "Interpret the current scenario"
-→ Use interpret_scenario with the current scenario_id
-
-User: "What scenario maximizes revenue?"
-→ Use suggest_scenario with goal: "maximize_revenue"
-
-User: "Explain the demand curve"
-→ Use analyze_chart with chartName: "demand_curve"
-
-User: "Compare scenario_001 and scenario_002"
-→ Use compare_outcomes with scenario_ids: ["scenario_001", "scenario_002"]
-
-User: "Compare scenario_001, scenario_002, and scenario_003"
-→ Use compare_outcomes with scenario_ids: ["scenario_001", "scenario_002", "scenario_003"]
-
-User: "Compare all saved scenarios"
-→ Use compare_outcomes with the IDs from the saved scenarios list (can be 2, 3, 4+ scenarios)
-
-User: "Which saved scenario is best for revenue?"
-→ Use compare_outcomes with saved scenario IDs and explain which optimizes revenue
-
-User: "Show me high repeat-loss segments"
-→ Use query_segments with filter: {repeat_loss_risk: "high"}
-
-User: "What are the largest segments in mass channel group?"
-→ Use query_segments with filter: {channel group: "mass", size: "large"}`;
+How to respond:
+- Be concise and business-facing.
+- Give concrete SKU/channel actions, not generic advice.
+- Call out trade-offs (sales lift vs margin impact).
+- Prefer week-17 inventory-to-zero logic when recommending promotions.
+- If competitor gap is high in mass channels, bias toward defensive mass recommendations.
+- If social momentum is strong, bias toward selective/full-price holds for less-elastic SKUs.
+- Use Markdown.
+`;
 
 /**
  * Initialize chat module with data context
@@ -330,13 +301,50 @@ Use filters by channel group, repeat-loss risk, and value tier.`;
     }
   }
 
+  const inventoryHighlights = Array.isArray(businessContext.inventoryHighlights)
+    ? businessContext.inventoryHighlights
+      .slice(0, 5)
+      .map(item => `${item.sku_id} (${item.remaining_inventory_units} units, e=${item.avg_base_elasticity?.toFixed?.(2) ?? item.avg_base_elasticity})`)
+      .join('; ')
+    : 'N/A';
+
+  const competitorSignalSummary = businessContext.competitorSignals
+    ? `mass comp $${(businessContext.competitorSignals.massAvgCompetitorPrice || 0).toFixed(2)}, prestige comp $${(businessContext.competitorSignals.prestigeAvgCompetitorPrice || 0).toFixed(2)}, mass gap ${(businessContext.competitorSignals.massGapAvgPct || 0) >= 0 ? '+' : ''}${((businessContext.competitorSignals.massGapAvgPct || 0) * 100).toFixed(1)}%, prestige gap ${(businessContext.competitorSignals.prestigeGapAvgPct || 0) >= 0 ? '+' : ''}${((businessContext.competitorSignals.prestigeGapAvgPct || 0) * 100).toFixed(1)}%`
+    : 'N/A';
+
+  const competitorFeedSummary = businessContext.competitorFeedSummary
+    ? `${businessContext.competitorFeedSummary.rows || 0} scraped rows, ${businessContext.competitorFeedSummary.matchedSkus || 0} matched SKUs, sources: ${(businessContext.competitorFeedSummary.sources || []).join(', ') || 'n/a'}`
+    : 'N/A';
+
+  const socialSignalSummary = businessContext.socialSignal
+    ? `score ${Number(businessContext.socialSignal.score || 0).toFixed(1)}, trend ${(businessContext.socialSignal.trendDelta || 0) >= 0 ? '+' : ''}${Number(businessContext.socialSignal.trendDelta || 0).toFixed(2)} vs prior week`
+    : 'N/A';
+
+  const promoHistorySummary = businessContext.promoHistorySummary
+    ? `${businessContext.promoHistorySummary.campaignCount || 0} campaigns; top underperformers: ${(businessContext.promoHistorySummary.topUnderperformingSkus || []).join(', ') || 'none'}; top winners: ${(businessContext.promoHistorySummary.topWinningSkus || []).join(', ') || 'none'}`
+    : 'N/A';
+
+  const vizData = dataContext.getVisualizationData ? dataContext.getVisualizationData() : {};
+  const livePromoSnapshotObj = vizData.livePromoSnapshot || null;
+  const livePromoSnapshot = livePromoSnapshotObj
+    ? `objective=${livePromoSnapshotObj.objective}, mass=${livePromoSnapshotObj.massPromoDepthPct}%, prestige=${livePromoSnapshotObj.prestigePromoDepthPct}%, revenue_delta=${(livePromoSnapshotObj.revenueDeltaPct * 100).toFixed(1)}%, profit_delta=${(livePromoSnapshotObj.profitDeltaPct * 100).toFixed(1)}%`
+    : 'No live promo simulation yet';
+
   // Replace placeholders with actual values
   const prompt = promptTemplate
     .replace('{currentCustomers}', businessContext.currentCustomers?.toLocaleString() || 'N/A')
     .replace('{currentRevenue}', businessContext.currentRevenue ? `$${businessContext.currentRevenue.toLocaleString()}` : 'N/A')
     .replace('{currentChurn}', businessContext.currentChurn ? `${(businessContext.currentChurn * 100).toFixed(2)}%` : 'N/A')
+    .replace('{seasonWeek}', (businessContext.currentSeasonWeek || 'N/A').toString())
+    .replace('{seasonLength}', (businessContext.seasonWeeks || 'N/A').toString())
     .replace('{elasticityAdSupported}', (businessContext.elasticityByTier?.ad_supported || -2.1).toString())
     .replace('{elasticityAdFree}', (businessContext.elasticityByTier?.ad_free || -1.9).toString())
+    .replace('{competitorSignalSummary}', competitorSignalSummary)
+    .replace('{competitorFeedSummary}', competitorFeedSummary)
+    .replace('{socialSignalSummary}', socialSignalSummary)
+    .replace('{inventoryHighlights}', inventoryHighlights)
+    .replace('{promoHistorySummary}', promoHistorySummary)
+    .replace('{livePromoSnapshot}', livePromoSnapshot)
     .replace('{availableScenarios}', allScenarios.slice(0, 8).map(s => `- ${s.id}: ${s.name}`).join('\n') || 'None loaded yet')
     .replace('{currentSimulation}', currentSim && currentSim.delta ? `Active: "${currentSim.scenario_name}" - Revenue ${currentSim.delta.revenue_pct >= 0 ? '+' : ''}${currentSim.delta.revenue_pct.toFixed(1)}%, Customers ${currentSim.delta.customers_pct >= 0 ? '+' : ''}${currentSim.delta.customers_pct.toFixed(1)}%` : currentSim ? `Active: "${currentSim.scenario_name}"` : 'No scenario simulated yet')
     .replace('{savedScenarios}', savedScenariosText)
@@ -396,7 +404,7 @@ function getToolDefinitions() {
           properties: {
             chart_name: {
               type: "string",
-              enum: ["demand_curve", "tier_mix", "forecast", "heatmap"],
+              enum: ["inventory_projection", "promo_history", "competitor_signal", "competitor_feed", "social_signal", "demand_curve", "tier_mix", "forecast", "heatmap"],
               description: "The name of the chart to analyze"
             }
           },
@@ -427,7 +435,7 @@ function getToolDefinitions() {
       type: "function",
       function: {
         name: "create_scenario",
-        description: "Create a new custom pricing scenario from user-specified parameters. Can create price change scenarios or promotional scenarios.",
+        description: "Create a new custom scenario from user-specified parameters (price change or promotion).",
         parameters: {
           type: "object",
           properties: {
@@ -484,6 +492,51 @@ function getToolDefinitions() {
             limit: {
               type: "integer",
               description: "Maximum number of segments to return (default: 10)"
+            }
+          },
+          required: []
+        }
+      }
+    },
+    {
+      type: "function",
+      function: {
+        name: "query_promo_history",
+        description: "Query historical promotion outcomes with optional season/channel filters and return suggested SKU inclusions/exclusions.",
+        parameters: {
+          type: "object",
+          properties: {
+            season: {
+              type: "string",
+              description: "Season filter, or 'all' for all seasons."
+            },
+            channel: {
+              type: "string",
+              enum: ["all", "target", "amazon", "sephora", "ulta", "dtc"],
+              description: "Channel filter"
+            }
+          },
+          required: []
+        }
+      }
+    },
+    {
+      type: "function",
+      function: {
+        name: "recommend_promo_mix",
+        description: "Recommend SKU-level promo inclusion and exclusion using inventory, elasticity, competitor gaps, social trend, and historical promo effectiveness.",
+        parameters: {
+          type: "object",
+          properties: {
+            objective: {
+              type: "string",
+              enum: ["balance", "sales", "profit", "maximize_revenue", "grow_customers", "reduce_churn", "maximize_aov"],
+              description: "Optimization objective"
+            },
+            channel_group: {
+              type: "string",
+              enum: ["all", "mass", "prestige"],
+              description: "Restrict recommendation to one channel group or all"
             }
           },
           required: []
@@ -765,6 +818,12 @@ async function executeTool(toolName, args) {
     case 'query_segments':
       return await querySegments(args);
 
+    case 'query_promo_history':
+      return await dataContext.queryPromoHistory(args);
+
+    case 'recommend_promo_mix':
+      return await dataContext.recommendPromoMix(args);
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -952,7 +1011,7 @@ export function clearHistory() {
   messagesDiv.innerHTML = `
     <div class="text-center text-muted mt-5">
       <i class="bi bi-chat-square-text display-4 mb-3"></i>
-      <p>Start a conversation by asking a question about your pricing data, scenarios, or elasticity analysis.</p>
+      <p>Start a conversation by asking a question about SKU promotions, inventory runway, competitor moves, or social demand signals.</p>
     </div>
   `;
 }

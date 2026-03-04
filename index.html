@@ -51,7 +51,7 @@
               <div class="step-line"></div>
               <div class="step-dot module-segmentation" data-step="5">5</div>
               <div class="step-line"></div>
-              <!-- Elasticity Modeling & Simulation -->
+              <!-- Promotion Planning Roadmap -->
               <div class="step-dot module-elasticity" data-step="6">6</div>
               <div class="step-line"></div>
               <div class="step-dot module-elasticity" data-step="7">7</div>
@@ -72,7 +72,7 @@
               </div>
               <div class="legend-item legend-elasticity">
                 <div class="legend-color elasticity"></div>
-                <span>Elasticity Modeling &amp; Simulation</span>
+                <span>Promotion Modeling &amp; Simulation</span>
               </div>
               <div class="legend-item legend-analytics">
                 <div class="legend-color analytics"></div>
@@ -114,8 +114,8 @@
       <div class="container">
         <div class="hero">
           <div>
-            <h1>Seasonal Promotion Elasticity Modeling</h1>
-            <p>Understand how price changes impact customer behavior, revenue, and growth. Make data-driven pricing decisions with confidence.</p>
+            <h1>Seasonal Promotion Optimization Studio</h1>
+            <p>Optimize promotions by SKU and channel using inventory, competitive pricing, and social demand signals to balance sales and profit through the season.</p>
             <button class="btn btn-primary-custom btn-lg" onclick="goToStep(1)">
               Start Exploration <i class="bi bi-arrow-right ms-2"></i>
             </button>
@@ -136,7 +136,7 @@
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Before exploring price elasticity, let's understand our current channel groups and key performance metrics.</p>
+        <p class="section-subtitle">Start with current season position, channel performance, and market signals before choosing promotion actions.</p>
       </div>
     </div>
 
@@ -153,7 +153,7 @@
           <i class="bi bi-database me-2"></i>
           Loading Data
         </h5>
-        <p class="text-muted">Initializing elasticity models and loading sample data...</p>
+        <p class="text-muted">Initializing promotion optimization models and loading season data...</p>
 
         <!-- Progress Bar (shown by default) -->
         <div id="loading-progress" class="mt-4" style="display: block !important; visibility: visible !important;">
@@ -163,7 +163,7 @@
           <div class="progress" style="height: 25px; background-color: rgba(0, 102, 255, 0.1); border: 1px solid rgba(0, 102, 255, 0.2);">
             <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                  role="progressbar" style="width: 5%; min-width: 5%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-              <span id="loading-percentage" class="fw-bold">0%</span>
+              <span id="loading-percentage">0%</span>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@
           <div class="tier-name">Mass Channel</div>
           <div class="tier-price">$24.00<span>/unit</span></div>
           <div class="mt-2">
-            High-volume retailers • Promo-driven demand
+            Target, Amazon &bull; High-volume, promo-responsive demand
           </div>
         </div>
       </div>
@@ -195,7 +195,7 @@
           <div class="tier-name">Prestige Channel</div>
           <div class="tier-price">$36.00<span>/unit</span></div>
           <div class="mt-2">
-            Premium retailers • Margin-protected pricing
+            Sephora, Ulta &bull; Premium retail with margin-protected pricing
           </div>
         </div>
       </div>
@@ -250,9 +250,9 @@
 
       <!-- Insight Box -->
       <div class="insight-box mt-4">
-        <div class="icon">💡</div>
+        <div class="icon"><i class="bi bi-lightbulb"></i></div>
         <h5>The Question</h5>
-      <p class="mb-0">What happens if we adjust price or promo depth? Elasticity modeling helps us predict the impact on customers, revenue, and repeat loss before making changes.</p>
+      <p class="mb-0">What happens if we adjust promo depth by channel and SKU? The optimizer projects sales, profit, and inventory runway before making in-season decisions.</p>
       </div>
 
       <!-- Channel Promotions Simulator -->
@@ -274,6 +274,33 @@
               <div class="card-body">
                 <h6 class="text-uppercase text-muted mb-3">Promo Depth by Channel Group</h6>
 
+                <div class="mb-3">
+                  <label for="channel-promo-product-group" class="form-label fw-bold small text-uppercase">Product Group</label>
+                  <select id="channel-promo-product-group" class="form-select form-select-sm">
+                    <option value="all" selected>All Product Groups</option>
+                    <option value="sunscreen">Sunscreen</option>
+                    <option value="moisturizer">Moisturizer</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="channel-promo-sku" class="form-label fw-bold small text-uppercase">SKU</label>
+                  <select id="channel-promo-sku" class="form-select form-select-sm">
+                    <option value="all" selected>All SKUs in Selection</option>
+                  </select>
+                </div>
+
+                <div class="mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="channel-promo-sku-boost-slider" class="form-label mb-0">Selected SKU Extra Promo</label>
+                    <span class="fw-semibold" id="channel-promo-sku-boost-value">0%</span>
+                  </div>
+                  <input type="range" class="form-range" id="channel-promo-sku-boost-slider" min="0" max="20" step="2" value="0">
+                  <div class="small text-muted" id="channel-promo-sku-boost-help">
+                    Select one SKU above to model cannibalization shifts from sibling SKUs.
+                  </div>
+                </div>
+
                 <div class="mb-4">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label for="mass-promo-slider" class="form-label mb-0">Mass Channel (Target, Amazon)</label>
@@ -289,7 +316,7 @@
 
                 <div class="mb-4">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label for="prestige-promo-slider" class="form-label mb-0">Prestige (Sephora, Ulta, DTC)</label>
+                    <label for="prestige-promo-slider" class="form-label mb-0">Prestige (Sephora, Ulta)</label>
                     <span class="fw-semibold" id="prestige-promo-value">0%</span>
                   </div>
                   <input type="range" class="form-range" id="prestige-promo-slider" min="0" max="30" step="5" value="0">
@@ -309,8 +336,62 @@
                   </select>
                 </div>
 
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="channel-promo-comp-shock" class="form-label mb-0">Competitor Price Shock</label>
+                    <span class="fw-semibold" id="channel-promo-comp-shock-value">0%</span>
+                  </div>
+                  <input type="range" class="form-range" id="channel-promo-comp-shock" min="-20" max="20" step="5" value="0">
+                  <div class="small text-muted">Negative means competitor prices drop. Positive means competitor prices rise.</div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="channel-promo-social-shock" class="form-label mb-0">Social Momentum Shock</label>
+                    <span class="fw-semibold" id="channel-promo-social-shock-value">0 pts</span>
+                  </div>
+                  <input type="range" class="form-range" id="channel-promo-social-shock" min="-20" max="20" step="5" value="0">
+                  <div class="small text-muted">Simulates sudden sentiment/news shifts without changing your own promo depth.</div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="channel-promo-apply-mass" checked>
+                    <label class="form-check-label small" for="channel-promo-apply-mass">
+                      Apply to Mass Channel
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="channel-promo-apply-prestige" checked>
+                    <label class="form-check-label small" for="channel-promo-apply-prestige">
+                      Apply to Prestige Channel
+                    </label>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold small text-uppercase mb-2">Narrative Presets</label>
+                  <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-preset-baseline">
+                      Start of Season Baseline
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="channel-promo-preset-pivot">
+                      In-Season Pivot: Competitor Drop
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="channel-promo-preset-social">
+                      Social Spike: Hold Price
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning" id="channel-promo-preset-clearance">
+                      Week-17 Clearance Push
+                    </button>
+                  </div>
+                  <div class="small text-muted mt-2" id="channel-promo-narrative-note">
+                    Use presets to tell the story: baseline, in-season pivot, and optimized finish.
+                  </div>
+                </div>
+
                 <p class="small text-muted mb-0">
-                  Elasticity by channel group is loaded from <code>elasticity-params.json</code>; volumes and margin come from <code>channel_weekly.csv</code>.
+                  Elasticity is modulated by social trend and competitor price delta from <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, and <code>social_signals.csv</code>.
                 </p>
               </div>
             </div>
@@ -351,6 +432,60 @@
                   </div>
                 </div>
 
+                <div class="row g-3 mb-3">
+                  <div class="col-md-4">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="small text-muted text-uppercase mb-1">Avg Competitor Price (Mass)</div>
+                      <div class="fs-5 fw-bold" id="channel-promo-comp-mass">--</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="small text-muted text-uppercase mb-1">Avg Competitor Price (Prestige)</div>
+                      <div class="fs-5 fw-bold" id="channel-promo-comp-prestige">--</div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="small text-muted text-uppercase mb-1">Brand Social Engagement Trend</div>
+                      <div class="fs-5 fw-bold" id="channel-promo-social-score">--</div>
+                      <div class="small text-muted" id="channel-promo-social-trend">--</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-12">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="small text-muted text-uppercase">Season Story</div>
+                        <span id="channel-promo-week-label" class="badge rounded-pill bg-info-subtle text-info-emphasis">Week -- of 17</span>
+                      </div>
+                      <div class="row g-2 small">
+                        <div class="col-md-3">
+                          <div class="text-muted">Start of season inventory</div>
+                          <div class="fw-semibold" id="channel-promo-season-start">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Inventory today</div>
+                          <div class="fw-semibold" id="channel-promo-season-current">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Week-17 baseline leftover</div>
+                          <div class="fw-semibold" id="channel-promo-season-end-baseline">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Week-17 scenario leftover</div>
+                          <div class="fw-semibold" id="channel-promo-season-end-scenario">--</div>
+                        </div>
+                      </div>
+                      <div class="small mt-2" id="channel-promo-season-guidance">
+                        Loading season trendline guidance...
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="row g-3">
                   <div class="col-md-6">
                     <h6 class="small text-uppercase text-muted mb-2">Revenue by Channel Group</h6>
@@ -362,6 +497,130 @@
                     <h6 class="small text-uppercase text-muted mb-2">Profit by Channel Group</h6>
                     <div class="chart-container" style="height: 220px;">
                       <canvas id="channel-promo-profit-chart"></canvas>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <h6 class="small text-uppercase text-muted mb-2">17-Week Inventory Projection (Baseline vs Scenario)</h6>
+                    <div class="chart-container" style="height: 260px;">
+                      <canvas id="channel-promo-inventory-chart"></canvas>
+                    </div>
+                    <div class="small text-muted mt-2" id="channel-promo-inventory-note">Loading season projection...</div>
+                  </div>
+                  <div class="col-12">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="small text-muted text-uppercase mb-2">Demand Driver Decomposition (Current Week)</div>
+                      <div class="row g-2 small">
+                        <div class="col-md-3">
+                          <div class="text-muted">Own promo effect</div>
+                          <div class="fw-semibold" id="channel-promo-driver-own">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Competitor price effect</div>
+                          <div class="fw-semibold" id="channel-promo-driver-competitor">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Social elasticity effect</div>
+                          <div class="fw-semibold" id="channel-promo-driver-social">--</div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="text-muted">Cannibalization effect</div>
+                          <div class="fw-semibold" id="channel-promo-driver-cannibalization">--</div>
+                        </div>
+                      </div>
+                      <div class="small mt-2 text-muted" id="channel-promo-driver-note">
+                        Competitive and social impacts update even when you do not change promo sliders.
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">Within-Group SKU Cannibalization View</h6>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>From SKU</th>
+                                <th>To SKU</th>
+                                <th>Channel Group</th>
+                                <th class="text-end">Estimated Unit Shift</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-cannibalization-body">
+                              <tr>
+                                <td colspan="4" class="text-center text-muted">No cannibalization shifts yet.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">SKU-Level Projection (6 Products): Baseline vs Shock-Only vs Scenario</h6>
+                        <div class="chart-container mb-3" style="height: 260px;">
+                          <canvas id="channel-promo-sku-response-chart"></canvas>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Product</th>
+                                <th>Group</th>
+                                <th class="text-end">Baseline Units</th>
+                                <th class="text-end">Shock-Only Units</th>
+                                <th class="text-end">Scenario Units</th>
+                                <th class="text-end">Net Delta</th>
+                                <th class="text-end">Internal Migration</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-sku-response-body">
+                              <tr>
+                                <td colspan="7" class="text-center text-muted">Adjust controls to render SKU-level projection.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="small text-muted mt-2" id="channel-promo-sku-response-note">
+                          Shock-only view keeps own promo depth at 0% and applies only competitor/social changes.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-primary-subtle mt-2">
+                      <div class="card-header bg-primary-subtle">
+                        <h6 class="mb-0">
+                          <i class="bi bi-stars me-2"></i>AI Recommendation Snapshot
+                        </h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="small mb-2" id="channel-promo-ai-summary">
+                          Waiting for simulator inputs to generate SKU recommendations.
+                        </div>
+                        <div class="row g-2 small">
+                          <div class="col-md-4">
+                            <div class="border rounded p-2 h-100 bg-body-tertiary">
+                              <div class="text-muted text-uppercase mb-1">Include In Promo</div>
+                              <div id="channel-promo-ai-include">--</div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="border rounded p-2 h-100 bg-body-tertiary">
+                              <div class="text-muted text-uppercase mb-1">Exclude / Hold</div>
+                              <div id="channel-promo-ai-exclude">--</div>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="border rounded p-2 h-100 bg-body-tertiary">
+                              <div class="text-muted text-uppercase mb-1">Key Risk Watch</div>
+                              <div id="channel-promo-ai-risks">--</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -384,9 +643,62 @@
       <div class="section-header-main">
         <div class="section-number">Step 2</div>
         <h2 class="section-title">Data Explorer</h2>
-        <p class="section-subtitle">Explore the raw datasets that power our price elasticity models. Browse through customer data, segments, and more.</p>
+        <p class="section-subtitle">Explore the raw datasets powering promotion optimization, including SKU-channel inventory, competitor pricing, and social demand signals.</p>
       </div>
- We build one “source of truth” panel so all models use the same price and promo history.</div>
+    </div>
+
+    <div class="card mb-4 border-info-subtle">
+      <div class="card-header bg-info-subtle">
+        <h6 class="mb-0">
+          <i class="bi bi-broadcast-pin me-2"></i>In-Season Pivot Signal Lab (Competitive + Social)
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-1">Avg competitor price (Mass)</div>
+              <div class="fw-semibold fs-5" id="step2-signal-comp-mass">--</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-1">Avg competitor price (Prestige)</div>
+              <div class="fw-semibold fs-5" id="step2-signal-comp-prestige">--</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-1">Brand social score</div>
+              <div class="fw-semibold fs-5" id="step2-signal-social-score">--</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-1">Social trend</div>
+              <div class="fw-semibold fs-6" id="step2-signal-social-trend">--</div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mb-2">
+          <div class="col-md-6">
+            <div class="alert alert-warning mb-0">
+              <strong>Competitor delta impact:</strong>
+              <span id="step2-signal-comp-impact">Waiting for signal update...</span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="alert alert-success mb-0">
+              <strong>Social impact:</strong>
+              <span id="step2-signal-social-impact">Waiting for signal update...</span>
+            </div>
+          </div>
+        </div>
+        <div class="small text-muted mt-2" id="step2-signal-change-log">
+          Detecting week-over-week signal changes...
+        </div>
+        <div class="small text-muted mt-1">
+          Competitive prices are represented as simulated website-scraped signals with SKU matching confidence.
         </div>
       </div>
     </div>
@@ -403,19 +715,19 @@
 
   </section>
 
-  <!-- Section 3: Acquisition Elasticity -->
+  <!-- Section 3: In-Season Planner (Roadmap Placeholder) -->
   <section class="section" id="section-3">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 6</div>
         <h2 class="section-title">
-          Acquisition Elasticity
+          In-Season Planner (Roadmap Placeholder)
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step3" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Model how price changes affect new customer acquisition. Simulate scenarios and analyze impacts on sign-up rates.</p>
+        <p class="section-subtitle">Future module: orchestrate weekly SKU-level promotion decisions by channel with inventory and competitive signal guardrails.</p>
       </div>
     </div>
 
@@ -431,19 +743,19 @@
 
   </section>
 
-  <!-- Section 4: Repeat-Loss Elasticity -->
+  <!-- Section 4: End-of-Season Markdown Simulator (Roadmap Placeholder) -->
   <section class="section" id="section-4">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 7</div>
         <h2 class="section-title">
-          Repeat Loss Elasticity
+          End-of-Season Markdown Simulator (Roadmap Placeholder)
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step4" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Understand how price changes drive repeat loss. Model time-lagged effects and retention patterns.</p>
+        <p class="section-subtitle">Future module: optimize markdown cadence to clear residual inventory by week 17 while protecting margin where possible.</p>
       </div>
     </div>
 
@@ -459,19 +771,19 @@
 
   </section>
 
-  <!-- Section 5: Channel Mix Migration -->
+  <!-- Section 5: Cross-Channel Migration Planner (Roadmap Placeholder) -->
   <section class="section" id="section-5">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 8</div>
         <h2 class="section-title">
-          Channel Mix Migration
+          Cross-Channel Migration Planner (Roadmap Placeholder)
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step5" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Model customer movement between channel groups. Analyze upgrade and downgrade patterns based on price gaps.</p>
+        <p class="section-subtitle">Future module: model SKU demand migration across channels when promos are applied in only one channel group.</p>
       </div>
     </div>
 
@@ -487,19 +799,19 @@
 
   </section>
 
-  <!-- Section 6: Customer Cohorts & Elasticity -->
+  <!-- Section 6: Customer Cohorts -->
   <section class="section" id="section-6">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 4</div>
         <h2 class="section-title">
-          Customer Cohorts & Elasticity
+          Customer Cohorts
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step6" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Analyze customer cohorts and their differential responses to pricing changes. Explore behavioral cohorts and elasticity patterns.</p>
+        <p class="section-subtitle">Analyze customer cohorts and their different promotion response patterns to support targeted offers.</p>
       </div>
     </div>
 
@@ -515,19 +827,19 @@
 
   </section>
 
-  <!-- Section 7: Segment Elasticity Comparison -->
+  <!-- Section 7: Segment Response Comparison -->
   <section class="section" id="section-7">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 5</div>
         <h2 class="section-title">
-          Segment Elasticity Comparison
+          Segment Response Comparison
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step7" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Compare price elasticity across different customer segments. Identify which segments are most and least price-sensitive.</p>
+        <p class="section-subtitle">Compare promotion response across customer segments and identify where discounts produce incremental lift.</p>
       </div>
     </div>
 
@@ -550,7 +862,7 @@
       <div class="section-header-main">
         <div class="section-number">Step 3</div>
         <h2 class="section-title">Event Calendar</h2>
-        <p class="section-subtitle">Track important events and their impact on business metrics. Understand how external factors influence customer behavior.</p>
+        <p class="section-subtitle">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that drive in-season optimization pivots.</p>
       </div>
     </div>
 
@@ -572,8 +884,8 @@
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 9</div>
-        <h2 class="section-title">AI Chat & Advanced Analytics</h2>
-        <p class="section-subtitle">Chat with AI to get insights, ask questions about your data, and access advanced analytical tools.</p>
+        <h2 class="section-title">AI Promotion Optimization Assistant</h2>
+        <p class="section-subtitle">Ask for SKU-level promotion recommendations using inventory runway, competitor price gaps, social momentum, and historical promo effectiveness.</p>
       </div>
       
     </div>
@@ -722,17 +1034,17 @@
   </div>
   </div>
 
-  <!-- Unified Scenario Engine with 3 Elasticity Models -->
+  <!-- Promotion Planning Roadmap Modules -->
   <div id="elasticity-models-section" style="display: none;">
   <div class="container my-4">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h2 class="h5 mb-0">
-          <i class="bi bi-calculator me-2"></i>
-          Scenario Engine - 3 Elasticity Models
+          <i class="bi bi-signpost-split me-2"></i>
+          Promotion Planning Roadmap Modules
         </h2>
         <p class="small mb-0 opacity-75">
-          Simulate pricing scenarios across acquisition, repeat loss, and channel mix migration models
+          Planned expansion areas beyond the current Step 1 promotion optimizer.
         </p>
       </div>
       <div class="card-body">
@@ -740,31 +1052,31 @@
         <!-- Reference to RFP Framework -->
         <div class="alert alert-info mb-4">
           <i class="bi bi-info-circle me-2"></i>
-          <strong>3-Model Framework:</strong>
-          Each tab represents a distinct elasticity model with different customer responses and decision metrics.
+          <strong>Roadmap Placeholder:</strong>
+          These modules are placeholders for future capabilities in in-season planning, markdown sequencing, and cross-channel demand migration.
         </div>
 
         <!-- Bootstrap Tabs for 3 Models -->
         <ul class="nav nav-tabs nav-fill mb-4" id="elasticityTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="acquisition-tab" data-bs-toggle="tab" data-bs-target="#acquisition-pane" type="button" role="tab">
-              <i class="bi bi-graph-up-arrow me-2"></i>
-              <strong>1. Acquisition Elasticity</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Gross Adds Response</small>
+              <i class="bi bi-calendar-week me-2"></i>
+              <strong>1. In-Season Planner</strong>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="churn-tab" data-bs-toggle="tab" data-bs-target="#churn-pane" type="button" role="tab">
               <i class="bi bi-hourglass-split me-2"></i>
-              <strong>2. Repeat Loss Elasticity</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Time-Lagged Response</small>
+              <strong>2. End-of-Season Markdown</strong>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="migration-tab" data-bs-toggle="tab" data-bs-target="#migration-pane" type="button" role="tab">
               <i class="bi bi-arrows-angle-expand me-2"></i>
-              <strong>3. Channel Mix Migration</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Mix-Shift Response</small>
+              <strong>3. Cross-Channel Migration</strong>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
             </button>
           </li>
         </ul>
@@ -843,7 +1155,7 @@
 
                 <!-- Insight Box -->
                 <div class="insight-box">
-                  <div class="icon">📊</div>
+                  <div class="icon"><i class="bi bi-graph-up-arrow"></i></div>
                   <h5>What is Elasticity?</h5>
                   <p class="mb-0">An elasticity of <strong>-1.9</strong> means a 1% price increase leads to a 1.9% decrease in new acquisitions. Negative values indicate inverse relationship.</p>
                 </div>
@@ -864,7 +1176,7 @@
                     <canvas id="acquisition-chart-simple"></canvas>
                   </div>
                   <div class="small text-muted mt-2">
-                    <i class="bi bi-info-circle me-1"></i>Confidence intervals show the range of uncertainty in forecasts (±15% standard error)
+                    <i class="bi bi-info-circle me-1"></i>Confidence intervals show the range of uncertainty in forecasts (+/- 15% standard error)
                   </div>
                 </div>
 
@@ -1015,7 +1327,7 @@
 
                 <!-- Insight Box -->
                 <div class="insight-box">
-                  <div class="icon">⏱️</div>
+                  <div class="icon"><i class="bi bi-clock-history"></i></div>
                   <h5>Why Time-Lagged?</h5>
                   <p class="mb-2">Customers don't drop immediately. Some wait for reorder cycles, others for promo expiration. Peak repeat loss typically occurs <strong>8-12 weeks</strong> after a price increase.</p>
                   <p class="mb-0 small"><strong>Revenue Note:</strong> The cumulative revenue line accumulates over time. With extreme price increases or highly elastic cohorts (Deal Hunter), it can peak then decline as customer loss outweighs price gain.</p>
@@ -1214,7 +1526,7 @@
 
                 <!-- Insight Box -->
                 <div class="insight-box">
-                  <div class="icon">↔️</div>
+                  <div class="icon"><i class="bi bi-arrow-left-right"></i></div>
                   <h5>Migration Dynamics</h5>
                   <p class="mb-0">When the price gap narrows, more Mass Channel customers upgrade. When it widens, more Prestige Channel customers may downgrade or show higher repeat loss.</p>
                 </div>
@@ -1243,7 +1555,7 @@
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adlite-pct">62%</div>
                       <div style="color: rgba(255,255,255,0.6);">Mass Channel</div>
                     </div>
-                    <div class="flow-arrow" id="mig-arrow">→</div>
+                    <div class="flow-arrow" id="mig-arrow">&rarr;</div>
                     <div class="flow-box">
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adfree-pct">38%</div>
                       <div style="color: rgba(255,255,255,0.6);">Prestige Channel</div>
@@ -1262,25 +1574,25 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Mass Channel → Prestige Channel (Upgrade)</td>
+                          <td>Mass Channel &rarr; Prestige Channel (Upgrade)</td>
                           <td><strong id="mig-upgrade-pct">8.2%</strong></td>
                           <td id="mig-upgrade-subs">~850</td>
                           <td class="text-success" id="mig-upgrade-rev">+$2,550</td>
                         </tr>
                         <tr>
-                          <td>Prestige Channel → Mass Channel (Downgrade)</td>
+                          <td>Prestige Channel &rarr; Mass Channel (Downgrade)</td>
                           <td><strong id="mig-downgrade-pct">3.5%</strong></td>
                           <td id="mig-downgrade-subs">~420</td>
                           <td class="text-danger" id="mig-downgrade-rev">-$1,260</td>
                         </tr>
                         <tr>
-                          <td>Mass Channel → Cancel</td>
+                          <td>Mass Channel &rarr; Cancel</td>
                           <td><strong id="mig-cancel-lite-pct">4.2%</strong></td>
                           <td id="mig-cancel-lite-subs">~430</td>
                           <td class="text-danger" id="mig-cancel-lite-rev">-$2,574</td>
                         </tr>
                         <tr>
-                          <td>Prestige Channel → Cancel</td>
+                          <td>Prestige Channel &rarr; Cancel</td>
                           <td><strong id="mig-cancel-free-pct">3.8%</strong></td>
                           <td id="mig-cancel-free-subs">~460</td>
                           <td class="text-danger" id="mig-cancel-free-rev">-$4,134</td>
@@ -1503,7 +1815,7 @@
               <div class="card-header bg-warning-subtle">
                 <h5 class="h6 mb-0">
                   <i class="bi bi-table me-2"></i>
-                  Cohort Repeat-Loss Uplift Heatmap (Δ vs baseline)
+                  Cohort Repeat-Loss Uplift Heatmap (change vs baseline)
                 </h5>
               </div>
               <div class="card-body">
@@ -1533,7 +1845,7 @@
               <div class="card-header bg-success-subtle">
                 <h5 class="h6 mb-0">
                   <i class="bi bi-table me-2"></i>
-                  Channel Transition Matrix (Δ vs baseline)
+                  Channel Transition Matrix (change vs baseline)
                 </h5>
               </div>
               <div class="card-body">
@@ -1572,7 +1884,7 @@
                     data-bs-custom-class="ml-popover"
                     data-bs-html="true"
                     data-bs-title="<i class='bi bi-cpu me-2'></i>ML Methodology: Elasticity Analysis"
-                    data-bs-content="<strong>Demand Curve Model:</strong><br>Q = Q₀ × (P/P₀)^ε<br>Non-linear demand function based on constant elasticity<br><br><strong>Segmentation:</strong><br>• Tenure-based cohorts (0-3mo, 3-12mo, 12+mo)<br>• Age demographics<br>• Channel touchpoint<br>• Channel acquisition<br><br><strong>Heatmap Algorithm:</strong><br>Hierarchical clustering of elasticity coefficients across segments using Ward's method<br><br><strong>Cross-Elasticity:</strong><br>Measures channel substitution effects using multivariate regression<br><br><strong>Feature Engineering:</strong><br>• Lagged price variables (1-week, 4-week)<br>• Lagged customer metrics<br>• Promotional flags<br>• Seasonal intensity score (events - gaps)">
+                    data-bs-content="<strong>Demand Curve Model:</strong><br>Q = Q0 x (P/P0)^e<br>Non-linear demand function based on constant elasticity<br><br><strong>Segmentation:</strong><br>&bull; Tenure-based cohorts (0-3mo, 3-12mo, 12+mo)<br>&bull; Age demographics<br>&bull; Channel touchpoint<br>&bull; Channel acquisition<br><br><strong>Heatmap Algorithm:</strong><br>Hierarchical clustering of elasticity coefficients across segments using Ward's method<br><br><strong>Cross-Elasticity:</strong><br>Measures channel substitution effects using multivariate regression<br><br><strong>Feature Engineering:</strong><br>&bull; Lagged price variables (1-week, 4-week)<br>&bull; Lagged customer metrics<br>&bull; Promotional flags<br>&bull; Seasonal intensity score (events - gaps)">
               <i class="bi bi-info-circle text-primary"></i>
             </button>
           </h2>
@@ -1615,7 +1927,7 @@
                   data-bs-custom-class="ml-popover"
                   data-bs-html="true"
                   data-bs-title="<i class='bi bi-cpu me-2'></i>ML Methodology: Multi-Scenario Comparison"
-                  data-bs-content="<strong>Algorithm:</strong> Pareto optimization and multi-objective ranking<br><br><strong>Metrics Normalized:</strong><br>• Revenue impact (% change)<br>• Customer growth (% change)<br>• Repeat loss (% change)<br>• AOV (% change)<br>• Customer LTV<br><br><strong>Ranking Method:</strong><br>Weighted scoring based on business priorities<br><br><strong>Radar Chart:</strong><br>5-dimensional representation using min-max normalization<br><br><strong>Trade-off Analysis:</strong><br>Scatter plot showing revenue vs. growth with Pareto frontier<br><br><strong>Sensitivity:</strong> Monte Carlo simulation with 10,000 iterations per scenario">
+                  data-bs-content="<strong>Algorithm:</strong> Pareto optimization and multi-objective ranking<br><br><strong>Metrics Normalized:</strong><br>&bull; Revenue impact (% change)<br>&bull; Customer growth (% change)<br>&bull; Repeat loss (% change)<br>&bull; AOV (% change)<br>&bull; Customer LTV<br><br><strong>Ranking Method:</strong><br>Weighted scoring based on business priorities<br><br><strong>Radar Chart:</strong><br>5-dimensional representation using min-max normalization<br><br><strong>Trade-off Analysis:</strong><br>Scatter plot showing revenue vs. growth with Pareto frontier<br><br><strong>Sensitivity:</strong> Monte Carlo simulation with 10,000 iterations per scenario">
             <i class="bi bi-info-circle text-primary"></i>
           </button>
         </h2>
@@ -1721,7 +2033,7 @@
             <i class="bi bi-lightbulb text-warning fs-4 me-3"></i>
             <div>
               <strong class="text-body">Promo strategy:</strong>
-              <span class="text-body-secondary">Mass channels (Target, Amazon) show higher price elasticity—use deeper promos to win volume. Prestige (Sephora, Ulta, DTC) are less elastic—focus on margin and full-price conversion. Balance sales and profit by channel.</span>
+              <span class="text-body-secondary">Mass channels (Target, Amazon) show higher price elasticity - use deeper promos to win volume. Prestige (Sephora, Ulta) are less elastic - focus on margin and full-price conversion. Balance sales and profit by channel.</span>
             </div>
           </div>
         </div>
@@ -1817,7 +2129,7 @@
                 <div id="channel-elasticity-bar"></div>
               </div>
               <div class="col-12">
-                <h4 class="h6 text-uppercase text-muted mb-2">Heatmap: Channel × Elasticity &amp; group</h4>
+                <h4 class="h6 text-uppercase text-muted mb-2">Heatmap: Channel x Elasticity &amp; group</h4>
                 <div id="channel-elasticity-heatmap"></div>
               </div>
               <div class="col-12">
@@ -1848,7 +2160,7 @@
                     <i class="bi bi-shield-exclamation text-warning me-1"></i>
                     Customer group watchlist
                   </h6>
-                  <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis" id="segment-watchlist-badge">Loading…</span>
+                  <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis" id="segment-watchlist-badge">Loading...</span>
                 </div>
                 <p class="small text-body-secondary mb-1">
                   Shows the customer groups most at risk of not coming back.
@@ -1881,14 +2193,14 @@
         <div class="d-flex justify-content-between align-items-center">
           <h2 class="h5 mb-0">
             <i class="bi bi-bar-chart-line me-2"></i>
-            Cohort Elasticity Comparison
+            Segment Response Comparison
           </h2>
         </div>
       </div>
       <div class="card-body">
         <!-- Controls -->
         <div class="row mb-4">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label fw-bold">Axis</label>
             <select id="compare-axis-select" class="form-select">
               <option value="acquisition">Acquisition</option>
@@ -1896,14 +2208,20 @@
               <option value="monetization">Monetization</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label fw-bold">Channel Group</label>
             <select id="compare-tier-select" class="form-select">
               <option value="ad_supported">Mass Channel</option>
               <option value="ad_free" selected>Prestige Channel</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
+            <label class="form-label fw-bold">SKU</label>
+            <select id="compare-sku-select" class="form-select">
+              <option value="all" selected>All SKUs</option>
+            </select>
+          </div>
+          <div class="col-md-3">
             <label class="form-label fw-bold">Sort By</label>
             <select id="compare-sort-select" class="form-select">
               <option value="elasticity">Elasticity</option>
@@ -1912,6 +2230,9 @@
               <option value="aov">AOV</option>
             </select>
           </div>
+        </div>
+        <div class="small text-muted mb-3" id="compare-sku-summary">
+          Segment response metrics currently shown at channel-group level.
         </div>
 
         <!-- Comparison Table -->
@@ -1947,9 +2268,12 @@
               <div class="card h-100">
                 <div class="card-body py-3">
                   <h6 class="small text-uppercase text-muted mb-2">
-                    <i class="bi bi-bullseye me-1"></i> Competitive Signals
+                    <i class="bi bi-bullseye me-1"></i> Competitive Price Delta Trend (Our vs Competitor)
                   </h6>
-                  <div id="market-signals-competitive" class="small"></div>
+                  <div class="chart-container" style="height: 220px;">
+                    <canvas id="event-competitive-signals-chart"></canvas>
+                  </div>
+                  <div id="market-signals-competitive" class="small text-muted mt-2"></div>
                 </div>
               </div>
             </div>
@@ -1957,9 +2281,12 @@
               <div class="card h-100">
                 <div class="card-body py-3">
                   <h6 class="small text-uppercase text-muted mb-2">
-                    <i class="bi bi-megaphone me-1"></i> Social & Listening
+                    <i class="bi bi-megaphone me-1"></i> Social Momentum and Elasticity Signal
                   </h6>
-                  <div id="market-signals-social" class="small"></div>
+                  <div class="chart-container" style="height: 220px;">
+                    <canvas id="event-social-signals-chart"></canvas>
+                  </div>
+                  <div id="market-signals-social" class="small text-muted mt-2"></div>
                 </div>
               </div>
             </div>
@@ -1977,6 +2304,11 @@
                 <input type="checkbox" class="btn-check" id="filter-price-change" checked autocomplete="off">
                 <label class="btn btn-outline-success btn-sm" for="filter-price-change">
                   <i class="bi bi-currency-dollar me-1"></i>Price Changes
+                </label>
+
+                <input type="checkbox" class="btn-check" id="filter-competitor-price-change" checked autocomplete="off">
+                <label class="btn btn-outline-danger btn-sm" for="filter-competitor-price-change">
+                  <i class="bi bi-arrow-left-right me-1"></i>Competitor Price Changes
                 </label>
 
                 <input type="checkbox" class="btn-check" id="filter-promo" checked autocomplete="off">
@@ -2039,11 +2371,35 @@
               <i class="bi bi-megaphone me-2"></i>Promo Campaign Performance
             </h6>
             <p class="text-muted small mb-3">
-              Latest campaigns across Sephora, Ulta, Target, Amazon, and DTC—aligned to seasonal sun care and the goal to balance sales &amp; profit without over-discounting.
+              Campaign story across the season: baseline setup, in-season pivot from competitor/social shocks, and end-of-season inventory push across Sephora, Ulta, Target, and Amazon.
             </p>
+            <div id="promo-data-methodology" class="alert alert-light border small mb-3">
+              Loading campaign data sources and analysis summary...
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <label class="form-label small text-muted mb-1" for="promo-season-filter">Season</label>
+                <select id="promo-season-filter" class="form-select form-select-sm">
+                  <option value="all" selected>All Seasons</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small text-muted mb-1" for="promo-channel-filter">Channel</label>
+                <select id="promo-channel-filter" class="form-select form-select-sm">
+                  <option value="all" selected>All Channels</option>
+                </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button id="promo-clear-filters" class="btn btn-sm btn-outline-secondary w-100" type="button">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Promo Filters
+                </button>
+              </div>
+            </div>
+            <div id="promo-campaign-summary" class="small text-muted mb-2"></div>
             <div class="row" id="promo-cards-container">
               <!-- Promo campaign cards will be rendered here -->
             </div>
+            <div id="promo-drilldown-panel" class="mt-3" style="display: none;"></div>
           </div>
 
         </div>
@@ -2059,7 +2415,7 @@
       <div class="card-header d-flex align-items-center justify-content-between">
         <h2 class="h5 mb-0">
           <i class="bi bi-chat-dots me-2"></i>
-          Ask Questions About Scenarios
+          Ask Questions About Promotion Optimization
         </h2>
         <button id="chat-reset-btn" class="btn btn-sm btn-outline-secondary" type="button">
           <i class="bi bi-arrow-counterclockwise me-1"></i>
@@ -2071,14 +2427,14 @@
         <div id="chat-messages" class="mb-3 border rounded p-3" style="height: 500px; overflow-y: auto;">
           <div class="text-center text-muted mt-5">
             <i class="bi bi-robot display-4 mb-3"></i>
-            <p><strong>Scenario Analysis Assistant</strong></p>
-            <p class="small">Ask me to interpret scenario results, compare outcomes, suggest optimizations, or create new scenarios.</p>
+            <p><strong>Promotion Optimization Assistant</strong></p>
+            <p class="small">Ask for SKU-level promo recommendations, inventory runway risk, competitor defense actions, or social-driven hold-price decisions.</p>
           </div>
         </div>
 
         <!-- Input -->
         <div class="input-group mb-3">
-          <input type="text" id="chat-input" class="form-control" placeholder="Ask about scenarios: interpret results, compare, or suggest new scenarios..." disabled />
+          <input type="text" id="chat-input" class="form-control" placeholder="Ask about promotion optimization: SKU mix, inventory to week 17, competitor moves, or promo effectiveness..." disabled />
           <button id="chat-send-btn" class="btn btn-primary" disabled>
             <i class="bi bi-send"></i> Send
           </button>
@@ -2091,10 +2447,10 @@
             Try asking:
           </small>
           <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Interpret the current scenario results and trade-offs</button>
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Suggest a scenario to maximize revenue with repeat loss under 5%</button>
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Explain the demand curve chart for the current tier</button>
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Show high repeat-loss segments in the Mass Channel group</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>What should I promote this week to clear inventory by week 17 with minimal margin damage?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Competitor dropped prices on Amazon. Which SKUs should be in a mass-channel defense promo?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Social engagement is high. Which SKUs should we hold at full price?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>From past promos, which SKUs underperformed and should be excluded next cycle?</button>
           </div>
         </div>
       </div>
@@ -2237,7 +2593,7 @@
           <div class="card mb-3">
             <div class="card-header"><strong>Customer Lifetime Value (LTV)</strong></div>
             <div class="card-body">
-              <code>LTV = AOV × Average Tenure (months) × (1 - Repeat Loss Rate)</code>
+              <code>LTV = AOV x Average Tenure (months) x (1 - Repeat Loss Rate)</code>
               <p class="small text-muted mt-2 mb-0">Discounted over 24-month horizon at 5% annual rate</p>
             </div>
           </div>
@@ -2265,99 +2621,21 @@
     </div>
   </div>
 
-  <!-- Step 3: Acquisition Elasticity -->
+    <!-- Step 3: In-Season Planner (Roadmap Placeholder) -->
   <div class="modal fade" id="methodology-modal-step3" tabindex="-1" aria-labelledby="methodology-modal-step3-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step3-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Acquisition Elasticity
+            <i class="bi bi-signpost-split me-2"></i> Methodology: In-Season Planner (Roadmap)
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-diagram-3 me-2"></i> Elasticity Model</h6>
-          <p>Price elasticity of demand measures how acquisition rates respond to price changes.</p>
-
-          <div class="card mb-3">
-            <div class="card-header"><strong>Core Formula</strong></div>
-            <div class="card-body">
-              <code>% Change in Acquisitions = Elasticity Coefficient × % Change in Price</code>
-              <p class="small text-muted mt-2">
-                <strong>Example:</strong> If elasticity = -2.1 and price increases by 10%, acquisitions decrease by 21%
-              </p>
-            </div>
-          </div>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-gear me-2"></i> Elasticity Coefficients (Industry Benchmarks)</h6>
-          <table class="table table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>Channel Group</th>
-                <th>Base Elasticity</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Mass Channel</td>
-                <td><strong>-2.1</strong></td>
-                <td>Most price-sensitive (value seekers)</td>
-              </tr>
-              <tr>
-                <td>Prestige Channel</td>
-                <td><strong>-1.7</strong></td>
-                <td>Moderately sensitive (quality conscious)</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-sliders me-2"></i> Adjustment Factors</h6>
-          <p>Base elasticity is modified by:</p>
-          <ul>
-            <li><strong>Tenure:</strong> New users (0-3 months) are 1.3× more sensitive</li>
-            <li><strong>Age Group:</strong> 18-24 demographic is 1.2× more sensitive</li>
-            <li><strong>Acquisition Channel:</strong> Paid ads users are 1.4× more sensitive</li>
-            <li><strong>Time Horizon:</strong> Long-term effects (12+ months) are 1.5× stronger</li>
-          </ul>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-activity me-2"></i> Scenario Simulation</h6>
-          <ol>
-            <li>Calculate price change percentage: <code>(New Price - Current Price) / Current Price</code></li>
-            <li>Apply elasticity: <code>Demand Change = Elasticity × Price Change%</code></li>
-            <li>Project new acquisitions: <code>New Acq = Baseline Acq × (1 + Demand Change)</code></li>
-            <li>Calculate revenue impact: <code>New Rev = New Acq × New Price × Retention Rate</code></li>
-          </ol>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-code-square me-2"></i> ML Model: Poisson GLM (Python)</h6>
-          <div class="card">
-            <div class="card-header ">
-              <strong>Model Implementation</strong>
-              <span class="badge bg-light text-dark border ms-2">python/acquisition_model.py</span>
-            </div>
-            <div class="card-body">
-              <p><strong>Algorithm:</strong> Poisson Generalized Linear Model</p>
-              <p><strong>Execution:</strong> Runs in browser via <strong>Pyodide</strong> (Python + NumPy in WebAssembly)</p>
-              <p><strong>Link Function:</strong> <code>log(E[adds]) = β₀ + β₁×price + β₂×discount + β₃×is_promo + β₄×segment</code></p>
-
-              <p class="mb-2 mt-3"><strong>Pre-fitted Coefficients:</strong></p>
-              <ul class="small mb-0">
-                <li><code>intercept = 6.5</code> → baseline ~665 adds/month</li>
-                <li><code>price = -0.25</code> → price sensitivity</li>
-                <li><code>promo_discount = 0.03</code> → discount effectiveness</li>
-                <li><code>is_promo = 0.4</code> → promo boost multiplier</li>
-                <li><code>segment_elasticity_factor = 0.12</code> → segment adjustment</li>
-              </ul>
-
-              <p class="small text-muted mt-3 mb-0">
-                <strong>Why Poisson?</strong> Customer counts are whole numbers (0, 1, 2...). This statistical method naturally fits count data and auto-adjusts as volumes change.
-              </p>
-            </div>
-          </div>
-
-          <div class="alert alert-warning mt-3">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <strong>Important:</strong> Model coefficients are industry benchmarks, not trained on this synthetic dataset. Real-world deployment requires retraining on actual data.
+          <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i> Planned Capability</h6>
+          <p>This roadmap module will support week-by-week promotion planning across SKUs and channels using inventory runway, competitor pricing, and social demand signals.</p>
+          <div class="alert alert-info mb-0">
+            <strong>Current implementation:</strong> Step 1 already delivers the core promotion optimization logic for a 17-week season, including objective-based controls and baseline-vs-scenario inventory projection.
           </div>
         </div>
         <div class="modal-footer">
@@ -2367,111 +2645,21 @@
     </div>
   </div>
 
-  <!-- Step 4: Repeat Loss Elasticity -->
+  <!-- Step 4: End-of-Season Markdown Simulator (Roadmap Placeholder) -->
   <div class="modal fade" id="methodology-modal-step4" tabindex="-1" aria-labelledby="methodology-modal-step4-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step4-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Repeat Loss Elasticity
+            <i class="bi bi-signpost-split me-2"></i> Methodology: End-of-Season Markdown (Roadmap)
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-diagram-3 me-2"></i> Repeat Loss Model</h6>
-          <p>Repeat-loss elasticity models how price increases drive customer drop-off over time.</p>
-
-          <div class="card mb-3">
-            <div class="card-header "><strong>Repeat Loss Formula</strong></div>
-            <div class="card-body">
-              <code>Additional Repeat Loss% = Repeat Loss Elasticity × Price Change% × Time Factor</code>
-              <p class="small text-muted mt-2">
-                <strong>Example:</strong> 10% price increase with -1.8 elasticity → +18% repeat loss (baseline 3% → 3.54%)
-              </p>
-            </div>
-          </div>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-clock-history me-2"></i> Time-Lagged Effects</h6>
-          <p>Repeat loss doesn't happen instantly. We model temporal dynamics:</p>
-          <table class="table table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>Period</th>
-                <th>Effect Multiplier</th>
-                <th>Explanation</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>0-1 month</td>
-                <td>0.3×</td>
-                <td>Immediate reaction (angry users)</td>
-              </tr>
-              <tr>
-                <td>2-3 months</td>
-                <td>1.0×</td>
-                <td>Peak repeat loss period</td>
-              </tr>
-              <tr>
-                <td>4-6 months</td>
-                <td>0.7×</td>
-                <td>Tapering off (remaining users adjusted)</td>
-              </tr>
-              <tr>
-                <td>7-12 months</td>
-                <td>0.4×</td>
-                <td>Long-tail effect</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-people me-2"></i> Cohort-Specific Repeat Loss</h6>
-          <p>Different customer segments have different repeat-loss sensitivities:</p>
-          <ul>
-            <li><strong>New customers (0-6 months):</strong> 2.5× baseline repeat-loss elasticity</li>
-            <li><strong>Mid-tenure (6-18 months):</strong> 1.0× baseline</li>
-            <li><strong>Loyal (18+ months):</strong> 0.5× baseline (more forgiving)</li>
-            <li><strong>Bundle customers:</strong> 0.3× baseline (highest repeat rate)</li>
-          </ul>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-shield-check me-2"></i> Retention Tactics</h6>
-          <p>Model includes optional retention strategies:</p>
-          <ul>
-            <li><strong>Win-back campaigns:</strong> Can reduce repeat loss by 15-25%</li>
-            <li><strong>Price protection:</strong> Exempt loyal customers from increases</li>
-            <li><strong>Loyalty offers:</strong> Offer 20% off for long-tenure customers</li>
-          </ul>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-code-square me-2"></i> ML Model: Logistic Regression (Python)</h6>
-          <div class="card">
-            <div class="card-header ">
-              <strong>Model Implementation</strong>
-              <span class="badge bg-light text-dark border ms-2">python/churn_model.py</span>
-            </div>
-            <div class="card-body">
-              <p><strong>Algorithm:</strong> Logistic Regression with time-lagged effects</p>
-              <p><strong>Execution:</strong> Runs in browser via <strong>Pyodide</strong> (Python + NumPy)</p>
-              <p><strong>Link Function:</strong> <code>logit(repeat_loss) = β₀ + β₁×price_change + β₂×time_interaction</code></p>
-
-              <p class="mb-2 mt-3"><strong>Pre-fitted Coefficients:</strong></p>
-              <ul class="small mb-0">
-                <li><code>intercept = -2.944</code> → baseline 5% repeat-loss probability</li>
-                <li><code>price_change_pct = 0.01</code> → base price effect</li>
-                <li><code>price_x_0_4wks = 0.006</code> → immediate effect multiplier</li>
-                <li><code>price_x_4_8wks = 0.018</code> → roll-off peak multiplier</li>
-                <li><code>price_x_8_12wks = 0.028</code> → peak repeat-loss multiplier</li>
-                <li><code>price_x_12plus = 0.008</code> → long-tail stabilization</li>
-              </ul>
-
-              <p class="small text-muted mt-3 mb-0">
-                <strong>Why Logistic?</strong> Binary outcome (repeat loss yes/no) requires logit link. Time-lagged interactions capture delayed repeat-loss response to price changes.
-              </p>
-            </div>
-          </div>
-
-          <div class="alert alert-info mt-3">
-            <i class="bi bi-info-circle me-2"></i>
-            <strong>Data Source:</strong> Repeat-loss patterns calibrated from channel_weekly.csv historical repeat-loss rates and industry research.
+          <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i> Planned Capability</h6>
+          <p>This roadmap module will optimize markdown sequencing for late-season inventory liquidation while balancing margin recovery and channel strategy.</p>
+          <div class="alert alert-info mb-0">
+            <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through week-17 projection and AI recommendation guidance.
           </div>
         </div>
         <div class="modal-footer">
@@ -2481,105 +2669,21 @@
     </div>
   </div>
 
-  <!-- Step 5: Channel Mix Migration -->
+  <!-- Step 5: Cross-Channel Migration Planner (Roadmap Placeholder) -->
   <div class="modal fade" id="methodology-modal-step5" tabindex="-1" aria-labelledby="methodology-modal-step5-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step5-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Channel Mix Migration
+            <i class="bi bi-signpost-split me-2"></i> Methodology: Cross-Channel Migration (Roadmap)
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i> Migration Model</h6>
-          <p>Models customer movement between channel groups when relative prices change.</p>
-
-          <div class="card mb-3">
-            <div class="card-header "><strong>Migration Formula</strong></div>
-            <div class="card-body">
-              <code>Migration Rate = Base Rate × Price Gap Factor × Elasticity</code>
-              <p class="small text-muted mt-2 mb-0">
-                Where <strong>Price Gap</strong> = (Higher Channel Price - Lower Channel Price) / Lower Tier Price
-              </p>
-            </div>
-          </div>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-arrows-move me-2"></i> Migration Patterns</h6>
-
-          <div class="card mb-3">
-            <div class="card-header "><strong>Downgrade Triggers (Prestige Channel → Mass Channel)</strong></div>
-            <div class="card-body">
-              <ul class="mb-0">
-                <li>Base downgrade rate: <strong>2-5% monthly</strong></li>
-                <li>Increases by <strong>1.5% for every $1 price gap increase</strong></li>
-                <li>Peak downgrade occurs 2-3 months after price change</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="card mb-3">
-            <div class="card-header "><strong>Upgrade Triggers (Mass Channel → Prestige Channel)</strong></div>
-            <div class="card-body">
-              <ul class="mb-0">
-                <li>Base upgrade rate: <strong>3-7% monthly</strong></li>
-                <li>Decreases by <strong>0.8% for every $1 price gap increase</strong></li>
-                <li>Motivated by premium assortment and exclusive sets</li>
-              </ul>
-            </div>
-          </div>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-calculator-fill me-2"></i> Simulation Logic</h6>
-          <ol>
-            <li>Calculate new price gaps between all tier pairs</li>
-            <li>Estimate migration probabilities using logistic regression</li>
-            <li>Apply cohort-specific modifiers (tenure, engagement)</li>
-            <li>Simulate month-by-month transitions using Markov chain</li>
-            <li>Calculate net revenue impact accounting for mix shift</li>
-          </ol>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-bezier2 me-2"></i> Elasticity Cross-Effects</h6>
-          <p>Migration is influenced by relative elasticities:</p>
-          <code class="d-block p-2 ">
-            Cross-Elasticity = -0.5 × (Channel A Elasticity - Channel B Elasticity)
-          </code>
-          <p class="small text-muted mt-2">Higher elasticity differential = more migration</p>
-
-          <h6 class="mb-3 mt-4"><i class="bi bi-code-square me-2"></i> ML Model: Multinomial Logit (Python)</h6>
-          <div class="card">
-            <div class="card-header ">
-              <strong>Model Implementation</strong>
-              <span class="badge bg-light text-dark border ms-2">python/migration_model.py</span>
-            </div>
-            <div class="card-body">
-              <p><strong>Algorithm:</strong> Multinomial Logistic Regression (Softmax)</p>
-              <p><strong>Execution:</strong> Runs in browser via <strong>Pyodide</strong> (Python + NumPy)</p>
-              <p><strong>Outputs:</strong> Migration probability matrix across all tier pairs</p>
-
-              <p class="mb-2 mt-3"><strong>Supported Channel Structures:</strong></p>
-              <ul class="small">
-                <li><strong>2-Group:</strong> Mass Channel ↔ Prestige Channel</li>
-                <li><strong>3-Group Bundle:</strong> Mass Channel, Prestige Channel, Bundle (Supergoop + Partner)</li>
-                <li><strong>3-Group Basic:</strong> Basic, Mass Channel, Prestige Channel</li>
-              </ul>
-
-              <p class="mb-2 mt-3"><strong>Sample Coefficients (3-Tier Bundle):</strong></p>
-              <ul class="small mb-0">
-                <li><code>ad_free_to_bundle intercept = -0.5</code> → moderate upgrade appeal</li>
-                <li><code>value_savings_pct = 0.03</code> → 21% savings → +0.63 utility</li>
-                <li><code>bundle_need = 0.8</code> → Value sets drive 55-70% conversion</li>
-                <li><code>tenure_months = 0.012</code> → loyal customers more likely to upgrade</li>
-              </ul>
-
-              <p class="small text-muted mt-3 mb-0">
-                <strong>Why Multinomial Logit?</strong> Multiple discrete choices (stay, upgrade, downgrade, cancel). Softmax ensures probabilities sum to 1. Handles asymmetric cross-effects between tiers.
-              </p>
-            </div>
-          </div>
-
-          <div class="alert alert-info mt-3">
-            <i class="bi bi-lightbulb me-2"></i>
-            <strong>Calibration:</strong> Migration rates calibrated from historical channel flow data in customers.csv.
+          <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i> Planned Capability</h6>
+          <p>This roadmap module will model how promotion actions in one channel group shift demand across other channel groups and impact portfolio-level outcomes.</p>
+          <div class="alert alert-info mb-0">
+            <strong>Current implementation:</strong> Event Calendar and Step 1 already provide channel-aware competitive and social signals to support immediate promo decisions.
           </div>
         </div>
         <div class="modal-footer">
@@ -2601,7 +2705,7 @@
         </div>
         <div class="modal-body">
           <h6 class="mb-3"><i class="bi bi-diagram-3-fill me-2"></i> Segmentation Framework</h6>
-          <p>3-axis behavioral segmentation framework creating 250 unique segments (5 × 5 × 5 × 2 channel groups).</p>
+          <p>3-axis behavioral segmentation framework creating 250 unique segments (5 x 5 x 5 x 2 channel groups).</p>
 
           <h6 class="mb-3 mt-4"><i class="bi bi-grid-3x3 me-2"></i> Three Segmentation Axes</h6>
 
@@ -2647,10 +2751,10 @@
           <h6 class="mb-3 mt-4"><i class="bi bi-activity me-2"></i> Segment Elasticity Calculation</h6>
           <div class="card">
             <div class="card-body">
-              <code>Segment Elasticity = Base Tier Elasticity × Axis1 Modifier × Axis2 Modifier × Axis3 Modifier</code>
+              <code>Segment Elasticity = Base Tier Elasticity x Axis1 Modifier x Axis2 Modifier x Axis3 Modifier</code>
               <p class="small text-muted mt-3 mb-0">
                 <strong>Example:</strong> Mass Channel promo-triggered, deal hunter, value bundle buyer:<br>
-                -2.1 (base) × 1.3 (promo) × 1.2 (deal hunter) × 1.1 (bundle) = <strong>-3.60</strong> (highly elastic)
+                -2.1 (base) x 1.3 (promo) x 1.2 (deal hunter) x 1.1 (bundle) = <strong>-3.60</strong> (highly elastic)
               </p>
             </div>
           </div>
@@ -2674,82 +2778,52 @@
     </div>
   </div>
 
-  <!-- Step 7: Segment Comparison -->
+    <!-- Step 7: Segment Response Comparison -->
   <div class="modal fade" id="methodology-modal-step7" tabindex="-1" aria-labelledby="methodology-modal-step7-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step7-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Segment Elasticity Comparison
+            <i class="bi bi-calculator me-2"></i> Methodology: Segment Response Comparison
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3" style="color: #6366f1;"><i class="bi bi-bar-chart-line me-2"></i> Comparative Analysis</h6>
-          <p>Compares price sensitivity across customer segments to identify optimal pricing strategies.</p>
-
-          <h6 class="mb-3 mt-4" style="color: #6366f1;"><i class="bi bi-diagram-2 me-2"></i> Analysis Methods</h6>
-
+          <h6 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i> Comparative Analysis</h6>
+          <p>Compares promotion response sensitivity across customer cohorts to guide targeted offer selection.</p>
+          <h6 class="mb-3 mt-4"><i class="bi bi-diagram-2 me-2"></i> Analysis Methods</h6>
           <div class="card mb-3">
-            <div class="card-header "><strong>1. Elasticity Heatmap</strong></div>
+            <div class="card-header"><strong>1. Cohort Response Heatmap</strong></div>
             <div class="card-body">
-              <p>Visual matrix showing elasticity coefficients across segments.</p>
+              <p>Visual matrix showing response sensitivity by cohort.</p>
               <ul class="mb-0">
-                <li><strong>Color scale:</strong> Green (inelastic -0.5 to -1.5) → Red (highly elastic -3.0+)</li>
-                <li><strong>Sorting:</strong> By elasticity magnitude or revenue contribution</li>
-                <li><strong>Filtering:</strong> By tier, acquisition channel, engagement level</li>
+                <li><strong>Color scale:</strong> lower to higher response sensitivity</li>
+                <li><strong>Sorting:</strong> by response magnitude or revenue contribution</li>
+                <li><strong>Filtering:</strong> by channel group, acquisition profile, or engagement profile</li>
               </ul>
             </div>
           </div>
-
           <div class="card mb-3">
-            <div class="card-header "><strong>2. Scatter Plot Analysis</strong></div>
+            <div class="card-header"><strong>2. Cohort Scatter Analysis</strong></div>
             <div class="card-body">
-              <p>2D visualization: Elasticity (X-axis) vs Revenue Impact (Y-axis)</p>
+              <p>2D view: response sensitivity (X-axis) vs revenue impact (Y-axis).</p>
               <ul class="mb-0">
-                <li><strong>Quadrant I:</strong> High elasticity, high revenue → Risky to increase prices</li>
-                <li><strong>Quadrant II:</strong> Low elasticity, high revenue → Safe to increase prices</li>
-                <li><strong>Quadrant III:</strong> Low elasticity, low revenue → Low priority</li>
-                <li><strong>Quadrant IV:</strong> High elasticity, low revenue → Discount opportunity</li>
+                <li>High response + high revenue cohorts are powerful promo levers</li>
+                <li>Low response + high revenue cohorts are candidates for selective holds</li>
+                <li>Low response + low revenue cohorts are lower optimization priority</li>
               </ul>
             </div>
           </div>
-
           <div class="card mb-3">
-            <div class="card-header "><strong>3. 3D Radial Chart</strong></div>
+            <div class="card-header"><strong>3. Multi-Dimensional Cohort Map</strong></div>
             <div class="card-body">
-              <p>Multi-dimensional view plotting segments across three axes:</p>
-              <ul class="mb-0">
-                <li><strong>Radius:</strong> Elasticity magnitude</li>
-                <li><strong>Angle:</strong> Revenue contribution</li>
-                <li><strong>Color:</strong> Repeat-loss risk level</li>
-              </ul>
+              <p>Plots cohort size, response, and repeat-loss risk in one view for planning trade-offs.</p>
             </div>
           </div>
-
-          <h6 class="mb-3 mt-4" style="color: #6366f1;"><i class="bi bi-funnel me-2"></i> Filtering & Aggregation</h6>
-          <p>Analysis supports multiple filter combinations:</p>
-          <ul>
-            <li><strong>By Tier:</strong> Compare within Mass Channel or ad-free tiers</li>
-            <li><strong>By Tenure:</strong> New (0-6mo), mid-tenure (6-18mo), loyal (18+mo)</li>
-            <li><strong>By Engagement:</strong> Heavy users (>20hr/month), light users (<5hr/month)</li>
-            <li><strong>By Risk:</strong> High repeat-loss risk (>10% monthly), stable (<3% monthly)</li>
-          </ul>
-
-          <h6 class="mb-3 mt-4" style="color: #6366f1;"><i class="bi bi-file-earmark-arrow-down me-2"></i> Export Capabilities</h6>
-          <ul>
-            <li><strong>CSV Export:</strong> Full cohort data with elasticity and KPI metrics</li>
-            <li><strong>SVG Export:</strong> Vector graphics for presentations</li>
-            <li><strong>JSON Export:</strong> Raw data for further analysis</li>
-          </ul>
-
-          <h6 class="mb-3 mt-4" style="color: #6366f1;"><i class="bi bi-lightning-charge me-2"></i> Key Insights</h6>
-          <div class="alert alert-primary">
+          <div class="alert alert-primary mb-0">
             <ul class="mb-0">
-              <li>Segments with elasticity < -2.5 are <strong>highly price-sensitive</strong></li>
-              <li>Segments with elasticity > -1.0 are <strong>inelastic</strong> (price increase opportunity)</li>
-              <li>Focus price optimization on high-revenue, low-elasticity segments</li>
-              <li>Consider targeted discounts for high-elasticity, low-engagement segments</li>
+              <li>Prioritize cohorts where promotions create incremental lift with acceptable margin impact.</li>
+              <li>Use historical underperformance to exclude low-return cohorts from broad promotions.</li>
             </ul>
           </div>
         </div>
@@ -2759,7 +2833,6 @@
       </div>
     </div>
   </div>
-
   <!-- Footer -->
   <footer class="container my-5 text-center text-muted">
     <small>Supergoop Seasonal Promotion POC | Confidential & Proprietary</small>
@@ -2823,7 +2896,7 @@
                     </span>
                     <span class="steps-table-body">
                       <strong>Current State Overview</strong>
-                      <span class="text-muted">Before exploring price elasticity, let's understand our current channel groups and key performance metrics.</span>
+                      <span class="text-muted">Start with current season position, channel performance, and market signals before choosing promotion actions.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="2" style="--step-index: 2;">
@@ -2833,7 +2906,7 @@
                     </span>
                     <span class="steps-table-body">
                       <strong>Data Explorer</strong>
-                      <span class="text-muted">Explore the raw datasets that power our price elasticity models. Browse through customer data, segments, and more.</span>
+                      <span class="text-muted">Explore the raw datasets powering promotion optimization, including SKU-channel inventory, competitor pricing, and social demand signals.</span>
                     </span>
                     
                   </button>
@@ -2844,7 +2917,7 @@
                     </span>
                     <span class="steps-table-body">
                       <strong>Event Calendar</strong>
-                      <span class="text-muted">Track important events and their impact on business metrics. Understand how external factors influence customer behavior.</span>
+                      <span class="text-muted">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that trigger in-season optimization pivots.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="4" style="--step-index: 4;">
@@ -2853,8 +2926,8 @@
                       <span class="steps-table-step-label">Step 4</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Customer Cohorts & Elasticity</strong>
-                      <span class="text-muted">Analyze customer cohorts and their differential responses to pricing changes. Explore behavioral cohorts and elasticity patterns.</span>
+                      <strong>Customer Cohorts</strong>
+                      <span class="text-muted">Analyze customer cohorts and their differential promotion response patterns to guide targeted offers.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="5" style="--step-index: 5;">
@@ -2863,8 +2936,8 @@
                       <span class="steps-table-step-label">Step 5</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Segment Elasticity Comparison</strong>
-                      <span class="text-muted">Compare price elasticity across different customer segments. Identify which segments are most and least price-sensitive.</span>
+                      <strong>Segment Response Comparison</strong>
+                      <span class="text-muted">Compare promotion response across segments and identify where discount depth drives incremental lift.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="6" style="--step-index: 6;">
@@ -2873,8 +2946,8 @@
                       <span class="steps-table-step-label">Step 6</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Acquisition Elasticity</strong>
-                      <span class="text-muted">Model how price changes affect new customer acquisition. Simulate scenarios and analyze impacts on sign-up rates.</span>
+                      <strong>In-Season Planner (Roadmap)</strong>
+                      <span class="text-muted">Future module for weekly SKU-level promotion orchestration using inventory and market signal constraints.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="7" style="--step-index: 7;">
@@ -2883,8 +2956,8 @@
                       <span class="steps-table-step-label">Step 7</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Repeat-Loss Elasticity</strong>
-                      <span class="text-muted">Understand how price increases drive customer repeat loss. Model time-lagged effects and retention patterns.</span>
+                      <strong>End-of-Season Markdown Simulator (Roadmap)</strong>
+                      <span class="text-muted">Future module for markdown sequencing to finish the season near zero inventory.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="8" style="--step-index: 8;">
@@ -2893,8 +2966,8 @@
                       <span class="steps-table-step-label">Step 8</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Channel Mix Migration</strong>
-                      <span class="text-muted">Model customer movement between channel groups. Analyze upgrade and downgrade patterns based on price gaps.</span>
+                      <strong>Cross-Channel Migration Planner (Roadmap)</strong>
+                      <span class="text-muted">Future module to estimate demand migration when promotions run in one channel group but not another.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="9" style="--step-index: 9;">
@@ -2903,8 +2976,8 @@
                       <span class="steps-table-step-label">Step 9</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>AI Chat & Advanced Analytics</strong>
-                      <span class="text-muted">Chat with AI to get insights, ask questions about your data, and access advanced analytical tools.</span>
+                      <strong>AI Promotion Optimization Assistant</strong>
+                      <span class="text-muted">Get SKU-level promotion recommendations grounded in inventory, competitor pricing, social signals, and past outcomes.</span>
                     </span>
                     
                   </button>
@@ -2988,3 +3061,5 @@
 </body>
 
 </html>
+
+

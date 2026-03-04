@@ -4,18 +4,84 @@
  * RFP-aligned: Slides 12, 16, 18 compliance
  */
 
-import { loadEventCalendar, loadPromoMetadata, loadValidationWindows, loadExternalFactors, loadSocialSignals, loadElasticityParams } from './data-loader.js';
+import {
+  loadEventCalendar,
+  loadPromoMetadata,
+  loadValidationWindows,
+  loadExternalFactors,
+  loadSocialSignals,
+  loadSkuWeeklyData
+} from './data-loader.js';
 import { formatCurrency, formatPercent, formatNumber } from './utils.js';
 
 // Global state
 let allEvents = [];
 let promoMetadata = {};
 let validationWindows = {};
+let skuCatalog = new Map();
 let activeFilters = {
   priceChange: true,
+  competitorPriceChange: true,
   promo: true,
   tentpole: true
 };
+let activePromoFilters = {
+  season: 'all',
+  channel: 'all'
+};
+let selectedPromoId = null;
+let eventCompetitiveSignalsChart = null;
+let eventSocialSignalsChart = null;
+
+const RETAIL_CHANNELS = ['sephora', 'ulta', 'target', 'amazon', 'dtc'];
+const CHANNEL_LABELS = {
+  sephora: 'Sephora',
+  ulta: 'Ulta',
+  target: 'Target',
+  amazon: 'Amazon',
+  dtc: 'DTC'
+};
+
+const STORY_PHASE_LABELS = {
+  baseline: 'Start of Season',
+  pivot: 'In-Season Pivot',
+  future: 'Future Vision'
+};
+
+function normalizeSkuId(skuId) {
+  return String(skuId || '').trim().toUpperCase();
+}
+
+function hydrateSkuCatalog(rows) {
+  skuCatalog = new Map();
+  (rows || []).forEach(row => {
+    const skuId = normalizeSkuId(row.sku_id);
+    if (!skuId || skuCatalog.has(skuId)) return;
+    skuCatalog.set(skuId, {
+      sku_id: skuId,
+      sku_name: row.sku_name || skuId,
+      product_group: row.product_group || ''
+    });
+  });
+}
+
+function getSkuName(skuId, fallbackName = null) {
+  const normalized = normalizeSkuId(skuId);
+  if (fallbackName) return String(fallbackName);
+  if (skuCatalog.has(normalized)) return skuCatalog.get(normalized).sku_name;
+  return normalized || '-';
+}
+
+function formatSkuDisplay(skuId, fallbackName = null, includeCode = true) {
+  const normalized = normalizeSkuId(skuId);
+  const skuName = getSkuName(normalized, fallbackName);
+  if (!includeCode || !normalized) return skuName;
+  return `${skuName} (${normalized})`;
+}
+
+function formatSeasonLabel(season) {
+  return String(season || 'season_n/a').replaceAll('_', ' ');
+}
 
 /**
  * Initialize event calendar section
@@ -25,11 +91,14 @@ export async function initializeEventCalendar() {
 
   try {
     // Load all data
-    [allEvents, promoMetadata, validationWindows] = await Promise.all([
+    let skuWeeklyData = [];
+    [allEvents, promoMetadata, validationWindows, skuWeeklyData] = await Promise.all([
       loadEventCalendar(),
       loadPromoMetadata(),
-      loadValidationWindows()
+      loadValidationWindows(),
+      loadSkuWeeklyData()
     ]);
+    hydrateSkuCatalog(skuWeeklyData || []);
 
     // Update event count badge
     updateEventCountBadge();
@@ -38,6 +107,8 @@ export async function initializeEventCalendar() {
     renderMarketSignalsDashboard();
     renderEventTimeline();
     renderEventTable();
+    initializePromoControls();
+    renderPromoMethodology();
     renderPromoCards();
     renderValidationWindows();
 
@@ -56,6 +127,90 @@ export async function initializeEventCalendar() {
   }
 }
 
+function initializePromoControls() {
+  const seasonSelect = document.getElementById('promo-season-filter');
+  const channelSelect = document.getElementById('promo-channel-filter');
+  const resetBtn = document.getElementById('promo-clear-filters');
+
+  if (!seasonSelect || !channelSelect || !resetBtn) return;
+
+  const promos = promoMetadata ? Object.values(promoMetadata) : [];
+  const seasons = [...new Set(promos.map(p => p.season).filter(Boolean))].sort();
+
+  seasonSelect.innerHTML = '<option value="all" selected>All Seasons</option>';
+  seasons.forEach(season => {
+    const option = document.createElement('option');
+    option.value = season;
+    option.textContent = formatSeasonLabel(season);
+    seasonSelect.appendChild(option);
+  });
+
+  channelSelect.innerHTML = '<option value="all" selected>All Channels</option>';
+  RETAIL_CHANNELS.forEach(channel => {
+    const option = document.createElement('option');
+    option.value = channel;
+    option.textContent = CHANNEL_LABELS[channel] || channel;
+    channelSelect.appendChild(option);
+  });
+
+  seasonSelect.value = activePromoFilters.season;
+  channelSelect.value = activePromoFilters.channel;
+
+  seasonSelect.addEventListener('change', (event) => {
+    activePromoFilters.season = event.target.value || 'all';
+    renderPromoCards();
+  });
+
+  channelSelect.addEventListener('change', (event) => {
+    activePromoFilters.channel = event.target.value || 'all';
+    renderPromoCards();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    activePromoFilters.season = 'all';
+    activePromoFilters.channel = 'all';
+    seasonSelect.value = 'all';
+    channelSelect.value = 'all';
+    renderPromoCards();
+  });
+}
+
+function getFilteredPromos() {
+  const promos = promoMetadata ? Object.values(promoMetadata) : [];
+  return promos
+    .filter(promo => {
+      if (activePromoFilters.season !== 'all' && promo.season !== activePromoFilters.season) {
+        return false;
+      }
+      if (activePromoFilters.channel !== 'all') {
+        const channels = (promo.eligible_channels || []).map(c => String(c).toLowerCase());
+        if (!channels.includes(activePromoFilters.channel)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+}
+
+function renderPromoMethodology() {
+  const container = document.getElementById('promo-data-methodology');
+  if (!container) return;
+
+  const promos = promoMetadata ? Object.values(promoMetadata) : [];
+  const skuRows = promos.flatMap(promo => Array.isArray(promo.sku_results) ? promo.sku_results : []);
+  const avgSkuUplift = skuRows.length
+    ? skuRows.reduce((sum, row) => sum + Number(row.sales_uplift_pct || 0), 0) / skuRows.length
+    : 0;
+  const competitorEvents = (allEvents || []).filter(e => e.event_type === 'Competitor Price Change').length;
+  const socialEvents = (allEvents || []).filter(e => e.event_type === 'Social Spike').length;
+  const promoEvents = (allEvents || []).filter(e => (e.event_type || '').includes('Promo')).length;
+
+  container.innerHTML = `
+    <div><strong>How this is built:</strong> Events come from <code>retail_events.csv</code>, campaign outcomes from <code>promo_metadata.json</code>, product names from <code>sku_channel_weekly.csv</code>, and market/social context from <code>market_signals.csv</code> + <code>social_signals.csv</code>.</div>
+    <div class="mt-1"><strong>How this is analyzed:</strong> We classify event types (price, competitor, promo, tentpole), compute SKU/channel uplift from historical campaigns, and flag repeat underperformers for next-cycle exclusions.</div>
+    <div class="mt-1 text-muted">Coverage in this demo: ${promos.length} campaigns, ${promoEvents} promo events, ${competitorEvents} competitor-price events, ${socialEvents} social spikes; average SKU uplift ${avgSkuUplift >= 0 ? '+' : ''}${avgSkuUplift.toFixed(1)}%.</div>
+  `;
+}
+
 /**
  * Update event count badge
  */
@@ -65,168 +220,218 @@ function updateEventCountBadge() {
     const events = Array.isArray(allEvents) ? allEvents : [];
     const counts = {
       priceChange: events.filter(e => e.event_type === 'Price Change').length,
-      promo: events.filter(e => (e.event_type || '').includes('Promo')).length,
+      competitorPriceChange: events.filter(e => e.event_type === 'Competitor Price Change').length,
+      promo: events.filter(e => (e.event_type || '').includes('Promo') || e.event_type === 'Social Spike').length,
       tentpole: events.filter(e => e.event_type === 'Tentpole').length
     };
-    badge.textContent = `${events.length} Events (${counts.priceChange} Price Changes, ${counts.promo} Promos, ${counts.tentpole} Tentpoles)`;
+    badge.textContent = `${events.length} Events (${counts.priceChange} Price Changes, ${counts.competitorPriceChange} Competitor Moves, ${counts.promo} Promos, ${counts.tentpole} Tentpoles)`;
   }
 }
 
 /**
  * Render Market Signals & Listening dashboard (competitive + social)
- * Uses latest rows from market_signals.csv and social_signals.csv plus tier prices.
+ * Uses direct weekly data only: market_signals.csv, social_signals.csv, sku_channel_weekly.csv.
  */
 async function renderMarketSignalsDashboard() {
   const compContainer = document.getElementById('market-signals-competitive');
   const socialContainer = document.getElementById('market-signals-social');
-  if (!compContainer || !socialContainer) return;
+  const compCanvas = document.getElementById('event-competitive-signals-chart');
+  const socialCanvas = document.getElementById('event-social-signals-chart');
+  if (!compContainer || !socialContainer || !compCanvas || !socialCanvas) return;
 
   try {
-    const [externalFactors, socialSignals, params] = await Promise.all([
+    const [externalFactors, socialSignals, skuWeekly] = await Promise.all([
       loadExternalFactors(),
       loadSocialSignals(),
-      loadElasticityParams()
+      loadSkuWeeklyData()
     ]);
 
-    if (!externalFactors || !externalFactors.length || !params) {
+    if (!externalFactors || !externalFactors.length || !socialSignals || !socialSignals.length || !skuWeekly || !skuWeekly.length) {
       compContainer.textContent = 'Market signals not available.';
       socialContainer.textContent = 'Social listening data not available.';
       return;
     }
 
-    const latestExternal = externalFactors[externalFactors.length - 1];
-    const latestSocial = socialSignals && socialSignals.length
-      ? socialSignals[socialSignals.length - 1]
-      : null;
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const socialModifier = (scoreRaw) => {
+      const score = toNum(scoreRaw);
+      if (!Number.isFinite(score)) return 1;
+      const normalized = score <= 1.5 && score >= -1.5 ? score * 100 : score;
+      const clipped = clamp(normalized, 35, 95);
+      return clamp(1.18 - ((clipped - 35) * 0.0075), 0.72, 1.26);
+    };
+    const normalizeSocialScore = (scoreRaw) => {
+      const score = toNum(scoreRaw);
+      if (!Number.isFinite(score)) return null;
+      return score <= 1.5 && score >= -1.5 ? score * 100 : score;
+    };
 
-    const massPrice = params.tiers.ad_supported?.price_range?.current ?? 24;
-    const prestigePrice = params.tiers.ad_free?.price_range?.current ?? 36;
+    const ourPriceByWeek = new Map();
+    skuWeekly.forEach(row => {
+      const week = row.date;
+      if (!week) return;
+      if (!ourPriceByWeek.has(week)) {
+        ourPriceByWeek.set(week, {
+          massSum: 0,
+          massCount: 0,
+          prestigeSum: 0,
+          prestigeCount: 0
+        });
+      }
+      const bucket = ourPriceByWeek.get(week);
+      const price = toNum(row.effective_price);
+      if (!Number.isFinite(price)) return;
+      if (row.channel_group === 'mass') {
+        bucket.massSum += price;
+        bucket.massCount += 1;
+      } else if (row.channel_group === 'prestige') {
+        bucket.prestigeSum += price;
+        bucket.prestigeCount += 1;
+      }
+    });
 
-    const {
-      competitor_mass_price,
-      competitor_prestige_price,
-      competitor_marketplace_price,
-      competitor_promo_flag,
-      category_demand_index,
-      promo_clutter_index
-    } = latestExternal;
+    const externalByWeek = new Map(externalFactors.map(row => [row.date, row]));
+    const weekLabels = [...new Set([
+      ...externalFactors.map(r => r.date),
+      ...socialSignals.map(r => r.week_start || r.date)
+    ])].sort();
 
-    // Competitive posture heuristics
-    const massGap = competitor_marketplace_price ? (massPrice - competitor_marketplace_price) / massPrice : 0;
-    const prestigeGap = competitor_prestige_price ? (prestigePrice - competitor_prestige_price) / prestigePrice : 0;
+    const compLabels = [];
+    const ourMassSeries = [];
+    const compMassSeries = [];
+    const ourPrestigeSeries = [];
+    const compPrestigeSeries = [];
 
-    const massUnderPressure = massGap > 0.08; // competitor cheaper by >8%
-    const prestigeRoomToHold = prestigeGap < 0.05; // competitor not much cheaper
-    const highDemand = category_demand_index >= 1.1;
-    const heavyClutter = promo_clutter_index >= 0.5;
+    weekLabels.forEach(week => {
+      const own = ourPriceByWeek.get(week);
+      const ext = externalByWeek.get(week);
+      if (!own || !ext) return;
+      const ownMass = own.massCount > 0 ? own.massSum / own.massCount : null;
+      const ownPrestige = own.prestigeCount > 0 ? own.prestigeSum / own.prestigeCount : null;
+      const compMass = toNum(ext.competitor_mass_price);
+      const compPrestige = toNum(ext.competitor_prestige_price);
+      if (!Number.isFinite(ownMass) || !Number.isFinite(ownPrestige) || !Number.isFinite(compMass) || !Number.isFinite(compPrestige)) return;
 
-    let compHtml = '<ul class="mb-1">';
-    if (massUnderPressure) {
-      compHtml += `
-        <li>
-          Mass channels face <strong>price pressure</strong> vs marketplaces
-          (our ~$${massPrice.toFixed(0)} vs competitor ~$${competitor_marketplace_price?.toFixed(0) ?? 'N/A'}).
-        </li>`;
+      compLabels.push(week.slice(5));
+      ourMassSeries.push(Number(ownMass.toFixed(2)));
+      compMassSeries.push(Number(compMass.toFixed(2)));
+      ourPrestigeSeries.push(Number(ownPrestige.toFixed(2)));
+      compPrestigeSeries.push(Number(compPrestige.toFixed(2)));
+    });
+
+    if (compLabels.length) {
+      if (eventCompetitiveSignalsChart) {
+        eventCompetitiveSignalsChart.data.labels = compLabels;
+        eventCompetitiveSignalsChart.data.datasets[0].data = ourMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[1].data = compMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[2].data = ourPrestigeSeries;
+        eventCompetitiveSignalsChart.data.datasets[3].data = compPrestigeSeries;
+        eventCompetitiveSignalsChart.update();
+      } else if (window.Chart) {
+        eventCompetitiveSignalsChart = new Chart(compCanvas, {
+          type: 'line',
+          data: {
+            labels: compLabels,
+            datasets: [
+              { label: 'Our Mass Avg Price', data: ourMassSeries, borderColor: 'rgba(2, 132, 199, 0.95)', tension: 0.25, fill: false },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: 'rgba(239, 68, 68, 0.95)', tension: 0.25, fill: false },
+              { label: 'Our Prestige Avg Price', data: ourPrestigeSeries, borderColor: 'rgba(16, 185, 129, 0.95)', tension: 0.25, borderDash: [4, 3], fill: false },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: 'rgba(217, 119, 6, 0.95)', tension: 0.25, borderDash: [4, 3], fill: false }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      const latestCompIdx = ourMassSeries.length - 1;
+      const prevCompIdx = Math.max(latestCompIdx - 1, 0);
+      const massDeltaPct = compMassSeries[latestCompIdx] > 0
+        ? ((ourMassSeries[latestCompIdx] - compMassSeries[latestCompIdx]) / compMassSeries[latestCompIdx]) * 100
+        : 0;
+      const prestigeDeltaPct = compPrestigeSeries[latestCompIdx] > 0
+        ? ((ourPrestigeSeries[latestCompIdx] - compPrestigeSeries[latestCompIdx]) / compPrestigeSeries[latestCompIdx]) * 100
+        : 0;
+      const massCompWoW = compMassSeries[latestCompIdx] - compMassSeries[prevCompIdx];
+      const prestigeCompWoW = compPrestigeSeries[latestCompIdx] - compPrestigeSeries[prevCompIdx];
+
+      compContainer.innerHTML = `
+        <div><strong>Latest delta vs competitor:</strong> Mass ${massDeltaPct >= 0 ? '+' : ''}${massDeltaPct.toFixed(1)}%, Prestige ${prestigeDeltaPct >= 0 ? '+' : ''}${prestigeDeltaPct.toFixed(1)}%.</div>
+        <div class="mt-1"><strong>Week-over-week competitor move:</strong> Mass ${massCompWoW >= 0 ? '+' : ''}${massCompWoW.toFixed(2)}, Prestige ${prestigeCompWoW >= 0 ? '+' : ''}${prestigeCompWoW.toFixed(2)}.</div>
+        <div class="mt-1">Method: own weekly price is averaged from <code>sku_channel_weekly.csv</code>; competitor weekly price is from <code>market_signals.csv</code>.</div>
+      `;
     } else {
-      compHtml += `
-        <li>
-          Mass channel pricing is roughly in line with marketplaces
-          (gap &lt; 8%).
-        </li>`;
+      compContainer.textContent = 'Insufficient competitive price history for chart rendering.';
     }
-    if (prestigeRoomToHold) {
-      compHtml += `
-        <li>
-          Prestige competitors are not deeply undercutting us
-          (our ~$${prestigePrice.toFixed(0)} vs competitor ~$${competitor_prestige_price?.toFixed(0) ?? 'N/A'}).
-        </li>`;
+
+    const socialByWeek = new Map(socialSignals.map(row => [row.week_start || row.date, row]));
+    const socialLabels = [];
+    const socialScoreSeries = [];
+    const socialElasticitySeries = [];
+
+    weekLabels.forEach(week => {
+      const row = socialByWeek.get(week);
+      if (!row) return;
+      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment);
+      if (!Number.isFinite(score)) return;
+      socialLabels.push(week.slice(5));
+      socialScoreSeries.push(Number(score.toFixed(2)));
+      socialElasticitySeries.push(Number(socialModifier(score).toFixed(3)));
+    });
+
+    if (socialLabels.length) {
+      if (eventSocialSignalsChart) {
+        eventSocialSignalsChart.data.labels = socialLabels;
+        eventSocialSignalsChart.data.datasets[0].data = socialScoreSeries;
+        eventSocialSignalsChart.data.datasets[1].data = socialElasticitySeries;
+        eventSocialSignalsChart.update();
+      } else if (window.Chart) {
+        eventSocialSignalsChart = new Chart(socialCanvas, {
+          type: 'line',
+          data: {
+            labels: socialLabels,
+            datasets: [
+              { label: 'Brand Social Score', data: socialScoreSeries, borderColor: 'rgba(14, 165, 233, 0.95)', fill: false, tension: 0.25, yAxisID: 'y' },
+              { label: 'Elasticity Modifier', data: socialElasticitySeries, borderColor: 'rgba(99, 102, 241, 0.95)', fill: false, tension: 0.25, yAxisID: 'y1' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+              y: { title: { display: true, text: 'Social score' } },
+              y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Elasticity modifier' } }
+            }
+          }
+        });
+      }
+
+      const latestSocialIdx = socialScoreSeries.length - 1;
+      const prevSocialIdx = Math.max(latestSocialIdx - 1, 0);
+      const socialScoreWoW = socialScoreSeries[latestSocialIdx] - socialScoreSeries[prevSocialIdx];
+      const elasticityWoW = socialElasticitySeries[latestSocialIdx] - socialElasticitySeries[prevSocialIdx];
+      const latestRow = socialByWeek.get(weekLabels[weekLabels.length - 1]) || {};
+      const totalMentions = toNum(latestRow.total_social_mentions) || 0;
+      const tiktokMentions = toNum(latestRow.tiktok_mentions) || 0;
+      const instagramMentions = toNum(latestRow.instagram_mentions) || 0;
+
+      socialContainer.innerHTML = `
+        <div><strong>Latest social score:</strong> ${socialScoreSeries[latestSocialIdx]?.toFixed(1) || 'N/A'} (${socialScoreWoW >= 0 ? '+' : ''}${socialScoreWoW.toFixed(1)} WoW).</div>
+        <div class="mt-1"><strong>Implied elasticity modifier:</strong> ${socialElasticitySeries[latestSocialIdx]?.toFixed(3) || 'N/A'} (${elasticityWoW >= 0 ? '+' : ''}${elasticityWoW.toFixed(3)} WoW).</div>
+        <div class="mt-1"><strong>Mention mix:</strong> ${formatNumber(totalMentions)} total, TikTok ${formatNumber(tiktokMentions)}, Instagram ${formatNumber(instagramMentions)}.</div>
+        <div class="mt-1">Method: score from <code>social_signals.csv</code>; modifier uses the same transformation used by the promotion simulator.</div>
+      `;
     } else {
-      compHtml += `
-        <li>
-          Prestige competitors are discounting more aggressively—watch for trade-down risk.
-        </li>`;
+      socialContainer.textContent = 'Insufficient social history for chart rendering.';
     }
-    if (competitor_promo_flag) {
-      compHtml += `
-        <li>
-          Competitors are <strong>currently on promo</strong>; defensive promo on Mass may be needed to defend volume.
-        </li>`;
-    } else {
-      compHtml += `
-        <li>
-          Competitors are largely at full price—opportunity to <strong>hold price</strong> in Prestige.
-        </li>`;
-    }
-    compHtml += '</ul>';
-
-    let compRecommendation = '';
-    if (massUnderPressure && competitor_promo_flag) {
-      compRecommendation = 'Consider the “Mass Channel Defensive Promo” scenario in Step 5 to defend share in Target & Amazon.';
-    } else if (highDemand && !heavyClutter) {
-      compRecommendation = 'Demand is strong and promo clutter is low—lean into full price or light promos in Prestige.';
-    } else if (heavyClutter) {
-      compRecommendation = 'Promo clutter is high—be selective with promos and focus on elastic segments only.';
-    } else {
-      compRecommendation = 'Maintain current promo posture; no strong competitive shocks detected this week.';
-    }
-
-    compContainer.innerHTML = `
-      ${compHtml}
-      <p class="mb-0 text-muted">
-        <strong>Suggested move:</strong> ${compRecommendation}
-      </p>
-    `;
-
-    // Social & listening summary
-    if (!latestSocial) {
-      socialContainer.textContent = 'Social listening data not available.';
-      return;
-    }
-
-    const sentiment = parseFloat(latestSocial.social_sentiment ?? 0);
-    const tiktok = parseFloat(latestSocial.tiktok_mentions ?? 0);
-    const instagram = parseFloat(latestSocial.instagram_mentions ?? 0);
-    const totalMentions = parseFloat(latestSocial.total_social_mentions ?? 0);
-
-    let socialHtml = '<ul class="mb-1">';
-    socialHtml += `
-      <li>
-        Total social mentions this week: <strong>${totalMentions.toLocaleString()}</strong>
-        (${tiktok.toLocaleString()} TikTok, ${instagram.toLocaleString()} Instagram).
-      </li>`;
-
-    if (sentiment >= 0.65) {
-      socialHtml += `
-        <li>
-          Social sentiment is <strong>high</strong> (${sentiment.toFixed(2)}). Favor <strong>brand-building</strong> and premium messaging over deep discounting.
-        </li>`;
-    } else if (sentiment >= 0.45) {
-      socialHtml += `
-        <li>
-          Social sentiment is <strong>mixed</strong> (${sentiment.toFixed(2)}). Use targeted promos for specific cohorts instead of broad cuts.
-        </li>`;
-    } else {
-      socialHtml += `
-        <li>
-          Social sentiment is <strong>soft</strong> (${sentiment.toFixed(2)}). Consider supportive offers or messaging to defend repeat customers.
-        </li>`;
-    }
-    socialHtml += '</ul>';
-
-    const tiktokShare = totalMentions > 0 ? (tiktok / totalMentions) * 100 : 0;
-    let channelCue = '';
-    if (tiktokShare >= 40) {
-      channelCue = 'TikTok is driving a large share of conversation—anchor creative and promotions around social-first moments.';
-    } else {
-      channelCue = 'Conversation is more evenly split across channels—coordinate messaging across Sephora, Ulta, Target, Amazon, and DTC.';
-    }
-
-    socialContainer.innerHTML = `
-      ${socialHtml}
-      <p class="mb-0 text-muted">
-        <strong>Listening cue:</strong> ${channelCue}
-      </p>
-    `;
   } catch (error) {
     console.error('Error rendering Market Signals dashboard:', error);
     compContainer.textContent = 'Error loading market signals.';
@@ -266,6 +471,10 @@ function renderEventTimeline() {
         <span class="ms-2 small">Price Changes</span>
       </div>
       <div class="d-flex align-items-center">
+        <div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);"></div>
+        <span class="ms-2 small">Competitor Price Changes</span>
+      </div>
+      <div class="d-flex align-items-center">
         <div style="width: 16px; height: 16px; border-radius: 50%; background: var(--dplus-blue); box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.2);"></div>
         <span class="ms-2 small">Promos</span>
       </div>
@@ -302,7 +511,9 @@ function renderEventTimeline() {
     let eventClass = 'timeline-event';
     if (event.event_type === 'Price Change') {
       eventClass += ' event-price';
-    } else if (event.event_type.includes('Promo')) {
+    } else if (event.event_type === 'Competitor Price Change') {
+      eventClass += ' event-competitor';
+    } else if (event.event_type.includes('Promo') || event.event_type === 'Social Spike') {
       eventClass += ' event-promo';
     } else if (event.event_type === 'Tentpole') {
       eventClass += ' event-content';
@@ -395,7 +606,7 @@ function renderEventTable() {
     const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     const badge = getEventBadge(event.event_type);
     const priceChange = event.price_before && event.price_after && event.price_before !== event.price_after
-      ? `${formatCurrency(event.price_before)} → ${formatCurrency(event.price_after)}`
+      ? `${formatCurrency(event.price_before)} -> ${formatCurrency(event.price_after)}`
       : '-';
     const promo = event.promo_discount_pct > 0
       ? `${event.promo_discount_pct}% off`
@@ -421,17 +632,27 @@ function renderEventTable() {
  */
 function renderPromoCards() {
   const container = document.getElementById('promo-cards-container');
+  const summaryEl = document.getElementById('promo-campaign-summary');
   if (!container) return;
 
-  const promos = promoMetadata ? Object.values(promoMetadata) : [];
+  const promos = getFilteredPromos();
 
   if (!promos || promos.length === 0) {
-    container.innerHTML = '<div class="col-12 text-center text-muted">No promo campaigns available</div>';
+    container.innerHTML = '<div class="col-12 text-center text-muted">No promo campaigns match the selected filters.</div>';
+    if (summaryEl) summaryEl.textContent = 'No campaigns for the selected season/channel filters.';
+    renderPromoDrilldown(null);
     return;
   }
 
-  const retailChannels = ['sephora', 'ulta', 'target', 'amazon', 'dtc'];
-  const channelLabels = { sephora: 'Sephora', ulta: 'Ulta', target: 'Target', amazon: 'Amazon', dtc: 'DTC' };
+  const filteredSkuRows = promos.flatMap(promo => Array.isArray(promo.sku_results) ? promo.sku_results : []);
+  const filteredAvgUplift = filteredSkuRows.length
+    ? filteredSkuRows.reduce((sum, row) => sum + Number(row.sales_uplift_pct || 0), 0) / filteredSkuRows.length
+    : 0;
+  const filteredDownCount = filteredSkuRows.filter(row => Number(row.sales_uplift_pct || 0) < 0 || row.outcome === 'down').length;
+  if (summaryEl) {
+    summaryEl.textContent =
+      `Showing ${promos.length} campaigns. SKU outcomes tracked: ${filteredSkuRows.length}, average uplift ${filteredAvgUplift >= 0 ? '+' : ''}${filteredAvgUplift.toFixed(1)}%, down outcomes ${filteredDownCount}.`;
+  }
 
   let html = '';
   promos.forEach(promo => {
@@ -441,8 +662,20 @@ function renderPromoCards() {
     const attainment = promo.actual_adds ?
       formatPercent(promo.actual_adds / promo.target_adds) : 'TBD';
     const roi = promo.actual_roi ? `${promo.actual_roi}x` : 'TBD';
-    const channels = (promo.eligible_channels || []).filter(c => retailChannels.includes(String(c).toLowerCase()));
-    const channelLine = channels.length ? channels.map(c => channelLabels[c] || c).join(', ') : '';
+    const channels = (promo.eligible_channels || []).filter(c => RETAIL_CHANNELS.includes(String(c).toLowerCase()));
+    const channelLine = channels.length ? channels.map(c => CHANNEL_LABELS[c] || c).join(', ') : '';
+    const promotedSkus = Array.isArray(promo.promoted_skus) ? promo.promoted_skus : [];
+    const promotedSkuBadges = promotedSkus.length
+      ? promotedSkus.map(skuId => `<span class="badge bg-light text-dark border me-1 mb-1">${formatSkuDisplay(skuId, null, false)}</span>`).join('')
+      : '';
+    const skuResults = Array.isArray(promo.sku_results) ? promo.sku_results : [];
+    const skuUpCount = skuResults.filter(s => s.outcome === 'up').length;
+    const skuDownCount = skuResults.filter(s => s.outcome === 'down').length;
+    const downBadge = skuDownCount > 0
+      ? `<span class="badge bg-danger-subtle text-danger ms-1">${skuDownCount} down</span>`
+      : '<span class="badge bg-success-subtle text-success ms-1">No down SKUs</span>';
+    const storyPhase = STORY_PHASE_LABELS[promo.story_phase] || 'Campaign';
+    const storySummary = promo.story_summary || promo.notes || '';
 
     html += `
       <div class="col-md-6 col-lg-4 mb-3">
@@ -454,10 +687,15 @@ function renderPromoCards() {
             </div>
           </div>
           <div class="card-body">
+            <div class="mb-2">
+              <span class="badge bg-primary-subtle text-primary">${storyPhase}</span>
+            </div>
             ${channelLine ? `<div class="mb-2"><strong>Channel:</strong> <span class="text-primary">${channelLine}</span></div>` : ''}
+            ${promotedSkus.length ? `<div class="mb-2"><strong>Promoted Products:</strong><div class="mt-1">${promotedSkuBadges}</div></div>` : ''}
             <div class="mb-2">
               <strong>Period:</strong> ${formatDate(promo.start_date)} - ${formatDate(promo.end_date)}
               <span class="badge bg-secondary ms-2">${promo.duration_weeks}w</span>
+              ${promo.season ? `<span class="badge bg-light text-dark border ms-1">${formatSeasonLabel(promo.season)}</span>` : ''}
             </div>
             <div class="mb-2">
               <strong>Discount:</strong> <span class="text-success">${promo.discount_pct}% off</span>
@@ -474,6 +712,7 @@ function renderPromoCards() {
                 <strong>ROI:</strong> <span class="text-success">${roi}</span>
               </div>
             ` : ''}
+            ${storySummary ? `<div class="mb-2 small text-muted"><strong>Narrative:</strong> ${storySummary}</div>` : ''}
             <div class="mb-2">
               <strong>Roll-off:</strong> ${formatDate(promo.roll_off_date)}
               ${promo.repeat_loss_expected ?
@@ -482,12 +721,18 @@ function renderPromoCards() {
                 </span>` : ''}
           </div>
             <div class="mt-3 small">
+              ${skuResults.length ? `<div class="mb-2"><strong>SKU Outcomes:</strong> ${skuUpCount} up, ${skuDownCount} down ${downBadge}</div>` : ''}
               <strong class="text-body-secondary">Tags:</strong>
               <span class="ms-1">
                 ${(promo.campaign_tags || [])
                   .map(tag => `<span class="badge bg-primary bg-opacity-90 text-white me-1">${tag}</span>`)
                   .join(' ')}
               </span>
+              <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary promo-drilldown-btn" data-promo-id="${promo.promo_id}" type="button">
+                  View SKU + Channel Outcomes
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -496,6 +741,141 @@ function renderPromoCards() {
   });
 
   container.innerHTML = html;
+
+  container.querySelectorAll('.promo-drilldown-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      renderPromoDrilldown(btn.dataset.promoId);
+    });
+  });
+
+  const visiblePromoIds = promos.map(p => p.promo_id);
+  if (!selectedPromoId || !visiblePromoIds.includes(selectedPromoId)) {
+    selectedPromoId = promos[0].promo_id;
+  }
+  renderPromoDrilldown(selectedPromoId);
+}
+
+function renderPromoDrilldown(promoId) {
+  const panel = document.getElementById('promo-drilldown-panel');
+  if (!panel) return;
+
+  if (!promoId) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+
+  const promo = promoMetadata ? promoMetadata[promoId] : null;
+  if (!promo) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+    return;
+  }
+
+  selectedPromoId = promoId;
+
+  const skuResults = Array.isArray(promo.sku_results) ? promo.sku_results : [];
+  const channelResults = promo.channel_results || {};
+  const underperformers = skuResults.filter(s => s.outcome === 'down' || Number(s.sales_uplift_pct) < 0);
+  const performers = skuResults.filter(s => s.outcome === 'up' || Number(s.sales_uplift_pct) > 0);
+
+  const skuRows = skuResults.length
+    ? skuResults
+      .sort((a, b) => Number(b.sales_uplift_pct || 0) - Number(a.sales_uplift_pct || 0))
+      .map(row => {
+        const uplift = Number(row.sales_uplift_pct || 0);
+        const upliftClass = uplift >= 0 ? 'text-success' : 'text-danger';
+        const outcomeBadge = uplift >= 0
+          ? '<span class="badge bg-success-subtle text-success">Up</span>'
+          : '<span class="badge bg-danger-subtle text-danger">Down</span>';
+        const channel = CHANNEL_LABELS[String(row.channel || '').toLowerCase()] || row.channel || '-';
+        const skuLabel = formatSkuDisplay(row.sku_id, row.sku_name, false);
+        return `
+            <tr>
+              <td class="fw-semibold">${skuLabel}</td>
+              <td>${channel}</td>
+              <td class="${upliftClass}">${uplift >= 0 ? '+' : ''}${uplift.toFixed(1)}%</td>
+              <td>${outcomeBadge}</td>
+            </tr>
+          `;
+      })
+      .join('')
+    : '<tr><td colspan="4" class="text-center text-muted">No SKU-level results available.</td></tr>';
+
+  const channelRows = Object.keys(channelResults).length
+    ? Object.entries(channelResults).map(([channel, metrics]) => {
+      const label = CHANNEL_LABELS[channel] || channel;
+      const sales = Number(metrics.sales_uplift_pct || 0);
+      const margin = Number(metrics.margin_delta_pct || 0);
+      return `
+          <tr>
+            <td>${label}</td>
+            <td class="${sales >= 0 ? 'text-success' : 'text-danger'}">${sales >= 0 ? '+' : ''}${sales.toFixed(1)}%</td>
+            <td class="${margin >= 0 ? 'text-success' : 'text-danger'}">${margin >= 0 ? '+' : ''}${margin.toFixed(1)}%</td>
+          </tr>
+        `;
+    }).join('')
+    : '<tr><td colspan="3" class="text-center text-muted">No channel-level results available.</td></tr>';
+
+  const exclusionLine = underperformers.length
+    ? `Exclude next cycle: ${underperformers.map(s => formatSkuDisplay(s.sku_id, s.sku_name, false)).join(', ')}.`
+    : 'No exclusions suggested from this campaign.';
+  const includeLine = performers.length
+    ? `Keep/scale next cycle: ${performers.map(s => formatSkuDisplay(s.sku_id, s.sku_name, false)).join(', ')}.`
+    : 'No positive performers identified.';
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="card border-primary-subtle">
+      <div class="card-header bg-primary-subtle">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">
+            <i class="bi bi-search me-2"></i>Promo Drill-Down: ${promo.campaign_name}
+          </h6>
+          <span class="badge bg-light text-dark border">${formatSeasonLabel(promo.season)}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-light border mb-3">
+          <div><strong>Recommendation:</strong> ${exclusionLine}</div>
+          <div>${includeLine}</div>
+        </div>
+        <div class="row g-3">
+          <div class="col-lg-7">
+            <h6 class="small text-uppercase text-muted mb-2">SKU Outcomes</h6>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>SKU</th>
+                    <th>Channel</th>
+                    <th>Sales Uplift</th>
+                    <th>Outcome</th>
+                  </tr>
+                </thead>
+                <tbody>${skuRows}</tbody>
+              </table>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <h6 class="small text-uppercase text-muted mb-2">Channel Outcomes</h6>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Channel</th>
+                    <th>Sales Uplift</th>
+                    <th>Margin Delta</th>
+                  </tr>
+                </thead>
+                <tbody>${channelRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /**
@@ -538,6 +918,7 @@ function renderValidationWindows() {
 function setupEventFilters() {
   const filterAll = document.getElementById('filter-all');
   const filterPriceChange = document.getElementById('filter-price-change');
+  const filterCompetitorPriceChange = document.getElementById('filter-competitor-price-change');
   const filterPromo = document.getElementById('filter-promo');
   const filterTentpole = document.getElementById('filter-tentpole');
 
@@ -545,10 +926,12 @@ function setupEventFilters() {
     filterAll.addEventListener('change', (e) => {
       const checked = e.target.checked;
       activeFilters.priceChange = checked;
+      activeFilters.competitorPriceChange = checked;
       activeFilters.promo = checked;
       activeFilters.tentpole = checked;
 
       filterPriceChange.checked = checked;
+      if (filterCompetitorPriceChange) filterCompetitorPriceChange.checked = checked;
       filterPromo.checked = checked;
       filterTentpole.checked = checked;
 
@@ -560,6 +943,14 @@ function setupEventFilters() {
   if (filterPriceChange) {
     filterPriceChange.addEventListener('change', (e) => {
       activeFilters.priceChange = e.target.checked;
+      renderEventTimeline();
+      renderEventTable();
+    });
+  }
+
+  if (filterCompetitorPriceChange) {
+    filterCompetitorPriceChange.addEventListener('change', (e) => {
+      activeFilters.competitorPriceChange = e.target.checked;
       renderEventTimeline();
       renderEventTable();
     });
@@ -590,7 +981,8 @@ function filterEvents() {
   return events.filter(event => {
     const eventType = event.event_type || '';
     if (eventType === 'Price Change' && !activeFilters.priceChange) return false;
-    if (eventType.includes('Promo') && !activeFilters.promo) return false;
+    if (eventType === 'Competitor Price Change' && !activeFilters.competitorPriceChange) return false;
+    if ((eventType.includes('Promo') || eventType === 'Social Spike') && !activeFilters.promo) return false;
     if (eventType === 'Tentpole' && !activeFilters.tentpole) return false;
     return true;
   });
@@ -602,9 +994,11 @@ function filterEvents() {
 function getEventBadge(eventType) {
   const badges = {
     'Price Change': { text: 'Price Change', class: 'bg-success' },
+    'Competitor Price Change': { text: 'Competitor Price', class: 'bg-danger' },
     'Promo Start': { text: 'Promo Start', class: 'bg-info' },
     'Promo End': { text: 'Promo End', class: 'bg-secondary' },
     'Promo Roll-off': { text: 'Roll-off', class: 'bg-warning text-dark' },
+    'Social Spike': { text: 'Social Spike', class: 'bg-primary' },
     'Tentpole': { text: 'Tentpole', class: 'bg-warning text-dark' }
   };
   return badges[eventType] || { text: eventType, class: 'bg-secondary' };
@@ -629,11 +1023,11 @@ function getEventPriceInfo(event) {
   if (event.price_before && event.price_after && event.price_before !== event.price_after) {
     // Calculate as decimal (0.4293 = 42.93%), formatPercent will multiply by 100
     const change = (event.price_after - event.price_before) / event.price_before;
-    const arrow = change > 0 ? '↑' : '↓';
+    const arrow = change > 0 ? 'up' : 'down';
     const color = change > 0 ? 'text-success' : 'text-danger';
     return `
       <span class="${color}">
-        <strong>${formatCurrency(event.price_before)} → ${formatCurrency(event.price_after)}</strong>
+        <strong>${formatCurrency(event.price_before)} -> ${formatCurrency(event.price_after)}</strong>
         (${arrow} ${formatPercent(Math.abs(change))})
       </span>
     `;

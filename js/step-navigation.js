@@ -1,6 +1,6 @@
 /**
  * Step Navigation System
- * Manages the step-by-step navigation flow for the Price Elasticity Studio
+ * Manages the step-by-step navigation flow for the Promotion Optimization Studio
  * Now with 10 steps (0-9) for better progressive disclosure
  */
 
@@ -330,10 +330,10 @@ function injectStepNavigations() {
     { step: 2, container: 'step-2-data-viewer-container', prev: 1, next: 3, nextLabel: 'Next: Event Calendar' },
     { step: 3, container: 'step-8-calendar-container', prev: 2, next: 4, nextLabel: 'Next: Customer Cohorts' },
     { step: 4, container: 'step-6-segmentation-container', prev: 3, next: 5, nextLabel: 'Next: Segment Comparison' },
-    { step: 5, container: 'step-7-analysis-container', prev: 4, next: 6, nextLabel: 'Next: Acquisition Elasticity' },
-    { step: 6, container: 'step-3-acquisition-container', prev: 5, next: 7, nextLabel: 'Next: Churn Elasticity' },
-    { step: 7, container: 'step-4-churn-container', prev: 6, next: 8, nextLabel: 'Next: Tier Migration' },
-    { step: 8, container: 'step-5-migration-container', prev: 7, next: 9, nextLabel: 'Next: AI Chat & Analytics' },
+    { step: 5, container: 'step-7-analysis-container', prev: 4, next: 6, nextLabel: 'Next: In-Season Planner (Roadmap)' },
+    { step: 6, container: 'step-3-acquisition-container', prev: 5, next: 7, nextLabel: 'Next: End-of-Season Markdown (Roadmap)' },
+    { step: 7, container: 'step-4-churn-container', prev: 6, next: 8, nextLabel: 'Next: Migration Planner (Roadmap)' },
+    { step: 8, container: 'step-5-migration-container', prev: 7, next: 9, nextLabel: 'Next: AI Assistant' },
     { step: 9, container: 'step-9-chat-container', prev: 8, next: 0, nextLabel: null }
   ];
 

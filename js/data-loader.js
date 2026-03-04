@@ -1,6 +1,6 @@
 /**
  * Data Loader Module
- * Loads and preprocesses all data files for the Price Elasticity POC
+ * Loads and preprocesses all data files for the Promotion Optimization demo
  *
  * Dependencies: None (Vanilla JavaScript)
  *
@@ -12,8 +12,10 @@
 // Global data cache to avoid redundant fetches
 const dataCache = {
   weeklyAggregated: null,
+  skuWeekly: null,
   pricingHistory: null,
   externalFactors: null,
+  competitorPriceFeed: null,
   socialSignals: null,
   seasonCalendar: null,
   elasticityParams: null,
@@ -36,8 +38,10 @@ export async function loadAllData() {
       scenarios,
       metadata,
       weeklyAggregated,
+      skuWeekly,
       pricingHistory,
       externalFactors,
+      competitorPriceFeed,
       socialSignals,
       seasonCalendar,
       eventCalendar,
@@ -48,8 +52,10 @@ export async function loadAllData() {
       loadScenarios(),
       loadMetadata(),
       loadWeeklyAggregated(),
+      loadSkuWeeklyData(),
       loadPricingHistory(),
       loadExternalFactors(),
+      loadCompetitorPriceFeed(),
       loadSocialSignals(),
       loadSeasonCalendar(),
       loadEventCalendar(),
@@ -71,8 +77,10 @@ export async function loadAllData() {
       scenarios,
       metadata,
       weeklyAggregated,
+      skuWeekly,
       pricingHistory,
       externalFactors,
+      competitorPriceFeed,
       socialSignals,
       seasonCalendar,
       eventCalendar,
@@ -182,6 +190,31 @@ export async function loadWeeklyAggregated() {
 }
 
 /**
+ * Load SKU x channel weekly data from CSV
+ * @returns {Promise<Array>} Array of SKU weekly records
+ */
+export async function loadSkuWeeklyData() {
+  if (dataCache.skuWeekly) {
+    return dataCache.skuWeekly;
+  }
+
+  try {
+    const response = await fetch('data/sku_channel_weekly.csv');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+    const data = parseCSV(csvText);
+    const normalized = normalizeSkuWeekly(data);
+    dataCache.skuWeekly = normalized;
+    return normalized;
+  } catch (error) {
+    console.error('Error loading SKU weekly data:', error);
+    throw error;
+  }
+}
+
+/**
  * Load pricing history from CSV
  * @returns {Promise<Array>} Array of pricing history records
  */
@@ -227,6 +260,30 @@ export async function loadExternalFactors() {
     return normalized;
   } catch (error) {
     console.error('Error loading external factors:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load simulated competitor web-scrape feed from CSV
+ * @returns {Promise<Array>} Array of competitor price feed records
+ */
+export async function loadCompetitorPriceFeed() {
+  if (dataCache.competitorPriceFeed) {
+    return dataCache.competitorPriceFeed;
+  }
+
+  try {
+    const response = await fetch('data/competitor_price_feed.csv');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+    const data = parseCSV(csvText);
+    dataCache.competitorPriceFeed = data;
+    return data;
+  } catch (error) {
+    console.error('Error loading competitor price feed:', error);
     throw error;
   }
 }
@@ -403,6 +460,17 @@ function channelGroupToTier(group) {
   return group;
 }
 
+function parseBooleanish(value) {
+  if (value === true || value === false) return value;
+  if (typeof value === 'string') {
+    const v = value.trim().toLowerCase();
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+  }
+  if (typeof value === 'number') return value !== 0;
+  return false;
+}
+
 function normalizeChannelWeekly(rows) {
   return rows.map(row => ({
     date: row.week_start,
@@ -425,10 +493,10 @@ function normalizePriceCalendar(rows) {
     date: row.week_start,
     tier: channelGroupToTier(row.channel_group),
     base_price: row.list_price,
-    is_promo: row.promo_flag,
+    is_promo: parseBooleanish(row.promo_flag),
     promo_discount_pct: row.promo_discount_pct,
     effective_price: row.effective_price,
-    price_changed: row.price_changed,
+    price_changed: parseBooleanish(row.price_changed),
     price_change_pct: row.price_change_pct
   }));
 }
@@ -443,23 +511,17 @@ function normalizeMarketSignals(rows) {
     competitor_prestige_price: row.competitor_price_b,
     competitor_marketplace_price: row.competitor_price_c,
     competitor_avg_price: row.competitor_avg_price,
-    competitor_promo_flag: row.competitor_promo_flag,
+    competitor_promo_flag: parseBooleanish(row.competitor_promo_flag),
     category_demand_index: row.category_demand_index,
     promo_clutter_index: row.promo_clutter_index
   }));
 }
 
 function normalizeRetailEvents(rows) {
-  const eventTypeMap = {
-    'Competitor Price Drop': 'Price Change',
-    'Retail Event': 'Tentpole',
-    'Social Spike': 'Promo',
-    'Markdown Start': 'Promo'
-  };
   return rows.map(row => ({
     event_id: row.event_id,
     date: row.week_start,
-    event_type: eventTypeMap[row.event_type] || row.event_type,
+    event_type: row.event_type,
     tier: channelGroupToTier(row.channel_group),
     affected_cohort: row.affected_channel,
     price_before: row.price_before,
@@ -468,6 +530,36 @@ function normalizeRetailEvents(rows) {
     promo_discount_pct: row.promo_discount_pct,
     notes: row.notes,
     validation_window: row.validation_window
+  }));
+}
+
+function normalizeSkuWeekly(rows) {
+  return rows.map(row => ({
+    date: row.week_start,
+    week_of_season: row.week_of_season,
+    is_current_week: parseBooleanish(row.is_current_week),
+    season_phase: row.season_phase,
+    product_group: row.product_group,
+    sku_id: row.sku_id,
+    sku_name: row.sku_name,
+    channel_group: row.channel_group,
+    tier: channelGroupToTier(row.channel_group),
+    sales_channel: row.sales_channel,
+    start_inventory_units: row.start_inventory_units,
+    end_inventory_units: row.end_inventory_units,
+    list_price: row.list_price,
+    effective_price: row.effective_price,
+    promo_depth_pct: row.promo_depth_pct,
+    competitor_price: row.competitor_price,
+    price_gap_vs_competitor: row.price_gap_vs_competitor,
+    social_engagement_score: row.social_engagement_score,
+    base_elasticity: row.base_elasticity,
+    effective_elasticity: row.effective_elasticity,
+    own_units_sold: row.own_units_sold,
+    cannibalized_out_units: row.cannibalized_out_units,
+    net_units_sold: row.net_units_sold,
+    revenue: row.revenue,
+    gross_margin_pct: row.gross_margin_pct
   }));
 }
 

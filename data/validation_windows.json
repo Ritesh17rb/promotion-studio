@@ -1,21 +1,26 @@
 {
   "clean_windows": [
     {
-      "start_date": "2025-03-02",
-      "end_date": "2025-04-05",
-      "notes": "Baseline spring launch stability"
+      "start_date": "2026-02-02",
+      "end_date": "2026-02-16",
+      "notes": "Stable pre-shock learning window"
     },
     {
-      "start_date": "2025-06-01",
-      "end_date": "2025-07-06",
-      "notes": "Mid-season steady demand"
+      "start_date": "2026-03-30",
+      "end_date": "2026-04-06",
+      "notes": "Post-promo stabilization"
     }
   ],
   "confounded_windows": [
     {
-      "start_date": "2025-06-15",
-      "end_date": "2025-07-20",
-      "notes": "Competitive price drop period"
+      "start_date": "2026-02-23",
+      "end_date": "2026-03-02",
+      "notes": "Mass promo + competitor drop overlap"
+    },
+    {
+      "start_date": "2026-04-13",
+      "end_date": "2026-04-13",
+      "notes": "Social viral spike"
     }
   ]
 }
