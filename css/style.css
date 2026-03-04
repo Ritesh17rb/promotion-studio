@@ -1795,6 +1795,18 @@ html {
   transition: all 0.3s ease;
 }
 
+.flow-box-label {
+  font-weight: 600;
+}
+
+[data-bs-theme="dark"] .flow-box-label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+[data-bs-theme="light"] .flow-box-label {
+  color: #334155;
+}
+
 /* Event Details Table */
 .event-details-table {
   max-height: 100vh;
@@ -1914,4 +1926,51 @@ html {
   height: 8px;
   border-radius: 999px;
   display: inline-block;
+}
+
+/* Step 6-8 visual-first layouts */
+.promo-story-flow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.promo-story-flow .story-node {
+  background: linear-gradient(160deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-body-bg-rgb), 0.95));
+  border: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  min-height: 62px;
+}
+
+.promo-story-flow .story-node .label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--bs-secondary-color);
+}
+
+.promo-story-flow .story-node .value {
+  font-size: 0.79rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--bs-emphasis-color);
+}
+
+.promo-story-flow .story-arrow {
+  text-align: center;
+  color: var(--bs-secondary-color);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@media (max-width: 991px) {
+  .promo-story-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .promo-story-flow .story-arrow {
+    transform: rotate(90deg);
+  }
 }

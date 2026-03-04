@@ -3,16 +3,30 @@
  * Interactive dual-slider interface for tier pricing
  */
 
-import { loadElasticityParams, loadWeeklyAggregated } from './data-loader.js';
+import {
+  loadElasticityParams,
+  loadWeeklyAggregated,
+  loadSkuWeeklyData,
+  loadExternalFactors,
+  loadSocialSignals,
+  loadPromoMetadata,
+  getSkuCatalog
+} from './data-loader.js';
 
 // Chart instance
 let migrationChartSimple = null;
+let migrationSkuInventoryChart = null;
 
 // Migration parameters (loaded from elasticity-params.json and channel_weekly.csv)
 let migrationParams = null;
 
 // Cohort data for asymmetry factors
 let cohortData = null;
+let skuWeeklyRows = [];
+let marketSignalRows = [];
+let socialSignalRows = [];
+let promoMetadata = {};
+let skuCatalog = { productGroups: [], skus: [] };
 
 /**
  * Load cohort data for migration asymmetry
@@ -103,6 +117,74 @@ async function loadMigrationParams() {
   }
 }
 
+async function loadSkuContext() {
+  const [skuRows, marketSignals, socialSignals, promos, catalog] = await Promise.all([
+    loadSkuWeeklyData(),
+    loadExternalFactors(),
+    loadSocialSignals(),
+    loadPromoMetadata(),
+    getSkuCatalog()
+  ]);
+  skuWeeklyRows = Array.isArray(skuRows) ? skuRows : [];
+  marketSignalRows = Array.isArray(marketSignals) ? marketSignals : [];
+  socialSignalRows = Array.isArray(socialSignals) ? socialSignals : [];
+  promoMetadata = promos || {};
+  skuCatalog = catalog || { productGroups: [], skus: [] };
+}
+
+function getSelectedGroupAndSku() {
+  const group = document.getElementById('mig-product-group-select')?.value || 'all';
+  const sku = document.getElementById('mig-sku-select')?.value || 'all';
+  return { group, sku };
+}
+
+function average(rows, key) {
+  if (!rows || !rows.length) return 0;
+  const total = rows.reduce((sum, row) => sum + Number(row[key] || 0), 0);
+  return total / rows.length;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function socialElasticityModifier(score) {
+  const numeric = Number(score);
+  if (!Number.isFinite(numeric)) return 1;
+  const clipped = clamp(numeric, 35, 95);
+  return clamp(1.18 - ((clipped - 35) * 0.0075), 0.72, 1.26);
+}
+
+function demandFromElasticity(baseUnits, basePrice, newPrice, elasticity) {
+  if (!Number.isFinite(baseUnits) || !Number.isFinite(basePrice) || !Number.isFinite(newPrice) || !Number.isFinite(elasticity)) {
+    return baseUnits;
+  }
+  const pct = (newPrice - basePrice) / Math.max(basePrice, 0.01);
+  const multiplier = clamp(1 - (elasticity * pct), 0.35, 2.3);
+  return baseUnits * multiplier;
+}
+
+function getSkuUniverse() {
+  const { group } = getSelectedGroupAndSku();
+  const list = (skuCatalog?.skus || []).filter(item => group === 'all' || item.product_group === group);
+  return list.slice(0, 6);
+}
+
+function getSkuRowsForSelection() {
+  const { group, sku } = getSelectedGroupAndSku();
+  return skuWeeklyRows.filter(row => {
+    if (group !== 'all' && row.product_group !== group) return false;
+    if (sku !== 'all' && row.sku_id !== sku) return false;
+    return true;
+  });
+}
+
+function getCurrentSeasonWeek(rows = skuWeeklyRows) {
+  const current = rows.find(r => r.is_current_week === true);
+  if (current) return Number(current.week_of_season || 1);
+  return Math.max(1, ...rows.map(r => Number(r.week_of_season || 1)));
+}
+
 /**
  * Initialize the simplified migration section
  */
@@ -113,10 +195,19 @@ async function initMigrationSimple() {
     // Load parameters from actual data
     await loadMigrationParams();
     await loadCohortData();
+    await loadSkuContext();
 
     // Create chart and Sankey diagram
     createMigrationChartSimple();
     createSankeyDiagram();
+    populateSkuSelectors();
+    populatePromoHistoryOptions();
+    const promoSelect = document.getElementById('mig-promo-history-select');
+    if (promoSelect && promoSelect.value) {
+      renderPromoHistoryRows(promoSelect.value);
+    } else {
+      renderPromoHistoryRows(null);
+    }
 
     // Setup interactivity
     setupMigrationInteractivity();
@@ -459,6 +550,119 @@ function updateSankeyDiagram(upgradeRate = null, downgradeRate = null, cancelLit
     });
 }
 
+function populateSkuSelectors() {
+  const groupSelect = document.getElementById('mig-product-group-select');
+  const skuSelect = document.getElementById('mig-sku-select');
+  if (!groupSelect || !skuSelect) return;
+
+  const groups = skuCatalog?.productGroups || [];
+  const initialGroup = groupSelect.value || 'all';
+  groupSelect.innerHTML = [
+    '<option value="all">All Product Groups</option>',
+    ...groups.map(group => `<option value="${group}">${group.charAt(0).toUpperCase() + group.slice(1)}</option>`)
+  ].join('');
+  groupSelect.value = groups.includes(initialGroup) ? initialGroup : 'all';
+
+  const filteredSkus = (skuCatalog?.skus || []).filter(item => groupSelect.value === 'all' || item.product_group === groupSelect.value);
+  const initialSku = skuSelect.value || 'all';
+  skuSelect.innerHTML = [
+    '<option value="all">All SKUs in Group</option>',
+    ...filteredSkus.map(item => `<option value="${item.sku_id}">${item.sku_name} (${item.sku_id})</option>`)
+  ].join('');
+  skuSelect.value = filteredSkus.some(item => item.sku_id === initialSku) ? initialSku : 'all';
+}
+
+function populatePromoHistoryOptions() {
+  const select = document.getElementById('mig-promo-history-select');
+  if (!select) return;
+  const promos = Object.values(promoMetadata || {})
+    .sort((a, b) => String(b.start_date || '').localeCompare(String(a.start_date || '')))
+    .slice(0, 8);
+  select.innerHTML = '<option value="">Select campaign...</option>' + promos.map(p =>
+    `<option value="${p.promo_id}">${p.campaign_name} (${p.start_date})</option>`
+  ).join('');
+}
+
+function renderPromoHistoryRows(promoId) {
+  const tbody = document.getElementById('mig-promo-history-body');
+  const summary = document.getElementById('mig-promo-history-summary');
+  const useBtn = document.getElementById('mig-use-promo-btn');
+  if (!tbody || !summary || !useBtn) return;
+
+  const promo = promoId ? promoMetadata[promoId] : null;
+  if (!promo) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No campaign selected.</td></tr>';
+    summary.textContent = 'Pick a campaign to inspect winners vs underperformers.';
+    useBtn.disabled = true;
+    return;
+  }
+
+  const rows = Array.isArray(promo.sku_results) ? promo.sku_results : [];
+  const upCount = rows.filter(r => Number(r.sales_uplift_pct || 0) >= 0).length;
+  const downCount = rows.length - upCount;
+  summary.textContent = `${promo.campaign_name}: ${rows.length} SKU outcomes, ${upCount} up and ${downCount} down.`;
+  tbody.innerHTML = rows.length ? rows.map(row => {
+    const uplift = Number(row.sales_uplift_pct || 0);
+    const outcome = uplift >= 0 ? 'Up' : 'Down';
+    return `
+      <tr>
+        <td>${row.sku_name || row.sku_id}</td>
+        <td>${String(row.channel || '-').toUpperCase()}</td>
+        <td class="text-end ${uplift >= 0 ? 'text-success' : 'text-danger'}">${uplift >= 0 ? '+' : ''}${uplift.toFixed(1)}%</td>
+        <td><span class="badge ${uplift >= 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">${outcome}</span></td>
+      </tr>
+    `;
+  }).join('') : '<tr><td colspan="4" class="text-center text-muted">No SKU-level outcomes.</td></tr>';
+  useBtn.disabled = false;
+}
+
+function createOrUpdateSkuInventoryChart(labels, baselineSeries, adjustedSeries) {
+  const canvas = document.getElementById('mig-sku-inventory-chart');
+  if (!canvas || !window.Chart) return;
+  if (!migrationSkuInventoryChart) {
+    migrationSkuInventoryChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Baseline Inventory',
+            data: baselineSeries,
+            borderColor: 'rgba(99, 102, 241, 1)',
+            backgroundColor: 'rgba(99, 102, 241, 0.08)',
+            fill: true,
+            tension: 0.25
+          },
+          {
+            label: 'Adjusted Inventory',
+            data: adjustedSeries,
+            borderColor: 'rgba(16, 185, 129, 1)',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+            fill: true,
+            tension: 0.25
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        scales: {
+          y: {
+            ticks: { callback: value => `${Math.round(value)}` },
+            title: { display: true, text: 'Inventory Units' }
+          }
+        }
+      }
+    });
+    return;
+  }
+  migrationSkuInventoryChart.data.labels = labels;
+  migrationSkuInventoryChart.data.datasets[0].data = baselineSeries;
+  migrationSkuInventoryChart.data.datasets[1].data = adjustedSeries;
+  migrationSkuInventoryChart.update('none');
+}
+
 /**
  * Setup slider interactivity
  */
@@ -466,6 +670,13 @@ function setupMigrationInteractivity() {
   const adliteSlider = document.getElementById('mig-adlite-slider');
   const adfreeSlider = document.getElementById('mig-adfree-slider');
   const cohortSelect = document.getElementById('mig-cohort-select');
+  const groupSelect = document.getElementById('mig-product-group-select');
+  const skuSelect = document.getElementById('mig-sku-select');
+  const scopeSelect = document.getElementById('mig-channel-scope-select');
+  const compShock = document.getElementById('mig-comp-shock-slider');
+  const socialShock = document.getElementById('mig-social-shock-slider');
+  const promoHistorySelect = document.getElementById('mig-promo-history-select');
+  const usePromoBtn = document.getElementById('mig-use-promo-btn');
 
   if (!adliteSlider || !adfreeSlider) {
     console.warn('Migration controls not found');
@@ -486,6 +697,67 @@ function setupMigrationInteractivity() {
       updateMigrationModel();
     });
   }
+
+  if (groupSelect) {
+    groupSelect.addEventListener('change', () => {
+      populateSkuSelectors();
+      updateMigrationModel();
+    });
+  }
+  if (skuSelect) skuSelect.addEventListener('change', updateMigrationModel);
+  if (scopeSelect) scopeSelect.addEventListener('change', updateMigrationModel);
+
+  if (compShock) {
+    compShock.addEventListener('input', () => {
+      const display = document.getElementById('mig-comp-shock-display');
+      if (display) display.textContent = `${Number(compShock.value)}%`;
+      updateMigrationModel();
+    });
+  }
+  if (socialShock) {
+    socialShock.addEventListener('input', () => {
+      const display = document.getElementById('mig-social-shock-display');
+      if (display) display.textContent = `${Number(socialShock.value)} pts`;
+      updateMigrationModel();
+    });
+  }
+
+  if (promoHistorySelect) {
+    promoHistorySelect.addEventListener('change', () => {
+      renderPromoHistoryRows(promoHistorySelect.value);
+    });
+  }
+
+  if (usePromoBtn) {
+    usePromoBtn.addEventListener('click', () => {
+      const promoId = promoHistorySelect?.value;
+      const promo = promoId ? promoMetadata[promoId] : null;
+      if (!promo) return;
+      const discount = Number(promo.discount_pct || 0);
+      const channels = (promo.eligible_channels || []).map(c => String(c).toLowerCase());
+      if (channels.length) {
+        const hasMass = channels.some(c => c === 'target' || c === 'amazon');
+        const hasPrestige = channels.some(c => c === 'sephora' || c === 'ulta');
+        if (scopeSelect) {
+          scopeSelect.value = hasMass && hasPrestige ? 'all' : hasMass ? 'mass' : 'prestige';
+        }
+      }
+      if (discount > 0) {
+        const massPrice = migrationParams.baselineAdLitePrice * (1 - discount / 100);
+        const prestigePrice = migrationParams.baselineAdFreePrice * (1 - (discount * 0.8) / 100);
+        adliteSlider.value = massPrice.toFixed(2);
+        adfreeSlider.value = prestigePrice.toFixed(2);
+      }
+      updateMigrationModel();
+    });
+  }
+
+  window.addEventListener('promo:drilldown-selected', (event) => {
+    const promoId = event?.detail?.promoId;
+    if (!promoId || !promoMetadata[promoId] || !promoHistorySelect) return;
+    promoHistorySelect.value = promoId;
+    renderPromoHistoryRows(promoId);
+  });
 }
 
 /**
@@ -508,6 +780,27 @@ function updateMigrationModel() {
   const adfreePrice = parseFloat(adfreeSlider.value);
   const newGap = adfreePrice - adlitePrice;
   const gapChange = ((newGap - migrationParams.baselineGap) / migrationParams.baselineGap) * 100;
+  const channelScope = document.getElementById('mig-channel-scope-select')?.value || 'all';
+  const compShockPct = Number(document.getElementById('mig-comp-shock-slider')?.value || 0);
+  const socialShock = Number(document.getElementById('mig-social-shock-slider')?.value || 0);
+  const { sku: selectedSku } = getSelectedGroupAndSku();
+  const currentWeek = getCurrentSeasonWeek(skuWeeklyRows);
+  const currentRowsForSelection = getSkuRowsForSelection().filter(r => Number(r.week_of_season) === currentWeek);
+  const selectedRows = selectedSku !== 'all'
+    ? currentRowsForSelection.filter(r => r.sku_id === selectedSku)
+    : currentRowsForSelection;
+
+  const baseElasticity = average(selectedRows, 'effective_elasticity') || -1.7;
+  const ownPrice = average(selectedRows, 'effective_price') || adlitePrice;
+  const competitorPrice = average(selectedRows, 'competitor_price') || ownPrice * 0.95;
+  const socialScoreBase = average(selectedRows, 'social_engagement_score')
+    || Number((socialSignalRows.find(row => row.week_start === selectedRows[0]?.date)?.brand_social_index) || 60);
+  const socialScoreAdjusted = clamp(socialScoreBase + socialShock, 25, 98);
+  const socialModifier = socialElasticityModifier(socialScoreAdjusted);
+  const effectiveElasticity = baseElasticity * socialModifier;
+  const competitorGapPct = (ownPrice - (competitorPrice * (1 + (compShockPct / 100)))) / Math.max(competitorPrice, 0.01);
+  const competitorPressure = clamp(1 - (competitorGapPct * 1.6), 0.65, 1.25);
+  const scopeMultiplier = channelScope === 'all' ? 1 : 0.72;
 
   // Calculate price changes for each tier (for churn calculation)
   const adlitePriceChange = ((adlitePrice - migrationParams.baselineAdLitePrice) / migrationParams.baselineAdLitePrice) * 100;
@@ -523,7 +816,11 @@ function updateMigrationModel() {
     baselineGap: migrationParams.baselineGap,
     newGap,
     gapChange: gapChange.toFixed(2) + '%',
-    chartExists: !!migrationChartSimple
+    chartExists: !!migrationChartSimple,
+    selectedSku,
+    channelScope,
+    effectiveElasticity: effectiveElasticity.toFixed(2),
+    competitorPressure: competitorPressure.toFixed(2)
   });
 
   // Update displays
@@ -531,6 +828,10 @@ function updateMigrationModel() {
   document.getElementById('mig-adfree-display').textContent = '$' + adfreePrice.toFixed(2);
   document.getElementById('mig-price-gap').textContent = '$' + newGap.toFixed(2);
   document.getElementById('mig-gap-change').textContent = (gapChange >= 0 ? '+' : '') + gapChange.toFixed(1) + '%';
+  const compDisplay = document.getElementById('mig-comp-shock-display');
+  const socialDisplay = document.getElementById('mig-social-shock-display');
+  if (compDisplay) compDisplay.textContent = `${compShockPct}%`;
+  if (socialDisplay) socialDisplay.textContent = `${socialShock} pts`;
 
   // Get cohort-specific migration parameters
   const selectedCohort = document.getElementById('mig-cohort-select')?.value || 'baseline';
@@ -603,6 +904,7 @@ function updateMigrationModel() {
   // 3. Price resistance to expensive ad-free
   const gapBasedUpgrade = upgradePct * upgradeWillingness;
   upgradePct = gapBasedUpgrade + priceMotivatedUpgrade - priceResistanceUpgrade;
+  upgradePct *= competitorPressure * scopeMultiplier * clamp(Math.abs(effectiveElasticity) / 1.8, 0.7, 1.35);
 
   // Ensure non-negative
   upgradePct = Math.max(0, upgradePct);
@@ -654,6 +956,7 @@ function updateMigrationModel() {
   // 3. Price resistance to expensive ad-lite
   const gapBasedDowngrade = downgradePct * downgradeWillingness;
   downgradePct = gapBasedDowngrade + priceMotivatedDowngrade - priceResistanceDowngrade;
+  downgradePct *= clamp(1.25 - (0.2 * competitorPressure), 0.7, 1.2) * scopeMultiplier;
 
   // Ensure non-negative
   downgradePct = Math.max(0, downgradePct);
@@ -777,6 +1080,124 @@ function updateMigrationModel() {
     migrationChartSimple.data.datasets[1].data = freeTrend;
     migrationChartSimple.update('none'); // Instant update
   }
+
+  // SKU-level projection and table (meeting ask: each SKU has different table)
+  const skuOutcomeBody = document.getElementById('mig-sku-outcome-body');
+  const skuBadge = document.getElementById('mig-sku-table-badge');
+  const riskNote = document.getElementById('mig-sku-risk-note');
+  const narrativeEl = document.getElementById('mig-season-narrative');
+  const startInvEl = document.getElementById('mig-sku-start-inventory');
+  const leftBaseEl = document.getElementById('mig-sku-leftover-baseline');
+  const leftAdjEl = document.getElementById('mig-sku-leftover-adjusted');
+  const weeks = [...new Set((selectedSku !== 'all' ? skuWeeklyRows.filter(r => r.sku_id === selectedSku) : getSkuRowsForSelection())
+    .map(r => Number(r.week_of_season || 0)))].filter(Boolean).sort((a, b) => a - b);
+  const labels = weeks.length ? weeks.map(w => `W${w}`) : Array.from({ length: 17 }, (_, i) => `W${i + 1}`);
+  const scopeRows = selectedSku !== 'all'
+    ? skuWeeklyRows.filter(row => row.sku_id === selectedSku)
+    : getSkuRowsForSelection();
+
+  const massRows = scopeRows.filter(row => row.channel_group === 'mass');
+  const prestigeRows = scopeRows.filter(row => row.channel_group === 'prestige');
+  const firstWeekRows = scopeRows.filter(row => Number(row.week_of_season) === 1);
+  const selectedCurrentRows = scopeRows.filter(row => Number(row.week_of_season) === currentWeek);
+  const startInventory = Math.round(firstWeekRows.reduce((sum, row) => sum + Number(row.start_inventory_units || 0), 0));
+  const currentInventory = Math.round(selectedCurrentRows.reduce((sum, row) => sum + Number(row.end_inventory_units || 0), 0));
+  const baselineWeeklyDemand = Math.max(1, selectedCurrentRows.reduce((sum, row) => sum + Number(row.net_units_sold || 0), 0));
+  const avgBasePrice = average(selectedCurrentRows, 'effective_price') || ownPrice;
+  const targetPrice = channelScope === 'prestige' ? adfreePrice : (channelScope === 'mass' ? adlitePrice : ((adlitePrice + adfreePrice) / 2));
+  const rawDemand = demandFromElasticity(baselineWeeklyDemand, avgBasePrice, targetPrice, effectiveElasticity);
+  const skuUniverse = getSkuUniverse().map(item => item.sku_id);
+  const isSkuSelected = selectedSku !== 'all';
+  const cannibalizationFactor = isSkuSelected ? clamp((Math.max(0, rawDemand - baselineWeeklyDemand) / Math.max(rawDemand, 1)) * 0.35, 0, 0.22) : 0.08;
+  const ownGainFromCompetitor = rawDemand * clamp((competitorPressure - 0.95) * 0.4, -0.15, 0.24);
+  const adjustedWeeklyDemand = Math.max(1, rawDemand + ownGainFromCompetitor);
+
+  let baselineInventory = currentInventory || startInventory;
+  let adjustedInventory = currentInventory || startInventory;
+  const baselineSeries = [];
+  const adjustedSeries = [];
+  for (let i = 0; i < labels.length; i += 1) {
+    const weekDemandAdj = adjustedWeeklyDemand * (1 + (0.05 * Math.sin(i / 2)));
+    baselineInventory = Math.max(0, baselineInventory - baselineWeeklyDemand);
+    adjustedInventory = Math.max(0, adjustedInventory - weekDemandAdj);
+    baselineSeries.push(Math.round(baselineInventory));
+    adjustedSeries.push(Math.round(adjustedInventory));
+  }
+  createOrUpdateSkuInventoryChart(labels, baselineSeries, adjustedSeries);
+
+  const channelRollup = (rows) => {
+    const units = rows.reduce((sum, row) => sum + Number(row.net_units_sold || 0), 0);
+    const revenue = rows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+    const marginPct = average(rows, 'gross_margin_pct');
+    return { units, revenue, marginPct };
+  };
+  const massRoll = channelRollup(massRows);
+  const prestigeRoll = channelRollup(prestigeRows);
+  const totalUnits = massRoll.units + prestigeRoll.units;
+  const totalRevenue = massRoll.revenue + prestigeRoll.revenue;
+  const totalMarginPct = average(scopeRows, 'gross_margin_pct');
+  const cannibalizedUnits = Math.round(adjustedWeeklyDemand * cannibalizationFactor);
+  const siblingSkuCount = isSkuSelected
+    ? Math.max(0, skuUniverse.filter(skuId => skuId !== selectedSku).length)
+    : Math.max(0, skuUniverse.length - 1);
+  const siblingImpactPerSku = siblingSkuCount ? Math.round(cannibalizedUnits / siblingSkuCount) : 0;
+
+  if (skuOutcomeBody) {
+    skuOutcomeBody.innerHTML = `
+      <tr>
+        <td>Current Weekly Units</td>
+        <td class="text-end">${Math.round(massRoll.units).toLocaleString()}</td>
+        <td class="text-end">${Math.round(prestigeRoll.units).toLocaleString()}</td>
+        <td class="text-end fw-semibold">${Math.round(totalUnits).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td>Current Weekly Revenue</td>
+        <td class="text-end">$${Math.round(massRoll.revenue).toLocaleString()}</td>
+        <td class="text-end">$${Math.round(prestigeRoll.revenue).toLocaleString()}</td>
+        <td class="text-end fw-semibold">$${Math.round(totalRevenue).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td>Gross Margin %</td>
+        <td class="text-end">${(massRoll.marginPct * 100).toFixed(1)}%</td>
+        <td class="text-end">${(prestigeRoll.marginPct * 100).toFixed(1)}%</td>
+        <td class="text-end fw-semibold">${(totalMarginPct * 100).toFixed(1)}%</td>
+      </tr>
+      <tr>
+        <td>Gain From Competitor Products</td>
+        <td class="text-end text-success">${Math.round(Math.max(0, ownGainFromCompetitor * 0.6)).toLocaleString()}</td>
+        <td class="text-end text-success">${Math.round(Math.max(0, ownGainFromCompetitor * 0.4)).toLocaleString()}</td>
+        <td class="text-end text-success fw-semibold">${Math.round(Math.max(0, ownGainFromCompetitor)).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td>Loss From Sibling Cannibalization</td>
+        <td class="text-end text-danger">-${Math.round(cannibalizedUnits * 0.6).toLocaleString()}</td>
+        <td class="text-end text-danger">-${Math.round(cannibalizedUnits * 0.4).toLocaleString()}</td>
+        <td class="text-end text-danger fw-semibold">-${Math.round(cannibalizedUnits).toLocaleString()}</td>
+      </tr>
+    `;
+  }
+
+  if (skuBadge) {
+    const selectedSkuLabel = selectedSku === 'all'
+      ? 'All SKUs'
+      : (skuCatalog.skus.find(item => item.sku_id === selectedSku)?.sku_name || selectedSku);
+    skuBadge.textContent = selectedSkuLabel;
+  }
+  if (riskNote) {
+    const baselineLeft = baselineSeries[baselineSeries.length - 1] ?? 0;
+    const adjustedLeft = adjustedSeries[adjustedSeries.length - 1] ?? 0;
+    const runwayRisk = adjustedLeft > (startInventory * 0.18) ? 'High leftover risk' : adjustedLeft > (startInventory * 0.08) ? 'Moderate leftover risk' : 'On track to clear';
+    const cannibalizationRisk = cannibalizedUnits > (adjustedWeeklyDemand * 0.16) ? 'High cannibalization' : 'Controlled cannibalization';
+    riskNote.textContent = `${runwayRisk}. ${cannibalizationRisk}. Sibling SKUs impacted: ~${siblingImpactPerSku.toLocaleString()} units each.`;
+  }
+  if (narrativeEl) {
+    const baselineLeft = baselineSeries[baselineSeries.length - 1] ?? 0;
+    const adjustedLeft = adjustedSeries[adjustedSeries.length - 1] ?? 0;
+    narrativeEl.textContent = `Start-of-season inventory ${startInventory.toLocaleString()} units. We are at week ${currentWeek} with ${currentInventory.toLocaleString()} units left. Baseline ends with ${baselineLeft.toLocaleString()} units by week 17; adjusted plan ends with ${adjustedLeft.toLocaleString()} units.`;
+  }
+  if (startInvEl) startInvEl.textContent = startInventory.toLocaleString();
+  if (leftBaseEl) leftBaseEl.textContent = (baselineSeries[baselineSeries.length - 1] ?? 0).toLocaleString();
+  if (leftAdjEl) leftAdjEl.textContent = (adjustedSeries[adjustedSeries.length - 1] ?? 0).toLocaleString();
 
   // Update Sankey diagram (with dynamic churn rates)
   updateSankeyDiagram(

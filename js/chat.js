@@ -71,6 +71,7 @@ Channel response context:
 Inventory and promo history:
 - Inventory highlights: {inventoryHighlights}
 - Promo history summary: {promoHistorySummary}
+- SKU optimization insights: {skuOptimizationInsights}
 - Current live promo snapshot: {livePromoSnapshot}
 
 Available scenarios:
@@ -105,6 +106,7 @@ How to respond:
 - Prefer week-17 inventory-to-zero logic when recommending promotions.
 - If competitor gap is high in mass channels, bias toward defensive mass recommendations.
 - If social momentum is strong, bias toward selective/full-price holds for less-elastic SKUs.
+- Explicitly list which SKUs to include and exclude.
 - Use Markdown.
 `;
 
@@ -323,6 +325,9 @@ Use filters by channel group, repeat-loss risk, and value tier.`;
   const promoHistorySummary = businessContext.promoHistorySummary
     ? `${businessContext.promoHistorySummary.campaignCount || 0} campaigns; top underperformers: ${(businessContext.promoHistorySummary.topUnderperformingSkus || []).join(', ') || 'none'}; top winners: ${(businessContext.promoHistorySummary.topWinningSkus || []).join(', ') || 'none'}`
     : 'N/A';
+  const skuOptimizationInsights = businessContext.skuOptimizationInsights
+    ? `include: ${(businessContext.skuOptimizationInsights.recommended_includes || []).join(', ') || 'none'}; exclude: ${(businessContext.skuOptimizationInsights.recommended_excludes || []).join(', ') || 'none'}; note: ${businessContext.skuOptimizationInsights.objective_note || 'n/a'}`
+    : 'N/A';
 
   const vizData = dataContext.getVisualizationData ? dataContext.getVisualizationData() : {};
   const livePromoSnapshotObj = vizData.livePromoSnapshot || null;
@@ -344,6 +349,7 @@ Use filters by channel group, repeat-loss risk, and value tier.`;
     .replace('{socialSignalSummary}', socialSignalSummary)
     .replace('{inventoryHighlights}', inventoryHighlights)
     .replace('{promoHistorySummary}', promoHistorySummary)
+    .replace('{skuOptimizationInsights}', skuOptimizationInsights)
     .replace('{livePromoSnapshot}', livePromoSnapshot)
     .replace('{availableScenarios}', allScenarios.slice(0, 8).map(s => `- ${s.id}: ${s.name}`).join('\n') || 'None loaded yet')
     .replace('{currentSimulation}', currentSim && currentSim.delta ? `Active: "${currentSim.scenario_name}" - Revenue ${currentSim.delta.revenue_pct >= 0 ? '+' : ''}${currentSim.delta.revenue_pct.toFixed(1)}%, Customers ${currentSim.delta.customers_pct >= 0 ? '+' : ''}${currentSim.delta.customers_pct.toFixed(1)}%` : currentSim ? `Active: "${currentSim.scenario_name}"` : 'No scenario simulated yet')

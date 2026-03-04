@@ -1102,7 +1102,16 @@ async function initializeChatContext() {
           topUnderperformingSkus: sortedUnderperformerLabels.slice(0, 5),
           topWinningSkus: sortedOutperformerLabels.slice(0, 5)
         },
-        competitorFeedSummary
+        competitorFeedSummary,
+        skuOptimizationInsights: {
+          recommended_includes: sortedOutperformerLabels.slice(0, 4),
+          recommended_excludes: sortedUnderperformerLabels.slice(0, 4),
+          objective_note: 'Prioritize high-elastic SKUs with low leftover risk; avoid SKUs with repeated negative promo lift.'
+        },
+        recommendedQuestions: [
+          'Which SKUs should I include in a week-17 clearance promo by channel?',
+          'Which SKUs are inelastic and should be held at higher prices despite competitor pressure?'
+        ]
       },
 
       // Visualization data context
@@ -1725,26 +1734,26 @@ function applyPromotionCopySweep() {
   const scenarioHeaderSubtitle = document.querySelector('#elasticity-models-section .card-header p');
   const scenarioFrameworkAlert = document.querySelector('#elasticity-models-section .alert.alert-info');
   if (scenarioHeaderTitle) {
-    scenarioHeaderTitle.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Promotion Planning Roadmap Modules';
+    scenarioHeaderTitle.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Promotion Optimization Scenario Studio';
   }
   if (scenarioHeaderSubtitle) {
-    scenarioHeaderSubtitle.textContent = 'Future vision modules for in-season planning, markdown sequencing, and cross-channel migration optimization.';
+    scenarioHeaderSubtitle.textContent = 'Start of Season baseline, In-Season pivots, and portfolio migration what-if simulation.';
   }
   if (scenarioFrameworkAlert) {
-    scenarioFrameworkAlert.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Future Vision:</strong> These modules represent planned expansion areas beyond the current Step 1 promotion optimizer.';
+    scenarioFrameworkAlert.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Live Workflow:</strong> Select scenarios, run models, save options, rank tradeoffs, and compare recommendations.';
   }
 
   const acquisitionTab = document.getElementById('acquisition-tab');
   const churnTab = document.getElementById('churn-tab');
   const migrationTab = document.getElementById('migration-tab');
   if (acquisitionTab) {
-    acquisitionTab.innerHTML = '<i class="bi bi-calendar-week me-2"></i><strong>1. In-Season Planner</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
+    acquisitionTab.innerHTML = '<i class="bi bi-calendar-week me-2"></i><strong>1. In-Season Planner</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>';
   }
   if (churnTab) {
-    churnTab.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><strong>2. End-of-Season Markdown</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
+    churnTab.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><strong>2. End-of-Season Markdown</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>';
   }
   if (migrationTab) {
-    migrationTab.innerHTML = '<i class="bi bi-arrows-angle-expand me-2"></i><strong>3. Cross-Channel Migration</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
+    migrationTab.innerHTML = '<i class="bi bi-arrows-angle-expand me-2"></i><strong>3. Portfolio Migration</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>';
   }
 
   // Segmentation copy alignment
@@ -1778,39 +1787,39 @@ function applyPromotionCopySweep() {
   const step5Body = document.querySelector('#methodology-modal-step5 .modal-body');
 
   if (step3Title) {
-    step3Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: In-Season Planner (Future Vision)';
+    step3Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: In-Season Planner';
   }
   if (step4Title) {
-    step4Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: End-of-Season Markdown (Future Vision)';
+    step4Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: End-of-Season Markdown';
   }
   if (step5Title) {
-    step5Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: Cross-Channel Migration (Future Vision)';
+    step5Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: Portfolio Migration & Advanced Analysis';
   }
 
   if (step3Body) {
     step3Body.innerHTML = `
-      <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i>Planned Capability</h6>
-      <p>This roadmap module will support week-by-week promotion planning across SKUs and channels using inventory runway, competitor pricing, and social demand signals.</p>
+      <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i>Active Capability</h6>
+      <p>Scenario-based in-season planning across SKUs and channels using inventory runway, competitor pricing, and social demand signals.</p>
       <div class="alert alert-info mb-0">
-        <strong>Current implementation:</strong> Step 1 already delivers the core promotion optimization logic for a 17-week season, including objective-based controls and baseline-vs-scenario inventory projection.
+        <strong>Current implementation:</strong> Select scenario, run simulation, save, and rank outcomes for weekly in-season pivots.
       </div>
     `;
   }
   if (step4Body) {
     step4Body.innerHTML = `
-      <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i>Planned Capability</h6>
-      <p>This roadmap module will optimize markdown sequencing for late-season inventory liquidation while balancing margin recovery and channel strategy.</p>
+      <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i>Active Capability</h6>
+      <p>Model-driven markdown sequencing for late-season liquidation while balancing margin floors, repeat-purchase risk, competitor price moves, and social momentum.</p>
       <div class="alert alert-info mb-0">
-        <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through week-17 projection and AI recommendation guidance.
+        <strong>Current implementation:</strong> Run scenario experiments to find the markdown path that clears inventory with controlled risk by SKU and channel.
       </div>
     `;
   }
   if (step5Body) {
     step5Body.innerHTML = `
-      <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i>Planned Capability</h6>
-      <p>This roadmap module will model how promotion actions in one channel group shift demand across other channel groups and impact portfolio-level outcomes.</p>
+      <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i>Active Capability</h6>
+      <p>Models how actions in one channel group shift demand across portfolio SKUs, separating competitor capture from internal cannibalization.</p>
       <div class="alert alert-info mb-0">
-        <strong>Current implementation:</strong> Event Calendar and Step 1 already provide channel-aware competitive and social signals to support immediate promo decisions.
+        <strong>Current implementation:</strong> Test migration paths with scenarios, save alternatives, and rank by growth/profit objective before campaign launch.
       </div>
     `;
   }
@@ -3714,21 +3723,26 @@ function populateElasticityModelTabs() {
   // Populate acquisition tab
   const acquisitionContainer = document.getElementById('acquisition-scenarios');
   if (acquisitionContainer) {
-    acquisitionContainer.innerHTML = acquisitionScenarios.map(scenario => createScenarioCard(scenario)).join('');
+    acquisitionContainer.innerHTML = acquisitionScenarios.length
+      ? acquisitionScenarios.map(scenario => createScenarioCard(scenario)).join('')
+      : '<div class="col-12"><div class="alert alert-warning mb-0 small">No in-season scenarios configured yet.</div></div>';
   }
 
   // Populate churn tab
   const churnContainer = document.getElementById('churn-scenarios');
   if (churnContainer) {
-    churnContainer.innerHTML = churnScenarios.map(scenario => createScenarioCard(scenario)).join('');
+    churnContainer.innerHTML = churnScenarios.length
+      ? churnScenarios.map(scenario => createScenarioCard(scenario)).join('')
+      : '<div class="col-12"><div class="alert alert-warning mb-0 small">No markdown/repeat-risk scenarios configured yet.</div></div>';
   }
 
   // Populate migration tab with custom order
   const migrationContainer = document.getElementById('migration-scenarios');
+  let sortedMigration = migrationScenarios;
   if (migrationContainer) {
-    // Custom order: Bundle first, iOS second, Basic last
-    const migrationOrder = ['scenario_008', 'scenario_010', 'scenario_005'];
-    const sortedMigration = migrationScenarios.sort((a, b) => {
+    // Custom order aligned to portfolio migration story
+    const migrationOrder = ['scenario_007', 'scenario_008', 'scenario_009'];
+    sortedMigration = [...migrationScenarios].sort((a, b) => {
       const indexA = migrationOrder.indexOf(a.id);
       const indexB = migrationOrder.indexOf(b.id);
       if (indexA === -1 && indexB === -1) return 0;
@@ -3736,7 +3750,9 @@ function populateElasticityModelTabs() {
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-    migrationContainer.innerHTML = sortedMigration.map(scenario => createScenarioCard(scenario)).join('');
+    migrationContainer.innerHTML = sortedMigration.length
+      ? sortedMigration.map(scenario => createScenarioCard(scenario)).join('')
+      : '<div class="col-12"><div class="alert alert-warning mb-0 small">No migration/cannibalization scenarios configured yet.</div></div>';
   }
 
   // Add click handlers for scenario cards
@@ -3765,6 +3781,31 @@ function populateElasticityModelTabs() {
       }
     });
   });
+
+  // Ensure each model has a default selected scenario if available
+  if (!selectedScenarioByModel.acquisition && acquisitionScenarios[0]) {
+    selectedScenarioByModel.acquisition = acquisitionScenarios[0];
+  }
+  if (!selectedScenarioByModel.churn && churnScenarios[0]) {
+    selectedScenarioByModel.churn = churnScenarios[0];
+  }
+  if (!selectedScenarioByModel.migration && sortedMigration[0]) {
+    selectedScenarioByModel.migration = sortedMigration[0];
+  }
+
+  // Restore selected card states in each pane
+  document.querySelectorAll('.scenario-card-tab').forEach(card => {
+    const scenarioId = card.dataset.scenarioId;
+    const scenario = scenarios.find(s => s.id === scenarioId);
+    if (!scenario) return;
+    const selectedByModel = selectedScenarioByModel[scenario.model_type];
+    if (selectedByModel && selectedByModel.id === scenarioId) {
+      card.classList.add('selected');
+    }
+  });
+
+  selectedScenario = selectedScenarioByModel[activeModelType] || null;
+  updateSimulateButtonState();
 
   // Add click handlers for edit buttons in tabs
   document.querySelectorAll('.edit-scenario-btn-tab').forEach(btn => {
@@ -3954,6 +3995,112 @@ window.setActiveModelType = setActiveModelType;
 window.hideScenarioResults = hideScenarioResults;
 window.getCurrentResultForModel = function(modelType) {
   return currentResultByModel[modelType] || null;
+};
+
+/**
+ * Run promotional scenario through the same JS/Python model pipeline used by the core scenario engine.
+ * Exposed globally so step-navigation (non-module script) can invoke model-backed simulations.
+ *
+ * @param {Object} payload
+ * @returns {Promise<Object>} simulation result
+ */
+async function runPromoScenarioModel(payload = {}) {
+  const modelType = String(payload.modelType || 'acquisition');
+  const currentPrice = Number(payload.currentPrice);
+  const newPrice = Number(payload.newPrice);
+  const normalizedCurrentPrice = Number.isFinite(currentPrice) && currentPrice > 0 ? currentPrice : 24;
+  const normalizedNewPrice = Number.isFinite(newPrice) && newPrice > 0 ? newPrice : normalizedCurrentPrice;
+  const discountPctRaw = Number(payload.discountPct);
+  const discountPct = Number.isFinite(discountPctRaw)
+    ? discountPctRaw
+    : ((normalizedCurrentPrice - normalizedNewPrice) / normalizedCurrentPrice) * 100;
+  const durationMonthsRaw = Number(payload.durationMonths);
+  const durationMonths = Number.isFinite(durationMonthsRaw) && durationMonthsRaw > 0 ? durationMonthsRaw : 1;
+  const tier = String(payload.tier || 'ad_supported');
+  const segmentElasticityRaw = Number(payload.segmentElasticity);
+  const segmentElasticity = Number.isFinite(segmentElasticityRaw)
+    ? -Math.abs(segmentElasticityRaw)
+    : -1.8;
+
+  const scenario = {
+    id: payload.id || `promo_${modelType}_${Date.now()}`,
+    name: payload.name || `${modelType} promo scenario`,
+    description: payload.description || 'Scenario generated from promotion model board controls',
+    category: 'promotion',
+    model_type: modelType,
+    priority: 'medium',
+    business_rationale: payload.rationale || 'Evaluate promo tradeoffs with model-backed simulation.',
+    config: {
+      tier,
+      current_price: normalizedCurrentPrice,
+      new_price: normalizedNewPrice,
+      promotion: {
+        discount_pct: discountPct,
+        duration_months: durationMonths
+      }
+    },
+    constraints: {
+      min_price: 0,
+      max_price: Math.max(normalizedCurrentPrice * 2, normalizedNewPrice * 2),
+      platform_compliant: true,
+      notice_period_30d: true,
+      price_change_12mo_limit: true
+    }
+  };
+
+  let result;
+  try {
+    if (!isPyodideAvailable()) {
+      await initializePyodideModels();
+    }
+    if (isPyodideAvailable()) {
+      result = await simulateScenarioWithPyodide(scenario, {
+        targetSegment: 'all',
+        segmentAxis: null,
+        segmentElasticity
+      });
+    } else {
+      result = await simulateScenario(scenario, {
+        targetSegment: 'all',
+        segmentAxis: null
+      });
+    }
+  } catch (error) {
+    console.warn('Model run fallback to JavaScript simulation due to:', error);
+    result = await simulateScenario(scenario, {
+      targetSegment: 'all',
+      segmentAxis: null
+    });
+  }
+
+  result.model_type = modelType;
+  result.request_payload = {
+    ...payload,
+    currentPrice: normalizedCurrentPrice,
+    newPrice: normalizedNewPrice,
+    discountPct,
+    durationMonths,
+    segmentElasticity
+  };
+
+  return result;
+}
+
+window.runPromoScenarioModel = runPromoScenarioModel;
+window.getScenarioTemplatesByModel = function(modelType) {
+  const key = String(modelType || '');
+  return (allScenarios || [])
+    .filter(scenario => !key || scenario.model_type === key)
+    .map(scenario => ({
+      id: scenario.id,
+      name: scenario.name,
+      description: scenario.description,
+      tier: scenario?.config?.tier || 'ad_supported',
+      currentPrice: Number(scenario?.config?.current_price),
+      newPrice: Number(scenario?.config?.new_price),
+      discountPct: Number(scenario?.config?.promotion?.discount_pct),
+      durationMonths: Number(scenario?.config?.promotion?.duration_months) || 1
+    }));
 };
 
 /**
@@ -4158,8 +4305,8 @@ function displayResultsInTabs(result, isRedisplay = false) {
     warningContainer.innerHTML = `
       <div class="alert alert-info border-info mb-3">
         <i class="bi bi-info-circle me-2"></i>
-        <strong>New Tier Simulation:</strong> This scenario introduces a hypothetical "${result.scenario_config.tier}" tier that doesn't exist in historical data.
-        Results use "${result.scenario_config.baseline_tier}" tier as baseline proxy for modeling.
+        <strong>New Portfolio Segment Simulation:</strong> This scenario introduces a hypothetical "${result.scenario_config.tier}" segment that doesn't exist in historical data.
+        Results use "${result.scenario_config.baseline_tier}" as baseline proxy for modeling.
       </div>
     `;
     warningContainer.style.display = 'block';
@@ -4229,7 +4376,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     <div class="col-md-3">
       <div class="card">
         <div class="card-body text-center">
-          <div class="text-muted small">Churn Rate</div>
+          <div class="text-muted small">Repeat-Risk Rate</div>
           <div class="h4 mb-1">${formatPercent((result.forecasted.repeatLossRate || result.forecasted.repeat_loss_rate || 0), 2)}</div>
           <div class="small ${result.delta.repeat_loss_rate <= 0 ? 'text-success' : 'text-danger'}">
             ${result.delta.repeat_loss_rate >= 0 ? '+' : ''}${formatPercent(result.delta.repeat_loss_rate, 2)}
@@ -4252,7 +4399,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
       <div class="card border-info">
         <div class="card-body text-center">
           <div class="text-muted small">
-            <i class="bi bi-hourglass-split me-1"></i>Churn Payback
+            <i class="bi bi-hourglass-split me-1"></i>Repeat-Risk Payback
           </div>
           <div class="h4 mb-1 text-info">${churnPayback.value}</div>
           <div class="small text-muted">${churnPayback.label}</div>
@@ -4855,7 +5002,7 @@ function displayTop3Scenarios(top3) {
                   </span>
                 </div>
                 <div class="col-6">
-                  <strong>Churn:</strong>
+                  <strong>Repeat Risk:</strong>
                   <span class="${scenario.delta.repeat_loss_rate <= 0 ? 'text-success' : 'text-danger'}">
                     ${scenario.delta.repeat_loss_rate >= 0 ? '+' : ''}${formatPercent(scenario.delta.repeat_loss_rate, 2)}pp
                   </span>

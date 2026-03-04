@@ -1127,6 +1127,14 @@ function renderPromoDrilldown(promoId) {
   }
 
   selectedPromoId = promoId;
+  window.dispatchEvent(new CustomEvent('promo:drilldown-selected', {
+    detail: {
+      promoId,
+      campaignName: promo.campaign_name,
+      promotedSkus: promo.promoted_skus || [],
+      channels: promo.eligible_channels || []
+    }
+  }));
 
   const skuResults = Array.isArray(promo.sku_results) ? promo.sku_results : [];
   const channelResults = promo.channel_results || {};

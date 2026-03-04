@@ -1057,23 +1057,23 @@
 
   </section>
 
-  <!-- Section 5: Cross-Channel Migration Planner (Future Vision) -->
+  <!-- Section 5: Portfolio Migration & Advanced Analysis -->
   <section class="section" id="section-5">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 8</div>
         <h2 class="section-title">
-          Cross-Channel Migration Planner (Future Vision)
+          Portfolio Migration & Advanced Analysis
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step5" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Future vision: model SKU demand migration across channels when promos are applied in only one channel group.</p>
+        <p class="section-subtitle">Interactive portfolio migration sandbox for Mass vs Prestige flow shifts, SKU cannibalization routes, and advanced scenario ranking.</p>
       </div>
     </div>
 
-    <!-- Cross-channel migration future-vision content will be shown here by step-navigation.js -->
+    <!-- Portfolio migration + advanced analysis content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-5-migration-container">
       <div id="step-5-migration-container-content">
@@ -1326,17 +1326,17 @@
   </div>
   </div>
 
-  <!-- Promotion Planning Future Vision Modules -->
+  <!-- Promotion Optimization Scenario Studio -->
   <div id="elasticity-models-section" style="display: none;">
   <div class="container my-4">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h2 class="h5 mb-0">
           <i class="bi bi-signpost-split me-2"></i>
-          Promotion Planning Future Vision Modules
+          Promotion Optimization Scenario Studio
         </h2>
         <p class="small mb-0 opacity-75">
-          Planned expansion areas beyond the current Step 1 promotion optimizer.
+          Start of Season baseline, In-Season pivots, and portfolio migration what-if simulation.
         </p>
       </div>
       <div class="card-body">
@@ -1344,8 +1344,8 @@
         <!-- Reference to RFP Framework -->
         <div class="alert alert-info mb-4">
           <i class="bi bi-info-circle me-2"></i>
-          <strong>Future Vision:</strong>
-          These modules preview future capabilities in in-season planning, markdown sequencing, and cross-channel demand migration.
+          <strong>Live Workflow:</strong>
+          Select scenarios, run models, save options, rank tradeoffs, and compare recommendations across in-season planning, markdown sequencing, and portfolio migration.
         </div>
 
         <!-- Bootstrap Tabs for 3 Models -->
@@ -1354,21 +1354,21 @@
             <button class="nav-link active" id="acquisition-tab" data-bs-toggle="tab" data-bs-target="#acquisition-pane" type="button" role="tab">
               <i class="bi bi-calendar-week me-2"></i>
               <strong>1. In-Season Planner</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="churn-tab" data-bs-toggle="tab" data-bs-target="#churn-pane" type="button" role="tab">
               <i class="bi bi-hourglass-split me-2"></i>
               <strong>2. End-of-Season Markdown</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="migration-tab" data-bs-toggle="tab" data-bs-target="#migration-pane" type="button" role="tab">
               <i class="bi bi-arrows-angle-expand me-2"></i>
               <strong>3. Cross-Channel Migration</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Live Simulation</small>
             </button>
           </li>
         </ul>
@@ -1723,13 +1723,22 @@
                 <div class="glass-card">
                   <!-- Model Description -->
                   <div class="alert alert-primary mb-3">
-                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Model 2: Repeat-Loss Elasticity (Time-Lagged)</h6>
-                    <p class="mb-2"><strong>What it captures:</strong> When customers cancel after price increases or when promotional discounts expire</p>
-                    <p class="mb-0"><strong>Key Insight:</strong> Cancellations don't happen immediately. Customers typically leave <strong>8-12 weeks after</strong> price changes or promo endings.</p>
+                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Model 2: Repeat-Purchase Risk After Promo</h6>
+                    <p class="mb-2"><strong>What it captures:</strong> How aggressive markdowns impact short-term sell-through vs delayed repeat-risk by SKU and channel.</p>
+                    <p class="mb-0"><strong>Key Insight:</strong> Risk usually peaks <strong>8-12 weeks later</strong>. Social momentum and competitor price increases can soften that risk, so rerun this model whenever signals change.</p>
+                  </div>
+
+                  <div class="alert alert-light border mb-3">
+                    <h6 class="mb-2"><i class="bi bi-signpost-split me-2"></i>Narrative To Pitch In This Step</h6>
+                    <div class="small">
+                      <strong>Start of Season:</strong> Set baseline inventory and repeat propensity by product group.<br>
+                      <strong>In-Season Pivot:</strong> Apply competitor/social shocks and test markdown depth by SKU.<br>
+                      <strong>End-of-Season:</strong> Choose the ladder that clears inventory with controlled repeat-risk.
+                    </div>
                   </div>
 
                   <!-- Churn Scenarios -->
-                  <h6 class="mb-3">Pre-Built Scenarios</h6>
+                  <h6 class="mb-3">Scenario Experiments (Try These)</h6>
                   <div class="row g-3 mb-4" id="churn-scenarios">
                     <!-- Will be populated by JavaScript -->
                   </div>
@@ -1739,18 +1748,18 @@
                     <div class="d-flex align-items-center justify-content-between">
                       <div>
                         <i class="bi bi-arrow-right-circle me-2"></i>
-                        <strong>Deep Dive:</strong> Explore repeat-loss-prone segments and time-lagged heatmaps
+                        <strong>Deep Dive:</strong> Compare markdown ladders by SKU and quantify revenue recovered vs repeat-risk added
                       </div>
                       <button class="btn btn-primary btn-sm" onclick="navigateToSegments('churn')">
                         <i class="bi bi-hourglass-split me-1"></i>
-                        Explore Segments
+                        Open Cohort Drilldown
                       </button>
                     </div>
                   </div>
 
                   <p class="small text-muted mb-0">
                     <i class="bi bi-info-circle me-1"></i>
-                    <strong>Note:</strong> Detailed cohort repeat-loss heatmaps will appear below after running a scenario simulation.
+                    <strong>Note:</strong> Run a scenario to populate lag-window risk heatmaps and product-cohort action cues.
                   </p>
                 </div>
               </div>
@@ -1783,7 +1792,56 @@
                     <small class="text-muted">See crossover point shift with different cohorts!</small>
                   </div>
 
-                                    <!-- Mass Channel Price Slider -->
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Product Group</label>
+                    <select class="form-select" id="mig-product-group-select">
+                      <option value="all">All Product Groups</option>
+                    </select>
+                    <small class="text-muted">Client story scope uses two groups (Sunscreen, Moisturizer) with three SKUs each.</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">SKU (Product)</label>
+                    <select class="form-select" id="mig-sku-select">
+                      <option value="all">All SKUs in Group</option>
+                    </select>
+                    <small class="text-muted">Elasticity, risk, and tables update for each selected SKU.</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Promotion Channel Scope</label>
+                    <select class="form-select" id="mig-channel-scope-select">
+                      <option value="all">Promote in Both Channel Groups</option>
+                      <option value="mass">Promote in Mass Channels Only</option>
+                      <option value="prestige">Promote in Prestige Channels Only</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Competitor Price Shock:
+                      <strong class="text-primary" id="mig-comp-shock-display">0%</strong>
+                    </label>
+                    <input type="range" class="price-slider" id="mig-comp-shock-slider" min="-20" max="20" step="1" value="0">
+                    <div class="d-flex justify-content-between mt-1 small text-muted">
+                      <span>-20%</span>
+                      <span>0%</span>
+                      <span>+20%</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold">Social Momentum Shock:
+                      <strong class="text-primary" id="mig-social-shock-display">0 pts</strong>
+                    </label>
+                    <input type="range" class="price-slider" id="mig-social-shock-slider" min="-20" max="20" step="1" value="0">
+                    <div class="d-flex justify-content-between mt-1 small text-muted">
+                      <span>-20</span>
+                      <span>0</span>
+                      <span>+20</span>
+                    </div>
+                  </div>
+
+                  <!-- Mass Channel Price Slider -->
                   <div class="mb-4">
                     <label class="form-label fw-semibold">Mass Channel Price: <strong class="text-primary" id="mig-adlite-display">$24.00</strong></label>
                     <input type="range" class="price-slider" id="mig-adlite-slider" min="18" max="30" step="0.50" value="24">
@@ -1820,7 +1878,7 @@
                 <div class="insight-box">
                   <div class="icon"><i class="bi bi-arrow-left-right"></i></div>
                   <h5>Migration Dynamics</h5>
-                  <p class="mb-0">When the price gap narrows, more Mass Channel customers upgrade. When it widens, more Prestige Channel customers may downgrade or show higher repeat loss.</p>
+                  <p class="mb-0">When the price gap narrows, more Mass Channel customers upgrade. When it widens, Prestige demand can split into downgrade and repeat-risk, while some volume shifts between your own SKUs.</p>
                 </div>
               </div>
 
@@ -1838,6 +1896,36 @@
                   </div>
                 </div>
 
+                <div class="glass-card mt-4">
+                  <h5 class="mb-3"><i class="bi bi-graph-up-arrow me-2"></i>17-Week SKU Inventory Projection</h5>
+                  <div class="small text-muted mb-2" id="mig-season-narrative">
+                    Select a SKU to project baseline vs adjusted inventory through week 17.
+                  </div>
+                  <div style="position: relative; height: 280px;">
+                    <canvas id="mig-sku-inventory-chart"></canvas>
+                  </div>
+                  <div class="row g-2 mt-3">
+                    <div class="col-md-4">
+                      <div class="border rounded p-2 bg-body-tertiary">
+                        <div class="small text-muted">Start Inventory</div>
+                        <div class="fw-semibold" id="mig-sku-start-inventory">--</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="border rounded p-2 bg-body-tertiary">
+                        <div class="small text-muted">Baseline Week-17 Left</div>
+                        <div class="fw-semibold" id="mig-sku-leftover-baseline">--</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="border rounded p-2 bg-body-tertiary">
+                        <div class="small text-muted">Adjusted Week-17 Left</div>
+                        <div class="fw-semibold" id="mig-sku-leftover-adjusted">--</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Channel Distribution Flow -->
                 <div class="glass-card mt-4">
                   <h5 class="mb-4"><i class="bi bi-pie-chart me-2"></i>Projected Channel Distribution</h5>
@@ -1845,12 +1933,12 @@
                   <div class="migration-flow mb-4">
                     <div class="flow-box">
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adlite-pct">62%</div>
-                      <div style="color: rgba(255,255,255,0.6);">Mass Channel</div>
+                      <div class="flow-box-label">Mass Channel</div>
                     </div>
                     <div class="flow-arrow" id="mig-arrow">&rarr;</div>
                     <div class="flow-box">
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adfree-pct">38%</div>
-                      <div style="color: rgba(255,255,255,0.6);">Prestige Channel</div>
+                      <div class="flow-box-label">Prestige Channel</div>
                     </div>
                   </div>
 
@@ -1894,6 +1982,65 @@
                   </div>
                 </div>
 
+                <div class="glass-card mt-4">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>SKU-Specific Transition Table</h5>
+                    <span class="badge bg-primary-subtle text-primary" id="mig-sku-table-badge">All SKUs</span>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                      <thead>
+                        <tr>
+                          <th>Metric</th>
+                          <th class="text-end">Mass</th>
+                          <th class="text-end">Prestige</th>
+                          <th class="text-end">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody id="mig-sku-outcome-body">
+                        <tr><td colspan="4" class="text-center text-muted">Select a SKU to populate this table.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="small text-muted mt-2" id="mig-sku-risk-note">
+                    SKU risk notes will appear here based on inventory runway, cannibalization, and competitor pressure.
+                  </div>
+                </div>
+
+                <div class="glass-card mt-4">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historical Promo Effectiveness (SKU + Channel)</h5>
+                    <button class="btn btn-sm btn-outline-primary" type="button" id="mig-use-promo-btn" disabled>
+                      Use in Planner
+                    </button>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                      <select class="form-select form-select-sm" id="mig-promo-history-select">
+                        <option value="">Select campaign...</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="small text-muted" id="mig-promo-history-summary">Pick a campaign to inspect winners vs underperformers.</div>
+                    </div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                      <thead>
+                        <tr>
+                          <th>SKU</th>
+                          <th>Channel</th>
+                          <th class="text-end">Sales Uplift</th>
+                          <th>Outcome</th>
+                        </tr>
+                      </thead>
+                      <tbody id="mig-promo-history-body">
+                        <tr><td colspan="4" class="text-center text-muted">No campaign selected.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 <!-- Channel Mix Chart -->
                 <div class="glass-card mt-4">
                   <h5 class="mb-3">Channel Mix Over Time</h5>
@@ -1914,13 +2061,22 @@
                 <div class="glass-card">
                   <!-- Model Description -->
                   <div class="alert alert-primary mb-3">
-                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Model 3: Channel Mix Migration & Mix-Shift</h6>
-                    <p class="mb-2"><strong>What it captures:</strong> How customers switch between subscription tiers based on price differences and promotional incentives</p>
-                    <p class="mb-0"><strong>Decision Takeaway:</strong> Find the smallest price gap that drives upgrades to premium tiers without causing excessive downgrades or cancellations.</p>
+                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Model 3: Competitor Capture vs SKU Cannibalization</h6>
+                    <p class="mb-2"><strong>What it captures:</strong> If SKU-1 gets cheaper, how much volume comes from competitors vs how much shifts from your own SKU-2/SKU-3.</p>
+                    <p class="mb-0"><strong>Decision Takeaway:</strong> Select the policy where external capture is higher than internal cannibalization while margin floors are protected.</p>
+                  </div>
+
+                  <div class="alert alert-light border mb-3">
+                    <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Decision Checklist</h6>
+                    <div class="small">
+                      1. Test Sunscreen and Moisturizer groups separately.<br>
+                      2. Change one SKU price and observe cannibalization matrix shifts.<br>
+                      3. Validate mass vs prestige mix and lock the scenario with best rank score.
+                    </div>
                   </div>
 
                   <!-- Migration Scenarios -->
-                  <h6 class="mb-3">Pre-Built Scenarios</h6>
+                  <h6 class="mb-3">Scenario Experiments (Try These)</h6>
                   <div class="row g-3 mb-4" id="migration-scenarios">
                     <!-- Will be populated by JavaScript -->
                   </div>
@@ -1930,18 +2086,18 @@
                     <div class="d-flex align-items-center justify-content-between">
                       <div>
                         <i class="bi bi-arrow-right-circle me-2"></i>
-                        <strong>Deep Dive:</strong> Explore channel mix migration patterns and transition matrices
+                        <strong>Deep Dive:</strong> Inspect SKU-to-SKU migration matrix and identify net-growth routes
                       </div>
                       <button class="btn btn-primary btn-sm" onclick="navigateToSegments('migration')">
                         <i class="bi bi-arrows-angle-expand me-1"></i>
-                        Explore Patterns
+                        Open Migration Drilldown
                       </button>
                     </div>
                   </div>
 
                   <p class="small text-muted mb-0">
                     <i class="bi bi-info-circle me-1"></i>
-                    <strong>Note:</strong> Detailed tier transition matrices will appear below after running a scenario simulation.
+                    <strong>Note:</strong> Run a scenario to render migration matrix, competitor pull, and cannibalization pressure by product route.
                   </p>
                 </div>
               </div>
@@ -2873,6 +3029,8 @@
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Competitor dropped prices on Amazon. Which SKUs should be in a mass-channel defense promo?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Social engagement is high. Which SKUs should we hold at full price?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>From past promos, which SKUs underperformed and should be excluded next cycle?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Which SKUs should I include in a week-17 clearance promo by channel?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Where are we over-promoting in inelastic SKUs and what should we stop discounting?</button>
           </div>
         </div>
       </div>
@@ -3091,21 +3249,21 @@
     </div>
   </div>
 
-  <!-- Step 5: Cross-Channel Migration Planner (Future Vision) -->
+  <!-- Step 5: Portfolio Migration & Advanced Analysis -->
   <div class="modal fade" id="methodology-modal-step5" tabindex="-1" aria-labelledby="methodology-modal-step5-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step5-label">
-            <i class="bi bi-signpost-split me-2"></i> Methodology: Cross-Channel Migration (Future Vision)
+            <i class="bi bi-signpost-split me-2"></i> Methodology: Portfolio Migration & Advanced Analysis
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i> Planned Capability</h6>
-          <p>This roadmap module will model how promotion actions in one channel group shift demand across other channel groups and impact portfolio-level outcomes.</p>
+          <h6 class="mb-3"><i class="bi bi-arrow-left-right me-2"></i> Active Capability</h6>
+          <p>This module simulates portfolio migration and SKU flow shifts when channel-specific promotions change, with explicit competitor-capture vs internal-cannibalization tradeoffs.</p>
           <div class="alert alert-info mb-0">
-            <strong>Current implementation:</strong> Event Calendar and Step 1 already provide channel-aware competitive and social signals to support immediate promo decisions.
+            <strong>Current implementation:</strong> Use the interactive controls to test competitor moves, media shocks, mass vs prestige promo depth, and then rank saved scenarios by growth/profit objective.
           </div>
         </div>
         <div class="modal-footer">
@@ -3388,8 +3546,8 @@
                       <span class="steps-table-step-label">Step 8</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Cross-Channel Migration Planner (Future Vision)</strong>
-                      <span class="text-muted">Future module to estimate demand migration when promotions run in one channel group but not another.</span>
+                      <strong>Portfolio Migration & Advanced Analysis</strong>
+                      <span class="text-muted">Simulate Mass vs Prestige migration, SKU cannibalization paths, and rank saved scenarios for growth/profit tradeoffs.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="9" style="--step-index: 9;">

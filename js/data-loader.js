@@ -717,6 +717,75 @@ export async function getCurrentPrices() {
 }
 
 /**
+ * Get SKU catalog grouped by product group from SKU-weekly data.
+ * @returns {Promise<{productGroups: string[], skus: Array<{sku_id:string, sku_name:string, product_group:string}>}>}
+ */
+export async function getSkuCatalog() {
+  const skuRows = await loadSkuWeeklyData();
+  const skuMap = new Map();
+  skuRows.forEach(row => {
+    const skuId = String(row.sku_id || '').trim();
+    if (!skuId || skuMap.has(skuId)) return;
+    skuMap.set(skuId, {
+      sku_id: skuId,
+      sku_name: row.sku_name || skuId,
+      product_group: row.product_group || 'other'
+    });
+  });
+  const skus = [...skuMap.values()].sort((a, b) => {
+    const groupCmp = String(a.product_group).localeCompare(String(b.product_group));
+    if (groupCmp !== 0) return groupCmp;
+    return String(a.sku_name).localeCompare(String(b.sku_name));
+  });
+  const productGroups = [...new Set(skus.map(s => s.product_group))].sort();
+  return { productGroups, skus };
+}
+
+/**
+ * Get ordered SKU-week rows for a given SKU, optionally filtered by channel group.
+ * @param {string} skuId
+ * @param {string} channelGroup - all|mass|prestige
+ * @returns {Promise<Array>}
+ */
+export async function getSkuSeasonTrajectory(skuId, channelGroup = 'all') {
+  if (!skuId || skuId === 'all') return [];
+  const skuRows = await loadSkuWeeklyData();
+  return skuRows
+    .filter(row => row.sku_id === skuId && (channelGroup === 'all' || row.channel_group === channelGroup))
+    .sort((a, b) => Number(a.week_of_season || 0) - Number(b.week_of_season || 0));
+}
+
+/**
+ * Build baseline metrics for a specific SKU at current season week.
+ * @param {string} skuId
+ * @returns {Promise<Object|null>}
+ */
+export async function getSkuBaselineMetrics(skuId) {
+  if (!skuId || skuId === 'all') return null;
+  const skuRows = await loadSkuWeeklyData();
+  const rows = skuRows.filter(r => r.sku_id === skuId);
+  if (!rows.length) return null;
+  const currentWeek = rows.find(r => r.is_current_week === true)?.week_of_season
+    || Math.max(...rows.map(r => Number(r.week_of_season || 1)));
+  const currentRows = rows.filter(r => Number(r.week_of_season) === Number(currentWeek));
+  const startWeekRows = rows.filter(r => Number(r.week_of_season) === 1);
+  const sum = (arr, key) => arr.reduce((acc, row) => acc + Number(row[key] || 0), 0);
+  return {
+    sku_id: skuId,
+    sku_name: rows[0].sku_name || skuId,
+    product_group: rows[0].product_group || 'other',
+    current_week: Number(currentWeek),
+    start_inventory_units: sum(startWeekRows, 'start_inventory_units'),
+    current_inventory_units: sum(currentRows, 'end_inventory_units'),
+    current_units_sold: sum(currentRows, 'net_units_sold'),
+    current_revenue: sum(currentRows, 'revenue'),
+    avg_effective_price: currentRows.length ? (sum(currentRows, 'effective_price') / currentRows.length) : 0,
+    avg_effective_elasticity: currentRows.length ? (sum(currentRows, 'effective_elasticity') / currentRows.length) : 0,
+    avg_price_gap_vs_competitor: currentRows.length ? (sum(currentRows, 'price_gap_vs_competitor') / currentRows.length) : 0
+  };
+}
+
+/**
  * Get column description from metadata
  * @param {string} dataset - Dataset name (e.g., 'customers')
  * @param {string} column - Column name
