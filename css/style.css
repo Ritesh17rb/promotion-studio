@@ -1555,6 +1555,75 @@ html {
   border: 1px solid rgba(0, 102, 255, 0.15);
 }
 
+/* Step 1 channel promo controls: keep sliders + immediate impact visible */
+.channel-promo-controls-card {
+  position: sticky;
+  top: 108px;
+}
+
+.channel-promo-controls-card .card-body {
+  max-height: calc(100vh - 132px);
+  overflow-y: auto;
+  padding-right: 0.75rem;
+}
+
+.channel-promo-controls-card .card-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.channel-promo-controls-card .card-body::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+  border-radius: 999px;
+}
+
+.channel-promo-live-impact {
+  border-color: rgba(37, 99, 235, 0.24) !important;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(6px);
+}
+
+[data-bs-theme="dark"] .channel-promo-live-impact {
+  background: rgba(15, 23, 42, 0.96) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.5);
+}
+
+[data-bs-theme="light"] .channel-promo-live-impact {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+#channel-promo-elasticity-body td,
+#channel-promo-elasticity-body th {
+  vertical-align: middle;
+}
+
+.channel-promo-pitch-caption {
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+  padding-left: 0.5rem;
+}
+
+@media (max-width: 991px) {
+  .channel-promo-controls-card {
+    position: static;
+    top: auto;
+  }
+
+  .channel-promo-controls-card .card-body {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 1rem;
+  }
+
+  .channel-promo-live-impact {
+    position: static;
+    box-shadow: none;
+  }
+}
+
 .decision-engine-controls > [class*="col-"] {
   display: flex;
   flex-direction: column;
@@ -1739,6 +1808,9 @@ html {
 
 .cohort-watchlist-body {
   font-size: 0.8125rem;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .cohort-rank {
@@ -1753,12 +1825,88 @@ html {
   line-height: 1;
 }
 
+.cohort-watchlist-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(var(--bs-tertiary-bg-rgb), 0.88), rgba(var(--bs-tertiary-bg-rgb), 0.58));
+  padding: 0.6rem 0.65rem;
+  margin-bottom: 0.55rem;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.cohort-watchlist-item:hover {
+  border-color: rgba(var(--bs-primary-rgb), 0.38);
+  box-shadow: 0 6px 20px rgba(var(--bs-primary-rgb), 0.14);
+  transform: translateY(-1px);
+}
+
+.cohort-watchlist-item.active {
+  border-color: rgba(var(--bs-primary-rgb), 0.55);
+  box-shadow: 0 10px 22px rgba(var(--bs-primary-rgb), 0.18);
+}
+
 .cohort-watchlist-item .progress {
   background-color: var(--bs-secondary-bg);
 }
 
 .cohort-watchlist-item .badge {
   font-weight: 500;
+}
+
+.cohort-watchlist-item .watchlist-sku-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(var(--bs-secondary-color-rgb), 0.35);
+  padding: 0.05rem 0.45rem;
+  font-size: 0.69rem;
+  line-height: 1.2;
+}
+
+.cohort-watchlist-item .watchlist-at-risk-count {
+  font-size: 0.72rem;
+}
+
+.cohort-watchlist-drilldown {
+  border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+  border-radius: 14px;
+  padding: 0.85rem;
+  min-height: 320px;
+  background: linear-gradient(160deg, rgba(var(--bs-body-bg-rgb), 0.9), rgba(var(--bs-tertiary-bg-rgb), 0.95));
+}
+
+.cohort-watchlist-drilldown .watchlist-kpi {
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+  background: rgba(var(--bs-body-bg-rgb), 0.7);
+}
+
+.cohort-watchlist-drilldown .watchlist-kpi .label {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--bs-secondary-color);
+}
+
+.cohort-watchlist-drilldown .watchlist-kpi .value {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cohort-watchlist-drilldown .watchlist-driver-row .progress {
+  height: 7px;
+  background-color: rgba(var(--bs-secondary-bg-rgb), 0.9);
+}
+
+.cohort-watchlist-drilldown .watchlist-sku-table td,
+.cohort-watchlist-drilldown .watchlist-sku-table th {
+  font-size: 0.74rem;
+  vertical-align: middle;
+}
+
+.cohort-watchlist-drilldown .watchlist-sku-table .watchlist-sku-name {
+  font-weight: 600;
 }
 
 .cohort-watchlist-legend .cohort-legend-dot {

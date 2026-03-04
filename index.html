@@ -270,9 +270,78 @@
         <div class="row g-4" id="channel-promo-simulator">
           <!-- Controls -->
           <div class="col-lg-4">
-            <div class="card h-100">
+            <div class="card channel-promo-controls-card">
               <div class="card-body">
                 <h6 class="text-uppercase text-muted mb-3">Promo Depth by Channel Group</h6>
+
+                <div class="border rounded-3 p-3 mb-3 bg-body-tertiary">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="channel-promo-week-slider" class="form-label mb-0 fw-bold small text-uppercase">Live Season Timeline</label>
+                    <span class="fw-semibold small" id="channel-promo-week-value">W7</span>
+                  </div>
+                  <input type="range" class="form-range" id="channel-promo-week-slider" min="1" max="17" step="1" value="7">
+                  <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
+                    <button type="button" class="btn btn-sm btn-primary" id="channel-promo-live-toggle">
+                      <i class="bi bi-play-fill me-1"></i>Play Live
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-live-reset">
+                      Reset
+                    </button>
+                    <select id="channel-promo-live-speed" class="form-select form-select-sm" style="max-width: 88px;">
+                      <option value="1x" selected>1x</option>
+                      <option value="2x">2x</option>
+                      <option value="4x">4x</option>
+                    </select>
+                  </div>
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="channel-promo-live-autosignal" checked>
+                    <label class="form-check-label small" for="channel-promo-live-autosignal">
+                      Auto-apply weekly competitor + social signals
+                    </label>
+                  </div>
+                </div>
+
+                <div class="channel-promo-live-impact border rounded-3 p-3 mb-3 bg-body-tertiary">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="small text-uppercase text-muted fw-semibold">Live Impact (Real-Time)</div>
+                    <span id="channel-promo-live-posture" class="badge rounded-pill bg-secondary-subtle text-body-secondary">--</span>
+                  </div>
+                  <div class="row g-2 small">
+                    <div class="col-4">
+                      <div class="text-muted">Revenue</div>
+                      <div class="fw-semibold" id="channel-promo-live-revenue">--</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted">Profit</div>
+                      <div class="fw-semibold" id="channel-promo-live-profit">--</div>
+                    </div>
+                    <div class="col-4">
+                      <div class="text-muted">Week-17 Left</div>
+                      <div class="fw-semibold" id="channel-promo-live-leftover">--</div>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                      <span class="text-muted">Projected Clearance vs Current Inventory</span>
+                      <span id="channel-promo-live-clearance-label">--</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                      <div id="channel-promo-live-clearance-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                  <div class="small text-muted mt-2" id="channel-promo-live-note">
+                    Move sliders to see immediate impact before scrolling to deeper charts.
+                  </div>
+                  <div class="chart-container mt-2" style="height: 120px;">
+                    <canvas id="channel-promo-live-pulse-chart"></canvas>
+                  </div>
+                  <div class="small text-muted mt-2">
+                    <strong>Live Feed</strong>
+                    <ul class="mb-0 mt-1 ps-3" id="channel-promo-live-feed">
+                      <li>Live week events and market signals will appear here.</li>
+                    </ul>
+                  </div>
+                </div>
 
                 <div class="mb-3">
                   <label for="channel-promo-product-group" class="form-label fw-bold small text-uppercase">Product Group</label>
@@ -284,20 +353,20 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="channel-promo-sku" class="form-label fw-bold small text-uppercase">SKU</label>
+                  <label for="channel-promo-sku" class="form-label fw-bold small text-uppercase">Product Focus</label>
                   <select id="channel-promo-sku" class="form-select form-select-sm">
-                    <option value="all" selected>All SKUs in Selection</option>
+                    <option value="all" selected>All Products in Selection</option>
                   </select>
                 </div>
 
                 <div class="mb-4">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label for="channel-promo-sku-boost-slider" class="form-label mb-0">Selected SKU Extra Promo</label>
+                    <label for="channel-promo-sku-boost-slider" class="form-label mb-0">Selected Product Extra Promo</label>
                     <span class="fw-semibold" id="channel-promo-sku-boost-value">0%</span>
                   </div>
                   <input type="range" class="form-range" id="channel-promo-sku-boost-slider" min="0" max="20" step="2" value="0">
                   <div class="small text-muted" id="channel-promo-sku-boost-help">
-                    Select one SKU above to model cannibalization shifts from sibling SKUs.
+                    Select one product above to model cannibalization shifts from sibling products.
                   </div>
                 </div>
 
@@ -351,7 +420,7 @@
                     <span class="fw-semibold" id="channel-promo-social-shock-value">0 pts</span>
                   </div>
                   <input type="range" class="form-range" id="channel-promo-social-shock" min="-20" max="20" step="5" value="0">
-                  <div class="small text-muted">Simulates sudden sentiment/news shifts without changing your own promo depth.</div>
+                  <div class="small text-muted">Simulates sudden sentiment/news shifts and recalculates both effective elasticity and baseline demand without changing own promo depth.</div>
                 </div>
 
                 <div class="mb-3">
@@ -369,28 +438,41 @@
                   </div>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label fw-bold small text-uppercase mb-2">Narrative Presets</label>
-                  <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-preset-baseline">
-                      Start of Season Baseline
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="channel-promo-preset-pivot">
-                      In-Season Pivot: Competitor Drop
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-success" id="channel-promo-preset-social">
-                      Social Spike: Hold Price
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning" id="channel-promo-preset-clearance">
-                      Week-17 Clearance Push
-                    </button>
-                  </div>
-                  <div class="small text-muted mt-2" id="channel-promo-narrative-note">
-                    Use presets to tell the story: baseline, in-season pivot, and optimized finish.
-                  </div>
+              </div>
+            </div>
+            <div class="card mt-3 channel-promo-secondary-card">
+              <div class="card-body">
+                <h6 class="text-uppercase text-muted mb-3">Story Presets & Context</h6>
+                <label class="form-label fw-bold small text-uppercase mb-2">Narrative Presets</label>
+                <div class="d-grid gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-preset-baseline">
+                    Start of Season Baseline
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="channel-promo-preset-pivot">
+                    In-Season Pivot: Competitor Drop
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-success" id="channel-promo-preset-social">
+                    Social Spike: Hold Price
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning" id="channel-promo-preset-clearance">
+                    Week-17 Clearance Push
+                  </button>
                 </div>
-
-                <p class="small text-muted mb-0">
+                <div class="small text-muted mt-2" id="channel-promo-narrative-note">
+                  Use presets to tell the story: baseline, in-season pivot, and optimized finish.
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                  <button type="button" class="btn btn-sm btn-primary" id="channel-promo-run-pitch">
+                    Run 3-Act Pitch Mode
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-stop-pitch" disabled>
+                    Stop Pitch Mode
+                  </button>
+                </div>
+                <div class="small text-muted mt-2 channel-promo-pitch-caption" id="channel-promo-pitch-caption">
+                  Pitch mode will auto-run: Start of Season -> In-Season Pivot -> Future Vision.
+                </div>
+                <p class="small text-muted mb-0 mt-3">
                   Elasticity is modulated by social trend and competitor price delta from <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, and <code>social_signals.csv</code>.
                 </p>
               </div>
@@ -462,11 +544,15 @@
                         <span id="channel-promo-week-label" class="badge rounded-pill bg-info-subtle text-info-emphasis">Week -- of 17</span>
                       </div>
                       <div class="row g-2 small">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                          <div class="text-muted">Narrative act</div>
+                          <div class="fw-semibold" id="channel-promo-story-act">--</div>
+                        </div>
+                        <div class="col-md-2">
                           <div class="text-muted">Start of season inventory</div>
                           <div class="fw-semibold" id="channel-promo-season-start">--</div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                           <div class="text-muted">Inventory today</div>
                           <div class="fw-semibold" id="channel-promo-season-current">--</div>
                         </div>
@@ -535,6 +621,35 @@
                   <div class="col-12">
                     <div class="card border-0 bg-body-tertiary">
                       <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">Product Elasticity &amp; Competitive Gap (Current Week)</h6>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Product</th>
+                                <th>Group</th>
+                                <th class="text-end">Base Elasticity</th>
+                                <th class="text-end">Effective Elasticity</th>
+                                <th class="text-end">Avg Gap vs Competitor</th>
+                                <th>Promo Guidance</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-elasticity-body">
+                              <tr>
+                                <td colspan="6" class="text-center text-muted">Computing product-level elasticity...</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="small text-muted mt-2" id="channel-promo-elasticity-note">
+                          Elasticity and competitor gaps are computed from the current week selection and update with social/competitor shocks.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
                         <h6 class="small text-uppercase text-muted mb-2">Within-Group SKU Cannibalization View</h6>
                         <div class="table-responsive">
                           <table class="table table-sm align-middle mb-1">
@@ -553,6 +668,28 @@
                             </tbody>
                           </table>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">SKU Migration Matrix (Cannibalization Heatmap)</h6>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1" id="channel-promo-migration-matrix">
+                            <tbody>
+                              <tr>
+                                <td class="text-center text-muted">Run the cannibalization example or apply product-level promo depth to render migration matrix.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="small text-muted mt-2" id="channel-promo-migration-note">
+                          Matrix cells show unit movement from source SKU (rows) to destination SKU (columns).
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="channel-promo-run-cannibal-demo">
+                          Run Cannibalization Example
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -590,6 +727,66 @@
                     </div>
                   </div>
                   <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">Objective Frontier (Revenue vs Profit vs Week-17 Leftover)</h6>
+                        <div class="chart-container mb-3" style="height: 250px;">
+                          <canvas id="channel-promo-frontier-chart"></canvas>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Objective</th>
+                                <th class="text-end">Revenue Delta</th>
+                                <th class="text-end">Profit Delta</th>
+                                <th class="text-end">Week-17 Leftover</th>
+                                <th class="text-end">Clearance from Current</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-frontier-body">
+                              <tr>
+                                <td colspan="5" class="text-center text-muted">Computing objective frontier...</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="small text-muted mt-2" id="channel-promo-frontier-note">
+                          Bubble size represents lower week-17 leftover inventory.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-0 bg-body-tertiary">
+                      <div class="card-body p-3">
+                        <h6 class="small text-uppercase text-muted mb-2">Causal Impact Waterfall (Selected SKU)</h6>
+                        <div class="chart-container mb-3" style="height: 240px;">
+                          <canvas id="channel-promo-waterfall-chart"></canvas>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Driver</th>
+                                <th class="text-end">Units Impact</th>
+                                <th class="text-end">Share of Baseline</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-waterfall-body">
+                              <tr>
+                                <td colspan="3" class="text-center text-muted">Select SKU or adjust controls to render causal decomposition.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="small text-muted mt-2" id="channel-promo-waterfall-note">
+                          This view quantifies movement from competitor response and migration within sibling SKUs.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
                     <div class="card border-primary-subtle mt-2">
                       <div class="card-header bg-primary-subtle">
                         <h6 class="mb-0">
@@ -618,6 +815,63 @@
                               <div class="text-muted text-uppercase mb-1">Key Risk Watch</div>
                               <div id="channel-promo-ai-risks">--</div>
                             </div>
+                          </div>
+                        </div>
+                        <div class="alert alert-light border mt-3 mb-0 small" id="channel-promo-ai-brief">
+                          Building decision brief from current scenario...
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-info-subtle">
+                      <div class="card-header bg-info-subtle d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                          <i class="bi bi-robot me-2"></i>LLM Live Co-Pilot
+                        </h6>
+                        <span class="badge text-bg-secondary" id="channel-promo-llm-status">Not Connected</span>
+                      </div>
+                      <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                          <button type="button" class="btn btn-sm btn-primary" id="channel-promo-llm-analyze">
+                            Analyze Current Scenario
+                          </button>
+                          <div class="form-check mt-1">
+                            <input class="form-check-input" type="checkbox" id="channel-promo-llm-auto">
+                            <label class="form-check-label small" for="channel-promo-llm-auto">
+                              Auto-analyze after slider changes
+                            </label>
+                          </div>
+                        </div>
+                        <div class="small mb-2" id="channel-promo-llm-summary">
+                          Connect LLM settings to get action-oriented analysis from the live scenario.
+                        </div>
+                        <div class="row g-2 small mb-3">
+                          <div class="col-md-6">
+                            <div class="border rounded p-2 h-100 bg-body-tertiary">
+                              <div class="text-muted text-uppercase mb-1">Recommended Actions</div>
+                              <ul class="mb-0 ps-3" id="channel-promo-llm-actions">
+                                <li>Run analysis to populate actions.</li>
+                              </ul>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="border rounded p-2 h-100 bg-body-tertiary">
+                              <div class="text-muted text-uppercase mb-1">Risks to Watch</div>
+                              <ul class="mb-0 ps-3" id="channel-promo-llm-risks">
+                                <li>Run analysis to populate risks.</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="border rounded p-3 bg-body-tertiary">
+                          <div class="small text-muted text-uppercase mb-1">Natural Language Plan -> Apply Controls</div>
+                          <div class="input-group input-group-sm mb-2">
+                            <input type="text" class="form-control" id="channel-promo-llm-plan-input" placeholder="Example: Defend mass this week, hold prestige margin, focus sunscreen leaders.">
+                            <button class="btn btn-outline-primary" type="button" id="channel-promo-llm-plan-apply">Apply Plan</button>
+                          </div>
+                          <div class="small text-muted" id="channel-promo-llm-plan-result">
+                            Enter a plan in plain English and apply it to sliders/objective/channel toggles.
                           </div>
                         </div>
                       </div>
@@ -680,25 +934,57 @@
             </div>
           </div>
         </div>
-        <div class="row g-3 mb-2">
-          <div class="col-md-6">
-            <div class="alert alert-warning mb-0">
-              <strong>Competitor delta impact:</strong>
-              <span id="step2-signal-comp-impact">Waiting for signal update...</span>
+        <div class="row g-3 mb-3">
+          <div class="col-lg-6">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-2">Competitive Price Delta Trend</div>
+              <div class="chart-container" style="height: 220px;">
+                <canvas id="step2-signal-comp-chart"></canvas>
+              </div>
             </div>
           </div>
-          <div class="col-md-6">
-            <div class="alert alert-success mb-0">
-              <strong>Social impact:</strong>
-              <span id="step2-signal-social-impact">Waiting for signal update...</span>
+          <div class="col-lg-6">
+            <div class="border rounded p-3 h-100 bg-body-tertiary">
+              <div class="small text-muted text-uppercase mb-2">Social Score and Elasticity Modifier</div>
+              <div class="chart-container" style="height: 220px;">
+                <canvas id="step2-signal-social-chart"></canvas>
+              </div>
             </div>
           </div>
         </div>
         <div class="small text-muted mt-2" id="step2-signal-change-log">
           Detecting week-over-week signal changes...
         </div>
-        <div class="small text-muted mt-1">
-          Competitive prices are represented as simulated website-scraped signals with SKU matching confidence.
+        <div class="small text-muted mt-1" id="step2-signal-method-note">
+          Computing signal impact formulas...
+        </div>
+        <div class="border rounded p-3 mt-3 bg-body-tertiary">
+          <div class="small text-muted text-uppercase mb-2">SKU Shock-Only Projection (No Own Promo Change)</div>
+          <div class="chart-container mb-3" style="height: 240px;">
+            <canvas id="step2-signal-sku-chart"></canvas>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-1">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                  <th>Group</th>
+                  <th class="text-end">Baseline Units</th>
+                  <th class="text-end">Shock-Only Units</th>
+                  <th class="text-end">Delta</th>
+                  <th class="text-end">Avg Price Gap vs Competitor</th>
+                </tr>
+              </thead>
+              <tbody id="step2-signal-sku-impact-body">
+                <tr>
+                  <td colspan="6" class="text-center text-muted">Loading SKU-level signal impact...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="small text-muted mt-2" id="step2-signal-sku-impact-note">
+            Applying competitor and social shifts only; own promo depth fixed at 0%.
+          </div>
         </div>
       </div>
     </div>
@@ -715,27 +1001,27 @@
 
   </section>
 
-  <!-- Section 3: In-Season Planner (Roadmap Placeholder) -->
+  <!-- Section 3: In-Season Planner Models -->
   <section class="section" id="section-3">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 6</div>
         <h2 class="section-title">
-          In-Season Planner (Roadmap Placeholder)
+          In-Season Planner Model Board
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step3" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Future module: orchestrate weekly SKU-level promotion decisions by channel with inventory and competitive signal guardrails.</p>
+        <p class="section-subtitle">Model-driven weekly SKU x channel decisions using current inventory, competitive deltas, social momentum, and cannibalization effects.</p>
       </div>
     </div>
 
-    <!-- Acquisition elasticity content will be shown here by step-navigation.js -->
+    <!-- In-Season planner model content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-3-acquisition-container">
       <div id="step-3-acquisition-container-content">
-        <!-- Acquisition model content will be injected here -->
+        <!-- In-season planner content will be injected here -->
       </div>
     </div>
 
@@ -743,27 +1029,27 @@
 
   </section>
 
-  <!-- Section 4: End-of-Season Markdown Simulator (Roadmap Placeholder) -->
+  <!-- Section 4: End-of-Season Markdown Models -->
   <section class="section" id="section-4">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 7</div>
         <h2 class="section-title">
-          End-of-Season Markdown Simulator (Roadmap Placeholder)
+          End-of-Season Markdown Decision Models
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step4" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Future module: optimize markdown cadence to clear residual inventory by week 17 while protecting margin where possible.</p>
+        <p class="section-subtitle">Evidence-led markdown planning using historical campaign outcomes by SKU/channel and week-17 inventory targets.</p>
       </div>
     </div>
 
-    <!-- Churn elasticity content will be shown here by step-navigation.js -->
+    <!-- End-of-season markdown model content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-4-churn-container">
       <div id="step-4-churn-container-content">
-        <!-- Repeat-loss model content will be injected here -->
+        <!-- Markdown simulator content will be injected here -->
       </div>
     </div>
 
@@ -771,27 +1057,27 @@
 
   </section>
 
-  <!-- Section 5: Cross-Channel Migration Planner (Roadmap Placeholder) -->
+  <!-- Section 5: Cross-Channel Migration Planner (Future Vision) -->
   <section class="section" id="section-5">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
         <div class="section-number">Step 8</div>
         <h2 class="section-title">
-          Cross-Channel Migration Planner (Roadmap Placeholder)
+          Cross-Channel Migration Planner (Future Vision)
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step5" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Future module: model SKU demand migration across channels when promos are applied in only one channel group.</p>
+        <p class="section-subtitle">Future vision: model SKU demand migration across channels when promos are applied in only one channel group.</p>
       </div>
     </div>
 
-    <!-- Tier migration content will be shown here by step-navigation.js -->
+    <!-- Cross-channel migration future-vision content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-5-migration-container">
       <div id="step-5-migration-container-content">
-        <!-- Migration model content will be injected here -->
+        <!-- Cross-channel migration content will be injected here -->
       </div>
     </div>
 
@@ -813,6 +1099,9 @@
         </h2>
         <p class="section-subtitle">Analyze customer cohorts and their different promotion response patterns to support targeted offers.</p>
       </div>
+    </div>
+    <div class="alert alert-light border mb-3 small">
+      <strong>Business use in this pitch:</strong> identify which cohorts are promo-responsive vs hold-price candidates, then carry that targeting into Step 1 channel and SKU decisions.
     </div>
 
     <!-- Segmentation content will be shown here by step-navigation.js -->
@@ -841,6 +1130,9 @@
         </h2>
         <p class="section-subtitle">Compare promotion response across customer segments and identify where discounts produce incremental lift.</p>
       </div>
+    </div>
+    <div class="alert alert-light border mb-3 small">
+      <strong>Business use in this pitch:</strong> validate which products and cohorts should be included or excluded in promotion campaigns before committing spend.
     </div>
 
     <!-- Segment analysis content will be shown here by step-navigation.js -->
@@ -1034,14 +1326,14 @@
   </div>
   </div>
 
-  <!-- Promotion Planning Roadmap Modules -->
+  <!-- Promotion Planning Future Vision Modules -->
   <div id="elasticity-models-section" style="display: none;">
   <div class="container my-4">
     <div class="card">
       <div class="card-header bg-primary text-white">
         <h2 class="h5 mb-0">
           <i class="bi bi-signpost-split me-2"></i>
-          Promotion Planning Roadmap Modules
+          Promotion Planning Future Vision Modules
         </h2>
         <p class="small mb-0 opacity-75">
           Planned expansion areas beyond the current Step 1 promotion optimizer.
@@ -1052,8 +1344,8 @@
         <!-- Reference to RFP Framework -->
         <div class="alert alert-info mb-4">
           <i class="bi bi-info-circle me-2"></i>
-          <strong>Roadmap Placeholder:</strong>
-          These modules are placeholders for future capabilities in in-season planning, markdown sequencing, and cross-channel demand migration.
+          <strong>Future Vision:</strong>
+          These modules preview future capabilities in in-season planning, markdown sequencing, and cross-channel demand migration.
         </div>
 
         <!-- Bootstrap Tabs for 3 Models -->
@@ -1062,21 +1354,21 @@
             <button class="nav-link active" id="acquisition-tab" data-bs-toggle="tab" data-bs-target="#acquisition-pane" type="button" role="tab">
               <i class="bi bi-calendar-week me-2"></i>
               <strong>1. In-Season Planner</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="churn-tab" data-bs-toggle="tab" data-bs-target="#churn-pane" type="button" role="tab">
               <i class="bi bi-hourglass-split me-2"></i>
               <strong>2. End-of-Season Markdown</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="migration-tab" data-bs-toggle="tab" data-bs-target="#migration-pane" type="button" role="tab">
               <i class="bi bi-arrows-angle-expand me-2"></i>
               <strong>3. Cross-Channel Migration</strong>
-              <small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>
+              <small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>
             </button>
           </li>
         </ul>
@@ -2163,7 +2455,7 @@
                   <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis" id="segment-watchlist-badge">Loading...</span>
                 </div>
                 <p class="small text-body-secondary mb-1">
-                  Shows the customer groups most at risk of not coming back.
+                  Shows the customer groups most at risk of not coming back at current price points. Click any row for SKU-level drilldown.
                 </p>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2 small text-body-secondary cohort-watchlist-legend">
                   <span class="d-inline-flex align-items-center gap-1">
@@ -2176,7 +2468,19 @@
                     <span class="cohort-legend-dot bg-danger"></span> Many at risk
                   </span>
                 </div>
-                <div id="segment-watchlist-body" class="cohort-watchlist-body"></div>
+                <div class="row g-3">
+                  <div class="col-12 col-xl-5">
+                    <div id="segment-watchlist-body" class="cohort-watchlist-body"></div>
+                  </div>
+                  <div class="col-12 col-xl-7">
+                    <div id="segment-watchlist-drilldown" class="cohort-watchlist-drilldown">
+                      <div class="text-center py-4 text-body-secondary small">
+                        <i class="bi bi-cursor-fill fs-5 d-block mb-1"></i>
+                        Select a customer group to view SKU-level drivers and recommended actions.
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2216,9 +2520,9 @@
             </select>
           </div>
           <div class="col-md-3">
-            <label class="form-label fw-bold">SKU</label>
+            <label class="form-label fw-bold">Product</label>
             <select id="compare-sku-select" class="form-select">
-              <option value="all" selected>All SKUs</option>
+              <option value="all" selected>All Products</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -2287,6 +2591,44 @@
                     <canvas id="event-social-signals-chart"></canvas>
                   </div>
                   <div id="market-signals-social" class="small text-muted mt-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card border-0 bg-body-tertiary mb-4">
+            <div class="card-body py-3">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h6 class="small text-uppercase text-muted mb-0">
+                  <i class="bi bi-cpu me-1"></i> Event Analyst (LLM)
+                </h6>
+                <div class="d-flex gap-2 align-items-center">
+                  <span class="badge text-bg-secondary" id="event-llm-status">Not Connected</span>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="event-llm-analyze-btn">Analyze Selected Event</button>
+                </div>
+              </div>
+              <div class="small text-muted mb-2" id="event-llm-selected">
+                Select an event from timeline to analyze impact and recommended pivot.
+              </div>
+              <div class="small mb-2" id="event-llm-summary">
+                LLM event analysis is available after configuring API credentials in settings.
+              </div>
+              <div class="row g-2 small">
+                <div class="col-md-6">
+                  <div class="border rounded p-2 h-100 bg-body">
+                    <div class="text-muted text-uppercase mb-1">Expected Impact</div>
+                    <ul class="mb-0 ps-3" id="event-llm-impact">
+                      <li>Awaiting event selection.</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="border rounded p-2 h-100 bg-body">
+                    <div class="text-muted text-uppercase mb-1">Recommended Pivot</div>
+                    <ul class="mb-0 ps-3" id="event-llm-actions">
+                      <li>Awaiting event selection.</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2396,10 +2738,90 @@
               </div>
             </div>
             <div id="promo-campaign-summary" class="small text-muted mb-2"></div>
+            <div class="row g-3 mb-3">
+              <div class="col-lg-6">
+                <div class="card border-0 bg-body-tertiary h-100">
+                  <div class="card-body p-3">
+                    <h6 class="small text-uppercase text-muted mb-2">Campaign Story Mix (Start vs Pivot vs Future)</h6>
+                    <div class="chart-container" style="height: 220px;">
+                      <canvas id="promo-story-phase-chart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="card border-0 bg-body-tertiary h-100">
+                  <div class="card-body p-3">
+                    <h6 class="small text-uppercase text-muted mb-2">Average Promo Uplift by Retail Channel</h6>
+                    <div class="chart-container" style="height: 220px;">
+                      <canvas id="promo-channel-impact-chart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="small text-muted" id="promo-story-visual-note">
+                  Building story-mix and channel-lift visuals from campaign outcomes...
+                </div>
+              </div>
+            </div>
             <div class="row" id="promo-cards-container">
               <!-- Promo campaign cards will be rendered here -->
             </div>
             <div id="promo-drilldown-panel" class="mt-3" style="display: none;"></div>
+            <div class="card border-0 bg-body-tertiary mt-3">
+              <div class="card-body p-3">
+                <h6 class="small text-uppercase text-muted mb-2">Promo Outcome Matrix (Product x Channel Uplift)</h6>
+                <div class="small text-muted mb-2" id="promo-outcome-summary">
+                  Building channel response matrix from campaign history...
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-1">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Product</th>
+                        <th>Sunscreen / Moisturizer</th>
+                        <th class="text-end">Target</th>
+                        <th class="text-end">Amazon</th>
+                        <th class="text-end">Sephora</th>
+                        <th class="text-end">Ulta</th>
+                      </tr>
+                    </thead>
+                    <tbody id="promo-outcome-matrix-body">
+                      <tr>
+                        <td colspan="6" class="text-center text-muted">Loading outcome matrix...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card border-0 bg-body-tertiary mt-3">
+              <div class="card-body p-3">
+                <h6 class="small text-uppercase text-muted mb-2">Promo Policy Extractor (From Historical Outcomes)</h6>
+                <div class="small text-muted mb-2" id="promo-policy-summary">
+                  Deriving include/exclude policies from campaign history...
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-1">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Product</th>
+                        <th class="text-end">Campaigns</th>
+                        <th class="text-end">Avg Uplift</th>
+                        <th>Best Channel</th>
+                        <th>Recommended Policy</th>
+                      </tr>
+                    </thead>
+                    <tbody id="promo-policy-table-body">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted">Loading policy extraction...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -2621,19 +3043,19 @@
     </div>
   </div>
 
-    <!-- Step 3: In-Season Planner (Roadmap Placeholder) -->
+    <!-- Step 3: In-Season Planner Models -->
   <div class="modal fade" id="methodology-modal-step3" tabindex="-1" aria-labelledby="methodology-modal-step3-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step3-label">
-            <i class="bi bi-signpost-split me-2"></i> Methodology: In-Season Planner (Roadmap)
+            <i class="bi bi-signpost-split me-2"></i> Methodology: In-Season Planner Model Board
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i> Planned Capability</h6>
-          <p>This roadmap module will support week-by-week promotion planning across SKUs and channels using inventory runway, competitor pricing, and social demand signals.</p>
+          <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i> Active Model Stack</h6>
+          <p>This section combines four active models: own promo response, competitor delta impact, social momentum impact, and SKU migration/cannibalization to produce weekly channel-specific actions.</p>
           <div class="alert alert-info mb-0">
             <strong>Current implementation:</strong> Step 1 already delivers the core promotion optimization logic for a 17-week season, including objective-based controls and baseline-vs-scenario inventory projection.
           </div>
@@ -2645,19 +3067,19 @@
     </div>
   </div>
 
-  <!-- Step 4: End-of-Season Markdown Simulator (Roadmap Placeholder) -->
+  <!-- Step 4: End-of-Season Markdown Models -->
   <div class="modal fade" id="methodology-modal-step4" tabindex="-1" aria-labelledby="methodology-modal-step4-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step4-label">
-            <i class="bi bi-signpost-split me-2"></i> Methodology: End-of-Season Markdown (Roadmap)
+            <i class="bi bi-signpost-split me-2"></i> Methodology: End-of-Season Markdown Decision Models
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i> Planned Capability</h6>
-          <p>This roadmap module will optimize markdown sequencing for late-season inventory liquidation while balancing margin recovery and channel strategy.</p>
+          <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i> Active Model Stack</h6>
+          <p>This section combines historical promotion effectiveness by SKU/channel with a markdown ladder model to reduce week-17 leftover inventory while preserving margin floors.</p>
           <div class="alert alert-info mb-0">
             <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through week-17 projection and AI recommendation guidance.
           </div>
@@ -2669,13 +3091,13 @@
     </div>
   </div>
 
-  <!-- Step 5: Cross-Channel Migration Planner (Roadmap Placeholder) -->
+  <!-- Step 5: Cross-Channel Migration Planner (Future Vision) -->
   <div class="modal fade" id="methodology-modal-step5" tabindex="-1" aria-labelledby="methodology-modal-step5-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step5-label">
-            <i class="bi bi-signpost-split me-2"></i> Methodology: Cross-Channel Migration (Roadmap)
+            <i class="bi bi-signpost-split me-2"></i> Methodology: Cross-Channel Migration (Future Vision)
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -2946,8 +3368,8 @@
                       <span class="steps-table-step-label">Step 6</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>In-Season Planner (Roadmap)</strong>
-                      <span class="text-muted">Future module for weekly SKU-level promotion orchestration using inventory and market signal constraints.</span>
+                      <strong>In-Season Planner Model Board</strong>
+                      <span class="text-muted">Weekly SKU-level promotion model using live inventory, competitor, social, and cannibalization signals.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="7" style="--step-index: 7;">
@@ -2956,8 +3378,8 @@
                       <span class="steps-table-step-label">Step 7</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>End-of-Season Markdown Simulator (Roadmap)</strong>
-                      <span class="text-muted">Future module for markdown sequencing to finish the season near zero inventory.</span>
+                      <strong>End-of-Season Markdown Decision Models</strong>
+                      <span class="text-muted">Historical promotion evidence + markdown ladder model to finish the season closer to zero inventory.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="8" style="--step-index: 8;">
@@ -2966,7 +3388,7 @@
                       <span class="steps-table-step-label">Step 8</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Cross-Channel Migration Planner (Roadmap)</strong>
+                      <strong>Cross-Channel Migration Planner (Future Vision)</strong>
                       <span class="text-muted">Future module to estimate demand migration when promotions run in one channel group but not another.</span>
                     </span>
                   </button>

@@ -25,7 +25,16 @@ import {
   compareScenarios as compareScenariosEngine
 } from './scenario-engine.js';
 import { renderDemandCurve, renderElasticityHeatmap, renderTierMixShift, renderTradeoffsScatter, renderComparisonBarChart, renderRadarChart } from './charts.js';
-import { initializeChat, configureLLM, sendMessage, clearHistory } from './chat.js';
+import {
+  initializeChat,
+  configureLLM,
+  sendMessage,
+  clearHistory,
+  isLLMConfigured,
+  generateLiveCopilot,
+  generateScenarioPlanFromText,
+  generateEventAnalyst
+} from './chat.js';
 import { initializeDataViewer } from './data-viewer.js';
 import { renderSegmentKPICards, renderSegmentElasticityHeatmap, render3AxisRadialChart, renderSegmentScatterPlot, exportSVG } from './segment-charts.js';
 import { renderChannelElasticityBar, renderChannelElasticityHeatmap, renderChannelSummary } from './channel-charts.js';
@@ -69,6 +78,15 @@ let allSimulationResultsByModel = {
 let selectedScenario = selectedScenarioByModel[activeModelType];
 let savedScenarios = savedScenariosByModel[activeModelType];
 let currentResult = currentResultByModel[activeModelType];
+let step2CompetitiveChart = null;
+let step2SocialChart = null;
+let step2SkuImpactChart = null;
+let llmStatusCached = null;
+let llmStatusLastCheckedAt = 0;
+let liveCopilotDebounceTimer = null;
+let liveCopilotInFlight = false;
+let selectedEventForLlm = null;
+let llmBusinessContext = {};
 
 const CHANNEL_PRICE = {
   ad_supported: 24.0,
@@ -78,11 +96,14 @@ const CHANNEL_PRICE = {
 const segmentSkuProfiles = {
   all: {
     sku_id: 'all',
-    sku_name: 'All SKUs',
+    sku_name: 'All Products',
     product_group: 'all',
     elasticityByTier: { ad_supported: 2.0, ad_free: 1.4 }
   }
 };
+let cohortWatchlistContext = null;
+let cohortWatchlistContextPromise = null;
+let selectedWatchlistCompositeKey = null;
 
 // Format helpers
 function formatNumber(num) {
@@ -109,12 +130,29 @@ function formatPercent(num, decimals = 1) {
   return `${num.toFixed(decimals)}%`;
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeSocialScore(rawScore) {
+  const score = Number(rawScore);
+  if (!Number.isFinite(score)) return null;
+  if (score <= 1.5 && score >= -1.5) return score * 100;
+  return score;
+}
+
 function socialElasticityModifier(score) {
-  if (!Number.isFinite(score)) return 1.0;
-  if (score >= 75) return 0.82;
-  if (score >= 65) return 0.9;
-  if (score >= 55) return 0.98;
-  return 1.08;
+  const normalized = normalizeSocialScore(score);
+  if (!Number.isFinite(normalized)) return 1.0;
+  const clipped = clamp(normalized, 35, 95);
+  return clamp(1.18 - ((clipped - 35) * 0.0075), 0.72, 1.26);
+}
+
+function socialDemandMultiplier(score) {
+  const normalized = normalizeSocialScore(score);
+  if (!Number.isFinite(normalized)) return 1.0;
+  const clipped = clamp(normalized, 35, 95);
+  return clamp(0.8 + ((clipped - 35) * 0.0067), 0.75, 1.22);
 }
 
 function getModelTypeFromTabId(tabId) {
@@ -375,11 +413,19 @@ async function initializeStep2SignalsLab() {
   const prestigeEl = document.getElementById('step2-signal-comp-prestige');
   const socialScoreEl = document.getElementById('step2-signal-social-score');
   const socialTrendEl = document.getElementById('step2-signal-social-trend');
-  const compImpactEl = document.getElementById('step2-signal-comp-impact');
-  const socialImpactEl = document.getElementById('step2-signal-social-impact');
   const changeLogEl = document.getElementById('step2-signal-change-log');
+  const methodNoteEl = document.getElementById('step2-signal-method-note');
+  const skuImpactBodyEl = document.getElementById('step2-signal-sku-impact-body');
+  const skuImpactNoteEl = document.getElementById('step2-signal-sku-impact-note');
+  const compCanvas = document.getElementById('step2-signal-comp-chart');
+  const socialCanvas = document.getElementById('step2-signal-social-chart');
+  const skuCanvas = document.getElementById('step2-signal-sku-chart');
 
-  if (!massEl || !prestigeEl || !socialScoreEl || !socialTrendEl || !compImpactEl || !socialImpactEl || !changeLogEl) {
+  if (
+    !massEl || !prestigeEl || !socialScoreEl || !socialTrendEl || !changeLogEl ||
+    !methodNoteEl || !skuImpactBodyEl || !skuImpactNoteEl ||
+    !compCanvas || !socialCanvas || !skuCanvas
+  ) {
     return;
   }
 
@@ -391,60 +437,281 @@ async function initializeStep2SignalsLab() {
     ]);
     if (!externalFactors?.length || !socialSignals?.length || !skuWeekly?.length) return;
 
-    const latestExternal = externalFactors[externalFactors.length - 1];
-    const prevExternal = externalFactors[externalFactors.length - 2] || latestExternal;
-    const latestSocial = socialSignals[socialSignals.length - 1];
-    const prevSocial = socialSignals[socialSignals.length - 2] || latestSocial;
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const toPct = (decimal, digits = 1) => `${(decimal * 100).toFixed(digits)}%`;
 
     const currentWeek = skuWeekly.find(r => r.is_current_week === true)?.week_of_season
       || Math.max(...skuWeekly.map(r => Number(r.week_of_season || 0)));
+    const previousWeek = Math.max(1, Number(currentWeek) - 1);
     const currentRows = skuWeekly.filter(r => Number(r.week_of_season) === Number(currentWeek));
-    const massRows = currentRows.filter(r => r.channel_group === 'mass');
-    const prestigeRows = currentRows.filter(r => r.channel_group === 'prestige');
+    const previousRows = skuWeekly.filter(r => Number(r.week_of_season) === Number(previousWeek));
+    const prevRowBySkuChannel = new Map(
+      previousRows.map(row => [`${row.sku_id}|${row.sales_channel}`, row])
+    );
 
-    const avgAbsElasticity = rows => {
-      if (!rows.length) return 1.0;
-      return rows.reduce((sum, row) => sum + Math.abs(Number(row.base_elasticity || 0)), 0) / rows.length;
-    };
-    const massElasticity = avgAbsElasticity(massRows);
-    const prestigeElasticity = avgAbsElasticity(prestigeRows);
+    const skuWeekByDate = new Map();
+    skuWeekly.forEach(row => {
+      if (!skuWeekByDate.has(row.date)) skuWeekByDate.set(row.date, Number(row.week_of_season));
+    });
 
-    const latestMassComp = Number(latestExternal.competitor_mass_price || 0);
-    const prevMassComp = Number(prevExternal.competitor_mass_price || latestMassComp);
-    const latestPrestigeComp = Number(latestExternal.competitor_prestige_price || 0);
-    const prevPrestigeComp = Number(prevExternal.competitor_prestige_price || latestPrestigeComp);
+    const ownByDate = new Map();
+    skuWeekly.forEach(row => {
+      const key = row.date;
+      if (!ownByDate.has(key)) {
+        ownByDate.set(key, {
+          massSum: 0,
+          massCount: 0,
+          prestigeSum: 0,
+          prestigeCount: 0
+        });
+      }
+      const bucket = ownByDate.get(key);
+      const price = toNum(row.effective_price);
+      if (!Number.isFinite(price)) return;
+      if (row.channel_group === 'mass') {
+        bucket.massSum += price;
+        bucket.massCount += 1;
+      } else if (row.channel_group === 'prestige') {
+        bucket.prestigeSum += price;
+        bucket.prestigeCount += 1;
+      }
+    });
+
+    const externalSorted = [...externalFactors].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const compLabels = [];
+    const ownMassSeries = [];
+    const compMassSeries = [];
+    const ownPrestigeSeries = [];
+    const compPrestigeSeries = [];
+
+    externalSorted.forEach(row => {
+      const own = ownByDate.get(row.date);
+      if (!own) return;
+      const ownMass = own.massCount ? own.massSum / own.massCount : null;
+      const ownPrestige = own.prestigeCount ? own.prestigeSum / own.prestigeCount : null;
+      const compMass = toNum(row.competitor_mass_price);
+      const compPrestige = toNum(row.competitor_prestige_price);
+      if (!Number.isFinite(ownMass) || !Number.isFinite(ownPrestige) || !Number.isFinite(compMass) || !Number.isFinite(compPrestige)) return;
+
+      const wk = skuWeekByDate.get(row.date);
+      compLabels.push(Number.isFinite(wk) ? `W${wk}` : String(row.date).slice(5));
+      ownMassSeries.push(Number(ownMass.toFixed(2)));
+      compMassSeries.push(Number(compMass.toFixed(2)));
+      ownPrestigeSeries.push(Number(ownPrestige.toFixed(2)));
+      compPrestigeSeries.push(Number(compPrestige.toFixed(2)));
+    });
+
+    if (compLabels.length) {
+      if (step2CompetitiveChart) {
+        step2CompetitiveChart.data.labels = compLabels;
+        step2CompetitiveChart.data.datasets[0].data = ownMassSeries;
+        step2CompetitiveChart.data.datasets[1].data = compMassSeries;
+        step2CompetitiveChart.data.datasets[2].data = ownPrestigeSeries;
+        step2CompetitiveChart.data.datasets[3].data = compPrestigeSeries;
+        step2CompetitiveChart.update();
+      } else if (window.Chart) {
+        step2CompetitiveChart = new Chart(compCanvas, {
+          type: 'line',
+          data: {
+            labels: compLabels,
+            datasets: [
+              { label: 'Our Mass Avg Price', data: ownMassSeries, borderColor: 'rgba(2, 132, 199, 0.95)', fill: false, tension: 0.25 },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: 'rgba(239, 68, 68, 0.95)', fill: false, tension: 0.25 },
+              { label: 'Our Prestige Avg Price', data: ownPrestigeSeries, borderColor: 'rgba(16, 185, 129, 0.95)', borderDash: [4, 3], fill: false, tension: 0.25 },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: 'rgba(217, 119, 6, 0.95)', borderDash: [4, 3], fill: false, tension: 0.25 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
+
+    const socialSorted = [...socialSignals].sort((a, b) => String(a.week_start || a.date).localeCompare(String(b.week_start || b.date)));
+    const socialLabels = [];
+    const socialScoreSeries = [];
+    const socialModifierSeries = [];
+
+    socialSorted.forEach(row => {
+      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment);
+      if (!Number.isFinite(score)) return;
+      const wk = skuWeekByDate.get(row.week_start || row.date);
+      socialLabels.push(Number.isFinite(wk) ? `W${wk}` : String(row.week_start || row.date).slice(5));
+      socialScoreSeries.push(Number(score.toFixed(2)));
+      socialModifierSeries.push(Number(socialElasticityModifier(score).toFixed(3)));
+    });
+
+    if (socialLabels.length) {
+      if (step2SocialChart) {
+        step2SocialChart.data.labels = socialLabels;
+        step2SocialChart.data.datasets[0].data = socialScoreSeries;
+        step2SocialChart.data.datasets[1].data = socialModifierSeries;
+        step2SocialChart.update();
+      } else if (window.Chart) {
+        step2SocialChart = new Chart(socialCanvas, {
+          type: 'line',
+          data: {
+            labels: socialLabels,
+            datasets: [
+              { label: 'Brand Social Score', data: socialScoreSeries, borderColor: 'rgba(14, 165, 233, 0.95)', fill: false, tension: 0.25, yAxisID: 'y' },
+              { label: 'Elasticity Modifier', data: socialModifierSeries, borderColor: 'rgba(99, 102, 241, 0.95)', fill: false, tension: 0.25, yAxisID: 'y1' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+              y: { title: { display: true, text: 'Social score' } },
+              y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Elasticity modifier' } }
+            }
+          }
+        });
+      }
+    }
+
+    const latestExternal = externalSorted[externalSorted.length - 1];
+    const prevExternal = externalSorted[externalSorted.length - 2] || latestExternal;
+    const latestSocial = socialSorted[socialSorted.length - 1];
+    const prevSocial = socialSorted[socialSorted.length - 2] || latestSocial;
+
+    const latestMassComp = toNum(latestExternal?.competitor_mass_price) || 0;
+    const prevMassComp = toNum(prevExternal?.competitor_mass_price) || latestMassComp;
+    const latestPrestigeComp = toNum(latestExternal?.competitor_prestige_price) || 0;
+    const prevPrestigeComp = toNum(prevExternal?.competitor_prestige_price) || latestPrestigeComp;
     const massCompDeltaPct = prevMassComp > 0 ? (latestMassComp - prevMassComp) / prevMassComp : 0;
     const prestigeCompDeltaPct = prevPrestigeComp > 0 ? (latestPrestigeComp - prevPrestigeComp) / prevPrestigeComp : 0;
 
-    const socialScore = Number(latestSocial.brand_social_index ?? latestSocial.social_sentiment ?? 0);
-    const prevSocialScore = Number(prevSocial.brand_social_index ?? prevSocial.social_sentiment ?? socialScore);
-    const socialDelta = socialScore - prevSocialScore;
-
-    const socialModNow = socialElasticityModifier(socialScore);
-    const socialModPrev = socialElasticityModifier(prevSocialScore);
-    const socialElasticityShift = socialModPrev > 0 ? (socialModNow - socialModPrev) / socialModPrev : 0;
-    const toPct = (decimal, digits = 1) => `${(decimal * 100).toFixed(digits)}%`;
-
-    const massCompImpactPct = massCompDeltaPct * 0.7 * massElasticity;
-    const prestigeCompImpactPct = prestigeCompDeltaPct * 0.6 * prestigeElasticity;
-    const socialImpactPct = -socialElasticityShift * 0.9;
+    const socialScore = normalizeSocialScore(latestSocial?.brand_social_index ?? latestSocial?.social_sentiment);
+    const prevSocialScore = normalizeSocialScore(prevSocial?.brand_social_index ?? prevSocial?.social_sentiment);
+    const socialDeltaPts = (Number.isFinite(socialScore) && Number.isFinite(prevSocialScore))
+      ? (socialScore - prevSocialScore)
+      : 0;
+    const modifierNow = socialElasticityModifier(socialScore);
+    const modifierPrev = socialElasticityModifier(prevSocialScore);
+    const modifierDeltaPct = modifierPrev > 0 ? (modifierNow - modifierPrev) / modifierPrev : 0;
 
     massEl.textContent = formatCurrency(latestMassComp);
     prestigeEl.textContent = formatCurrency(latestPrestigeComp);
     socialScoreEl.textContent = Number.isFinite(socialScore) ? socialScore.toFixed(1) : 'N/A';
-    socialTrendEl.textContent = `${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} vs prior week`;
+    socialTrendEl.textContent = `${socialDeltaPts >= 0 ? '+' : ''}${socialDeltaPts.toFixed(1)} pts WoW`;
 
-    compImpactEl.textContent =
-      `Mass est. ${massCompImpactPct >= 0 ? '+' : ''}${toPct(massCompImpactPct)} units, ` +
-      `Prestige est. ${prestigeCompImpactPct >= 0 ? '+' : ''}${toPct(prestigeCompImpactPct)} units from competitor move.`;
-    socialImpactEl.textContent =
-      `Effective elasticity shift ${socialElasticityShift >= 0 ? '+' : ''}${toPct(socialElasticityShift)}; ` +
-      `expected demand pressure ${socialImpactPct >= 0 ? '+' : ''}${toPct(socialImpactPct)} before price changes.`;
+    const perSku = new Map();
+    currentRows.forEach(row => {
+      const key = `${row.sku_id}|${row.sales_channel}`;
+      const prevRow = prevRowBySkuChannel.get(key) || row;
+      const ownPrice = toNum(row.effective_price) || toNum(row.list_price) || 0;
+      const currComp = toNum(row.competitor_price) || ownPrice;
+      const prevComp = toNum(prevRow.competitor_price) || currComp;
+      const sens = row.channel_group === 'mass' ? 0.72 : 0.46;
+      const currGap = currComp > 0 ? (ownPrice - currComp) / currComp : 0;
+      const prevGap = prevComp > 0 ? (ownPrice - prevComp) / prevComp : 0;
+      const currCompMult = clamp(1 - currGap * sens, 0.55, 1.38);
+      const prevCompMult = clamp(1 - prevGap * sens, 0.55, 1.38);
+      const compRatio = prevCompMult > 0 ? (currCompMult / prevCompMult) : 1;
+
+      const currSocial = normalizeSocialScore(row.social_engagement_score);
+      const prevSocialRow = normalizeSocialScore(prevRow.social_engagement_score);
+      const socialRatio = socialDemandMultiplier(currSocial) / socialDemandMultiplier(prevSocialRow ?? currSocial);
+      const baselineUnits = toNum(row.net_units_sold) || 0;
+      const shockOnlyUnits = baselineUnits * compRatio * socialRatio;
+
+      if (!perSku.has(row.sku_id)) {
+        perSku.set(row.sku_id, {
+          sku_id: row.sku_id,
+          sku_name: row.sku_name || row.sku_id,
+          product_group: row.product_group || '-',
+          baselineUnits: 0,
+          shockUnits: 0,
+          gapSum: 0,
+          count: 0
+        });
+      }
+      const entry = perSku.get(row.sku_id);
+      entry.baselineUnits += baselineUnits;
+      entry.shockUnits += shockOnlyUnits;
+      entry.gapSum += toNum(row.price_gap_vs_competitor) || 0;
+      entry.count += 1;
+    });
+
+    const skuRows = [...perSku.values()]
+      .map(row => ({
+        ...row,
+        avgGap: row.count > 0 ? row.gapSum / row.count : 0,
+        deltaUnits: row.shockUnits - row.baselineUnits
+      }))
+      .sort((a, b) => {
+        const groupCmp = String(a.product_group).localeCompare(String(b.product_group));
+        if (groupCmp !== 0) return groupCmp;
+        return String(a.sku_name).localeCompare(String(b.sku_name));
+      });
+
+    skuImpactBodyEl.innerHTML = skuRows.length
+      ? skuRows.map(row => `
+        <tr>
+          <td>${row.sku_name}</td>
+          <td class="text-capitalize">${row.product_group}</td>
+          <td class="text-end">${formatNumber(row.baselineUnits)}</td>
+          <td class="text-end">${formatNumber(row.shockUnits)}</td>
+          <td class="text-end ${row.deltaUnits >= 0 ? 'text-success' : 'text-danger'}">${row.deltaUnits >= 0 ? '+' : ''}${formatNumber(row.deltaUnits)}</td>
+          <td class="text-end ${row.avgGap >= 0 ? 'text-danger' : 'text-success'}">${row.avgGap >= 0 ? '+' : ''}${(row.avgGap * 100).toFixed(1)}%</td>
+        </tr>
+      `).join('')
+      : '<tr><td colspan="6" class="text-center text-muted">No SKU rows available for current week.</td></tr>';
+
+    const skuLabels = skuRows.map(row => row.sku_name);
+    const skuBaseline = skuRows.map(row => Number(row.baselineUnits.toFixed(2)));
+    const skuShock = skuRows.map(row => Number(row.shockUnits.toFixed(2)));
+
+    if (skuRows.length) {
+      if (step2SkuImpactChart) {
+        step2SkuImpactChart.data.labels = skuLabels;
+        step2SkuImpactChart.data.datasets[0].data = skuBaseline;
+        step2SkuImpactChart.data.datasets[1].data = skuShock;
+        step2SkuImpactChart.update();
+      } else if (window.Chart) {
+        step2SkuImpactChart = new Chart(skuCanvas, {
+          type: 'bar',
+          data: {
+            labels: skuLabels,
+            datasets: [
+              { label: 'Baseline Units', data: skuBaseline, backgroundColor: 'rgba(148, 163, 184, 0.85)' },
+              { label: 'Shock-Only Units', data: skuShock, backgroundColor: 'rgba(245, 158, 11, 0.85)' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
+
+    const totalBaseline = skuRows.reduce((sum, row) => sum + row.baselineUnits, 0);
+    const totalShock = skuRows.reduce((sum, row) => sum + row.shockUnits, 0);
+    const totalShockDeltaPct = totalBaseline > 0 ? (totalShock - totalBaseline) / totalBaseline : 0;
 
     changeLogEl.textContent =
-      `This week: competitor mass price ${massCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(massCompDeltaPct))}, ` +
-      `competitor prestige price ${prestigeCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(prestigeCompDeltaPct))}, ` +
-      `social score ${socialDelta >= 0 ? 'up' : 'down'} ${Math.abs(socialDelta).toFixed(1)} points.`;
+      `Week ${currentWeek} vs Week ${previousWeek}: competitor mass ${massCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(massCompDeltaPct))}, ` +
+      `competitor prestige ${prestigeCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(prestigeCompDeltaPct))}, ` +
+      `social score ${socialDeltaPts >= 0 ? 'up' : 'down'} ${Math.abs(socialDeltaPts).toFixed(1)} pts.`;
+
+    methodNoteEl.innerHTML =
+      `<strong>Method:</strong> ` +
+      `<code>gap_pct = (our_price - competitor_price) / competitor_price</code>; ` +
+      `<code>competitor_multiplier = clamp(1 - gap_pct * sensitivity, 0.55, 1.38)</code>; ` +
+      `<code>social_modifier = f(social_score)</code> from simulator. ` +
+      `Data sources: <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, <code>social_signals.csv</code>.`;
+
+    skuImpactNoteEl.textContent =
+      `Shock-only total vs baseline: ${totalShockDeltaPct >= 0 ? '+' : ''}${toPct(totalShockDeltaPct)} with own promo depth held at 0%.`;
   } catch (error) {
     console.error('Error initializing Step 2 Signal Lab:', error);
     changeLogEl.textContent = 'Signal lab failed to load. Check data files.';
@@ -697,10 +964,10 @@ async function initializeChatContext() {
       const skuResults = promo.sku_results || [];
       const underperformers = skuResults
         .filter(s => s.outcome === 'down' || Number(s.sales_uplift_pct || 0) < 0)
-        .map(s => s.sku_id);
+        .map(s => s.sku_name || s.sku_id);
       const winners = skuResults
         .filter(s => s.outcome === 'up' || Number(s.sales_uplift_pct || 0) > 0)
-        .map(s => s.sku_id);
+        .map(s => s.sku_name || s.sku_id);
       return {
         promo_id: promo.promo_id,
         campaign_name: promo.campaign_name,
@@ -944,6 +1211,8 @@ async function initializeChatContext() {
         const recommended = buildPromoMixRecommendation({ objective: objectiveMap[goal] || 'balance', channel_group: 'all' });
         const includeSkus = recommended.include.map(s => s.sku_id);
         const excludeSkus = recommended.exclude.map(s => s.sku_id);
+        const includeSkuLabels = recommended.include.map(s => s.sku_name || s.sku_id);
+        const excludeSkuLabels = recommended.exclude.map(s => s.sku_name || s.sku_id);
         const primaryChannel = (recommended.notes.competitor_signals.massGapAvgPct > 0.02) ? 'mass' : 'prestige';
         return {
           goal: goal,
@@ -951,11 +1220,13 @@ async function initializeChatContext() {
             name: `${primaryChannel === 'mass' ? 'Mass Defensive Promo' : 'Prestige Selective Promo'} (${goal.replace('_', ' ')})`,
             channel_group: primaryChannel,
             include_skus: includeSkus,
+            include_products: includeSkuLabels,
             exclude_skus: excludeSkus,
+            exclude_products: excludeSkuLabels,
             season_week: currentWeek
           },
           rationale: `Recommendation uses week-${currentWeek} inventory, elasticity, competitor gap, social trend, and historical promo outcomes.`,
-          estimated_impact: `Focus on ${includeSkus.join(', ') || 'top elastic SKUs'} and avoid ${excludeSkus.join(', ') || 'historical underperformers'}.`,
+          estimated_impact: `Focus on ${includeSkuLabels.join(', ') || 'top elastic products'} and avoid ${excludeSkuLabels.join(', ') || 'historical underperformers'}.`,
           next_steps: 'Apply this mix in Step 1 and compare baseline vs scenario inventory runway to week 17.'
         };
       },
@@ -1177,6 +1448,7 @@ async function initializeChatContext() {
     };
 
     // Initialize chat module with scenario-focused context
+    llmBusinessContext = context.businessContext || {};
     initializeChat(context);
   } catch (error) {
     console.error('Error initializing chat context:', error);
@@ -1456,23 +1728,23 @@ function applyPromotionCopySweep() {
     scenarioHeaderTitle.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Promotion Planning Roadmap Modules';
   }
   if (scenarioHeaderSubtitle) {
-    scenarioHeaderSubtitle.textContent = 'Roadmap placeholders for future in-season planning, markdown sequencing, and cross-channel migration optimization.';
+    scenarioHeaderSubtitle.textContent = 'Future vision modules for in-season planning, markdown sequencing, and cross-channel migration optimization.';
   }
   if (scenarioFrameworkAlert) {
-    scenarioFrameworkAlert.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Roadmap Placeholder:</strong> These modules represent planned expansion areas beyond the current Step 1 promotion optimizer.';
+    scenarioFrameworkAlert.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Future Vision:</strong> These modules represent planned expansion areas beyond the current Step 1 promotion optimizer.';
   }
 
   const acquisitionTab = document.getElementById('acquisition-tab');
   const churnTab = document.getElementById('churn-tab');
   const migrationTab = document.getElementById('migration-tab');
   if (acquisitionTab) {
-    acquisitionTab.innerHTML = '<i class="bi bi-calendar-week me-2"></i><strong>1. In-Season Planner</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>';
+    acquisitionTab.innerHTML = '<i class="bi bi-calendar-week me-2"></i><strong>1. In-Season Planner</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
   }
   if (churnTab) {
-    churnTab.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><strong>2. End-of-Season Markdown</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>';
+    churnTab.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><strong>2. End-of-Season Markdown</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
   }
   if (migrationTab) {
-    migrationTab.innerHTML = '<i class="bi bi-arrows-angle-expand me-2"></i><strong>3. Cross-Channel Migration</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Roadmap Placeholder</small>';
+    migrationTab.innerHTML = '<i class="bi bi-arrows-angle-expand me-2"></i><strong>3. Cross-Channel Migration</strong><small class="d-block text-muted" style="font-size: 0.75rem;">Future Vision</small>';
   }
 
   // Segmentation copy alignment
@@ -1506,13 +1778,13 @@ function applyPromotionCopySweep() {
   const step5Body = document.querySelector('#methodology-modal-step5 .modal-body');
 
   if (step3Title) {
-    step3Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: In-Season Planner (Roadmap)';
+    step3Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: In-Season Planner (Future Vision)';
   }
   if (step4Title) {
-    step4Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: End-of-Season Markdown (Roadmap)';
+    step4Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: End-of-Season Markdown (Future Vision)';
   }
   if (step5Title) {
-    step5Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: Cross-Channel Migration (Roadmap)';
+    step5Title.innerHTML = '<i class="bi bi-signpost-split me-2"></i>Methodology: Cross-Channel Migration (Future Vision)';
   }
 
   if (step3Body) {
@@ -1551,6 +1823,298 @@ function applyPromotionCopySweep() {
   if (step7ModalBodyIntro) {
     step7ModalBodyIntro.textContent = 'Compares promotion response sensitivity across customer cohorts to guide targeted offer selection.';
   }
+}
+
+function renderList(el, items, fallbackText) {
+  if (!el) return;
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (!list.length) {
+    el.innerHTML = `<li>${fallbackText}</li>`;
+    return;
+  }
+  el.innerHTML = list.slice(0, 4).map(item => `<li>${item}</li>`).join('');
+}
+
+async function getLlmReady(force = false) {
+  const now = Date.now();
+  if (!force && llmStatusCached !== null && (now - llmStatusLastCheckedAt) < 30000) {
+    return llmStatusCached;
+  }
+  try {
+    llmStatusCached = await isLLMConfigured();
+  } catch {
+    llmStatusCached = false;
+  }
+  llmStatusLastCheckedAt = now;
+  return llmStatusCached;
+}
+
+function setLlmBadgeState(elementId, ready) {
+  const badge = document.getElementById(elementId);
+  if (!badge) return;
+  if (ready) {
+    badge.className = 'badge text-bg-success';
+    badge.textContent = 'Connected';
+  } else {
+    badge.className = 'badge text-bg-secondary';
+    badge.textContent = 'Not Connected';
+  }
+}
+
+async function refreshLlmStatuses(force = false) {
+  const ready = await getLlmReady(force);
+  setLlmBadgeState('channel-promo-llm-status', ready);
+  setLlmBadgeState('event-llm-status', ready);
+  return ready;
+}
+
+function getLivePromoSnapshotSafe() {
+  return (
+    window.getChannelPromoSnapshot && typeof window.getChannelPromoSnapshot === 'function'
+      ? window.getChannelPromoSnapshot()
+      : null
+  );
+}
+
+function findOptionValueByText(selectEl, text) {
+  if (!selectEl || !text) return null;
+  const needle = String(text).trim().toLowerCase();
+  if (!needle) return null;
+  const options = [...selectEl.options];
+  const exact = options.find(opt => String(opt.textContent || '').trim().toLowerCase() === needle);
+  if (exact) return exact.value;
+  const partial = options.find(opt => String(opt.textContent || '').toLowerCase().includes(needle));
+  return partial ? partial.value : null;
+}
+
+function setControlValue(elementId, value, eventName = 'input') {
+  const el = document.getElementById(elementId);
+  if (!el || value === undefined || value === null) return;
+  el.value = String(value);
+  el.dispatchEvent(new Event(eventName, { bubbles: true }));
+}
+
+function applyScenarioPlanToControls(plan) {
+  if (!plan || typeof plan !== 'object') return;
+
+  if (plan.objective) {
+    setControlValue('channel-promo-objective', plan.objective, 'change');
+  }
+
+  if (typeof plan.massPromoDepthPct === 'number') {
+    setControlValue('mass-promo-slider', clamp(plan.massPromoDepthPct, 0, 40), 'input');
+  }
+  if (typeof plan.prestigePromoDepthPct === 'number') {
+    setControlValue('prestige-promo-slider', clamp(plan.prestigePromoDepthPct, 0, 30), 'input');
+  }
+  if (typeof plan.skuBoostPct === 'number') {
+    setControlValue('channel-promo-sku-boost-slider', clamp(plan.skuBoostPct, 0, 20), 'input');
+  }
+  if (typeof plan.competitorShockPct === 'number') {
+    setControlValue('channel-promo-comp-shock', clamp(plan.competitorShockPct, -20, 20), 'input');
+  }
+  if (typeof plan.socialShockPts === 'number') {
+    setControlValue('channel-promo-social-shock', clamp(plan.socialShockPts, -20, 20), 'input');
+  }
+
+  const applyMassEl = document.getElementById('channel-promo-apply-mass');
+  if (applyMassEl && typeof plan.applyMass === 'boolean') {
+    applyMassEl.checked = plan.applyMass;
+    applyMassEl.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const applyPrestigeEl = document.getElementById('channel-promo-apply-prestige');
+  if (applyPrestigeEl && typeof plan.applyPrestige === 'boolean') {
+    applyPrestigeEl.checked = plan.applyPrestige;
+    applyPrestigeEl.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  const groupEl = document.getElementById('channel-promo-product-group');
+  if (groupEl && plan.productGroup) {
+    const allowed = ['all', 'sunscreen', 'moisturizer'];
+    const nextGroup = allowed.includes(plan.productGroup) ? plan.productGroup : 'all';
+    groupEl.value = nextGroup;
+    groupEl.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  const skuFocusName = String(plan.skuFocusName || '').trim();
+  if (skuFocusName) {
+    setTimeout(() => {
+      const skuEl = document.getElementById('channel-promo-sku');
+      if (!skuEl) return;
+      const matchedValue = findOptionValueByText(skuEl, skuFocusName);
+      if (!matchedValue) return;
+      skuEl.value = matchedValue;
+      skuEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }, 120);
+  }
+}
+
+async function runLiveCopilotAnalysis({ force = false } = {}) {
+  const summaryEl = document.getElementById('channel-promo-llm-summary');
+  const actionsEl = document.getElementById('channel-promo-llm-actions');
+  const risksEl = document.getElementById('channel-promo-llm-risks');
+  const autoEl = document.getElementById('channel-promo-llm-auto');
+  if (!summaryEl || !actionsEl || !risksEl) return;
+  if (!force && autoEl && !autoEl.checked) return;
+  if (liveCopilotInFlight) return;
+
+  const snapshot = getLivePromoSnapshotSafe();
+  if (!snapshot) {
+    summaryEl.textContent = 'Run simulator controls first to generate a live scenario snapshot.';
+    renderList(actionsEl, [], 'No actions available yet.');
+    renderList(risksEl, [], 'No risks available yet.');
+    return;
+  }
+
+  const ready = await refreshLlmStatuses();
+  if (!ready) {
+    summaryEl.textContent = 'LLM not configured. Use settings key icon to connect and enable co-pilot.';
+    return;
+  }
+
+  liveCopilotInFlight = true;
+  summaryEl.textContent = 'Analyzing current scenario with LLM...';
+
+  try {
+    const result = await generateLiveCopilot({
+      liveSnapshot: snapshot,
+      businessContext: llmBusinessContext
+    });
+    const confidenceText = Number.isFinite(Number(result.confidence))
+      ? ` (confidence ${Math.round(Number(result.confidence))}%)`
+      : '';
+    summaryEl.textContent = `${result.summary || 'Analysis ready.'}${confidenceText}`;
+    renderList(actionsEl, result.actions, 'No immediate action required.');
+    renderList(risksEl, result.risks, 'No material risks flagged.');
+  } catch (error) {
+    summaryEl.textContent = `LLM analysis failed: ${error.message}`;
+    renderList(actionsEl, [], 'Could not generate actions.');
+    renderList(risksEl, [], 'Could not generate risks.');
+  } finally {
+    liveCopilotInFlight = false;
+  }
+}
+
+function scheduleLiveCopilotAnalysis({ force = false } = {}) {
+  if (liveCopilotDebounceTimer) {
+    clearTimeout(liveCopilotDebounceTimer);
+  }
+  const delay = force ? 80 : 900;
+  liveCopilotDebounceTimer = setTimeout(() => {
+    runLiveCopilotAnalysis({ force });
+  }, delay);
+}
+
+async function applyLlmPlanFromText() {
+  const inputEl = document.getElementById('channel-promo-llm-plan-input');
+  const resultEl = document.getElementById('channel-promo-llm-plan-result');
+  if (!inputEl || !resultEl) return;
+
+  const planText = inputEl.value.trim();
+  if (!planText) {
+    resultEl.textContent = 'Enter a plan first.';
+    return;
+  }
+
+  const ready = await refreshLlmStatuses();
+  if (!ready) {
+    resultEl.textContent = 'LLM not configured. Connect API first.';
+    return;
+  }
+
+  const snapshot = getLivePromoSnapshotSafe();
+  resultEl.textContent = 'Interpreting plan and applying controls...';
+
+  try {
+    const plan = await generateScenarioPlanFromText({
+      userText: planText,
+      liveSnapshot: snapshot
+    });
+    applyScenarioPlanToControls(plan);
+    resultEl.textContent = `Applied plan. ${plan.reasoning || 'Controls updated from natural-language instruction.'}`;
+    setTimeout(() => scheduleLiveCopilotAnalysis({ force: true }), 180);
+  } catch (error) {
+    resultEl.textContent = `Failed to apply plan: ${error.message}`;
+  }
+}
+
+function setSelectedEventForLlmAnalysis(event) {
+  selectedEventForLlm = event || null;
+  const selectedEl = document.getElementById('event-llm-selected');
+  if (!selectedEl) return;
+  if (!selectedEventForLlm) {
+    selectedEl.textContent = 'Select an event from timeline to analyze impact and recommended pivot.';
+    return;
+  }
+  const eventDate = selectedEventForLlm.date
+    ? new Date(selectedEventForLlm.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : 'N/A';
+  selectedEl.textContent = `Selected: ${selectedEventForLlm.event_type} (${eventDate}) - ${selectedEventForLlm.notes || 'No notes'}`;
+}
+
+async function runEventLlmAnalysis() {
+  const summaryEl = document.getElementById('event-llm-summary');
+  const impactEl = document.getElementById('event-llm-impact');
+  const actionsEl = document.getElementById('event-llm-actions');
+  if (!summaryEl || !impactEl || !actionsEl) return;
+
+  if (!selectedEventForLlm) {
+    summaryEl.textContent = 'Select an event on the timeline first.';
+    return;
+  }
+
+  const ready = await refreshLlmStatuses();
+  if (!ready) {
+    summaryEl.textContent = 'LLM not configured. Connect API first.';
+    return;
+  }
+
+  summaryEl.textContent = 'Analyzing selected event...';
+  try {
+    const result = await generateEventAnalyst({
+      event: selectedEventForLlm,
+      liveSnapshot: getLivePromoSnapshotSafe(),
+      businessContext: llmBusinessContext
+    });
+    summaryEl.textContent = result.summary || 'Event analysis ready.';
+    renderList(impactEl, result.impact, 'No major measurable impact detected.');
+    renderList(actionsEl, result.actions, 'No immediate pivot needed.');
+  } catch (error) {
+    summaryEl.textContent = `Event analysis failed: ${error.message}`;
+    renderList(impactEl, [], 'Unable to compute impact.');
+    renderList(actionsEl, [], 'Unable to compute actions.');
+  }
+}
+
+function initializeLlmAssistPanels() {
+  refreshLlmStatuses(true);
+
+  document.getElementById('channel-promo-llm-analyze')?.addEventListener('click', () => {
+    runLiveCopilotAnalysis({ force: true });
+  });
+
+  document.getElementById('channel-promo-llm-auto')?.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      scheduleLiveCopilotAnalysis({ force: true });
+    }
+  });
+
+  document.getElementById('channel-promo-llm-plan-apply')?.addEventListener('click', applyLlmPlanFromText);
+  document.getElementById('channel-promo-llm-plan-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      applyLlmPlanFromText();
+    }
+  });
+
+  document.getElementById('event-llm-analyze-btn')?.addEventListener('click', runEventLlmAnalysis);
+
+  window.onChannelPromoSnapshotUpdated = () => {
+    scheduleLiveCopilotAnalysis({ force: false });
+  };
+  window.onEventCalendarEventSelected = (event) => {
+    setSelectedEventForLlmAnalysis(event);
+  };
 }
 
 // Handle chat message send
@@ -2005,13 +2569,16 @@ async function initializeSegmentSkuSelector() {
     });
 
     const previous = skuSelect.value || 'all';
-    skuSelect.innerHTML = '<option value="all" selected>All SKUs</option>';
+    skuSelect.innerHTML = '<option value="all" selected>All Products</option>';
     Object.values(bySku)
       .sort((a, b) => a.sku_id.localeCompare(b.sku_id))
       .forEach(profile => {
         const option = document.createElement('option');
         option.value = profile.sku_id;
-        option.textContent = `${profile.sku_id} - ${profile.sku_name}`;
+        const groupLabel = profile.product_group
+          ? `${profile.product_group.charAt(0).toUpperCase()}${profile.product_group.slice(1)}`
+          : 'Product';
+        option.textContent = `${profile.sku_name} (${groupLabel})`;
         skuSelect.appendChild(option);
       });
 
@@ -2347,12 +2914,462 @@ window.selectSegmentFromSearch = function(segmentId) {
   }
 };
 
-/**
- * Update the Cohort Watchlist (top at-risk cohorts) based on current filters & tier
- */
+function getWatchlistRiskBandMeta(riskPct) {
+  if (riskPct < 12) return { color: 'success', label: 'Fewer at risk' };
+  if (riskPct < 18) return { color: 'warning', label: 'Some at risk' };
+  return { color: 'danger', label: 'Many at risk' };
+}
+
+function formatProductGroupLabel(productGroup) {
+  const raw = String(productGroup || 'product').trim();
+  if (!raw) return 'Product';
+  return raw.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function normalizeRange(value, min, max, fallback = 0.5) {
+  const v = Number(value);
+  if (!Number.isFinite(v)) return fallback;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return fallback;
+  return clamp((v - min) / (max - min), 0, 1);
+}
+
+function buildCohortWatchlistContextFromSkuData(rows) {
+  const validRows = (rows || []).filter(row => Number(row.week_of_season) > 0);
+  if (!validRows.length) return null;
+
+  const currentWeek =
+    validRows.find(row => row.is_current_week === true)?.week_of_season ||
+    validRows.reduce((max, row) => Math.max(max, Number(row.week_of_season || 0)), 0);
+  const currentWeekNum = Number(currentWeek) || 1;
+  const previousWeekNum = Math.max(1, currentWeekNum - 1);
+
+  const currentRows = validRows.filter(row => Number(row.week_of_season) === currentWeekNum);
+  const previousRows = validRows.filter(row => Number(row.week_of_season) === previousWeekNum);
+  if (!currentRows.length) return null;
+
+  const previousUnitsBySku = new Map();
+  previousRows.forEach(row => {
+    const key = row.sku_id;
+    previousUnitsBySku.set(key, (previousUnitsBySku.get(key) || 0) + (Number(row.net_units_sold) || 0));
+  });
+
+  const skuMap = new Map();
+  currentRows.forEach(row => {
+    const key = row.sku_id;
+    if (!skuMap.has(key)) {
+      skuMap.set(key, {
+        sku_id: row.sku_id,
+        sku_name: row.sku_name || row.sku_id,
+        product_group: row.product_group || 'product',
+        channels: new Set(),
+        mass_units: 0,
+        prestige_units: 0,
+        units: 0,
+        inventory: 0,
+        price_sum: 0,
+        gap_sum: 0,
+        promo_sum: 0,
+        social_sum: 0,
+        elasticity_sum: 0,
+        row_count: 0,
+        prev_units: previousUnitsBySku.get(key) || 0
+      });
+    }
+
+    const entry = skuMap.get(key);
+    const units = Number(row.net_units_sold) || 0;
+    entry.channels.add(row.sales_channel || row.channel_group || 'channel');
+    entry.units += units;
+    entry.inventory += Number(row.end_inventory_units) || 0;
+    entry.price_sum += Number(row.effective_price || row.list_price) || 0;
+    entry.gap_sum += Number(row.price_gap_vs_competitor) || 0;
+    entry.promo_sum += Number(row.promo_depth_pct) || 0;
+    entry.social_sum += Number(row.social_engagement_score) || 0;
+    entry.elasticity_sum += Math.abs(Number(row.base_elasticity) || 0);
+    entry.row_count += 1;
+    if (row.channel_group === 'mass') entry.mass_units += units;
+    if (row.channel_group === 'prestige') entry.prestige_units += units;
+  });
+
+  const skuProfiles = [...skuMap.values()].map(entry => {
+    const count = Math.max(1, entry.row_count);
+    const avgPrice = entry.price_sum / count;
+    const avgGapPct = entry.gap_sum / count;
+    const avgPromoDepth = entry.promo_sum / count;
+    const avgSocial = entry.social_sum / count;
+    const avgElasticity = entry.elasticity_sum / count;
+    const wowUnitsPct = entry.prev_units > 0 ? ((entry.units - entry.prev_units) / entry.prev_units) : 0;
+    const massShare = entry.units > 0 ? (entry.mass_units / entry.units) : 0.5;
+    const channelSwitchFit = clamp(1 - (Math.abs(massShare - 0.5) * 2), 0, 1);
+
+    return {
+      sku_id: entry.sku_id,
+      sku_name: entry.sku_name,
+      product_group: entry.product_group,
+      channels: [...entry.channels],
+      units: entry.units,
+      inventory: entry.inventory,
+      avgPrice,
+      avgGapPct,
+      avgPromoDepth,
+      avgSocial,
+      avgElasticity,
+      wowUnitsPct,
+      massShare,
+      channelSwitchFit
+    };
+  });
+
+  if (!skuProfiles.length) return null;
+
+  const prices = skuProfiles.map(row => row.avgPrice);
+  const socials = skuProfiles.map(row => row.avgSocial);
+  const elasticities = skuProfiles.map(row => row.avgElasticity);
+  const maxPositiveGap = Math.max(0.0001, ...skuProfiles.map(row => Math.max(0, row.avgGapPct)));
+  const totalUnits = Math.max(1, skuProfiles.reduce((sum, row) => sum + row.units, 0));
+  const totalInventory = Math.max(1, skuProfiles.reduce((sum, row) => sum + row.inventory, 0));
+
+  skuProfiles.forEach(row => {
+    row.premiumScore = normalizeRange(row.avgPrice, Math.min(...prices), Math.max(...prices), 0.5);
+    row.valueScore = clamp(1 - row.premiumScore, 0, 1);
+    row.socialMomentum = normalizeRange(row.avgSocial, Math.min(...socials), Math.max(...socials), 0.5);
+    row.elasticityScore = normalizeRange(row.avgElasticity, Math.min(...elasticities), Math.max(...elasticities), 0.5);
+    row.promoSupport = clamp(row.avgPromoDepth / 25, 0, 1);
+    row.compPressure = clamp(Math.max(0, row.avgGapPct) / maxPositiveGap, 0, 1);
+    row.inventoryShare = clamp(row.inventory / totalInventory, 0, 1);
+    row.volumeShare = clamp(row.units / totalUnits, 0, 1);
+  });
+
+  return { currentWeek: currentWeekNum, skuProfiles };
+}
+
+function ensureCohortWatchlistContextLoaded() {
+  if (cohortWatchlistContext?.skuProfiles?.length) return Promise.resolve(cohortWatchlistContext);
+  if (cohortWatchlistContextPromise) return cohortWatchlistContextPromise;
+
+  cohortWatchlistContextPromise = loadSkuWeeklyData()
+    .then(rows => {
+      cohortWatchlistContext = buildCohortWatchlistContextFromSkuData(rows);
+      return cohortWatchlistContext;
+    })
+    .catch(error => {
+      console.warn('Failed to load SKU drilldown context for cohort watchlist:', error);
+      cohortWatchlistContext = null;
+      return null;
+    })
+    .finally(() => {
+      cohortWatchlistContextPromise = null;
+    });
+
+  return cohortWatchlistContextPromise;
+}
+
+function deriveCohortPreferenceWeights(entry) {
+  const weights = {
+    value: 0.35,
+    premium: 0.35,
+    trend: 0.35,
+    promo: 0.35,
+    loyalty: 0.35,
+    channelSwitch: 0.35,
+    trial: 0.35,
+    routine: 0.35
+  };
+  const boost = patch => {
+    Object.entries(patch || {}).forEach(([key, value]) => {
+      if (weights[key] === undefined) return;
+      weights[key] = Math.max(weights[key], Number(value) || 0);
+    });
+  };
+
+  const acquisitionMap = {
+    seasonal_first_time: { trend: 0.76, value: 0.48, routine: 0.28 },
+    routine_refill: { routine: 0.94, loyalty: 0.76, value: 0.42 },
+    gift_buyer: { premium: 0.8, trend: 0.36, value: 0.28 },
+    influencer_discovered: { trend: 0.97, premium: 0.58, promo: 0.52 },
+    promo_triggered: { promo: 0.98, value: 0.88, loyalty: 0.18 }
+  };
+  const engagementMap = {
+    prestige_loyalist: { loyalty: 0.94, premium: 0.9, channelSwitch: 0.22 },
+    value_seeker: { value: 0.93, promo: 0.68, loyalty: 0.3 },
+    deal_hunter: { promo: 1.0, value: 0.96, loyalty: 0.18 },
+    occasional_shop: { promo: 0.52, trend: 0.46, loyalty: 0.28 },
+    channel_switcher: { channelSwitch: 0.98, value: 0.58, premium: 0.5 }
+  };
+  const monetizationMap = {
+    single_sku_staple: { routine: 0.88, loyalty: 0.58, premium: 0.32 },
+    multi_sku_builder: { premium: 0.64, trend: 0.57, routine: 0.65 },
+    value_bundle_buyer: { value: 0.98, promo: 0.82, routine: 0.54 },
+    premium_add_on: { premium: 1.0, loyalty: 0.64, trend: 0.56 },
+    trial_size_sampler: { trial: 1.0, value: 0.74, trend: 0.58 }
+  };
+
+  boost(acquisitionMap[entry.acquisition]);
+  boost(engagementMap[entry.engagement]);
+  boost(monetizationMap[entry.monetization]);
+
+  if (entry.profileWeights) {
+    const profile = entry.profileWeights;
+    boost({
+      loyalty: Number(profile.brand_loyal) || 0,
+      value: Number(profile.value_conscious) || 0,
+      promo: Number(profile.deal_seeker) || 0,
+      trend: Number(profile.trend_driven) || 0,
+      channelSwitch: Number(profile.channel_switcher) || 0,
+      premium: Number(profile.premium_loyal) || 0,
+      trial: Number(profile.at_risk) || 0,
+      routine: Number(profile.brand_loyal) || 0
+    });
+  }
+
+  const maxWeight = Math.max(1, ...Object.values(weights));
+  Object.keys(weights).forEach(key => {
+    weights[key] = clamp(weights[key] / maxWeight, 0, 1);
+  });
+  return weights;
+}
+
+function getWatchlistChannelFocusLabel(profile) {
+  if (profile.massShare >= 0.58) return 'Mass: Target + Amazon';
+  if (profile.massShare <= 0.42) return 'Prestige: Sephora + Ulta';
+  return 'Balanced channels';
+}
+
+function getWatchlistSkuAction(profile, promoSensitivity, cohortEntry) {
+  if (profile.compPressure > 0.62 && profile.promoFit > 0.55) {
+    return `Run selective 8-12% defense promo in ${profile.channelFocus}.`;
+  }
+  if (profile.socialMomentum > 0.68 && profile.premiumScore > 0.58) {
+    return `Hold depth and use creator-led messaging in ${profile.channelFocus}.`;
+  }
+  if (promoSensitivity > 0.58 && profile.elasticityScore > 0.55 && profile.inventoryShare > 0.14) {
+    return 'Prioritize this SKU in the next promo burst to clear inventory.';
+  }
+  if (cohortEntry.monetization === 'trial_size_sampler' || profile.trialFit > 0.68) {
+    return 'Package as trial-friendly offer with low entry barrier.';
+  }
+  return 'Monitor and retarget this cohort with channel-specific creative.';
+}
+
+function computeCohortSkuDrilldown(entry, context) {
+  if (!context?.skuProfiles?.length) return null;
+
+  const weights = deriveCohortPreferenceWeights(entry);
+  const atRiskCustomers = Math.max(0, Number(entry.atRiskCustomers) || 0);
+  const promoSensitivity = clamp((Math.abs(Number(entry.promoElasticity) || 1.8) - 1.0) / 2.2, 0, 1);
+  const repeatSensitivity = clamp((Math.abs(Number(entry.repeatElasticity) || 0.8) - 0.25) / 1.8, 0, 1);
+
+  const scored = context.skuProfiles.map(profile => {
+    const isSunscreen = profile.product_group === 'sunscreen';
+    const routineFit = clamp((isSunscreen ? 0.46 : 0.86) * (0.7 + ((1 - profile.compPressure) * 0.3)), 0, 1);
+    const trendFit = clamp((profile.socialMomentum * 0.58) + ((isSunscreen ? 1 : 0.48) * 0.42), 0, 1);
+    const promoFit = clamp((profile.elasticityScore * 0.62) + (profile.promoSupport * 0.38), 0, 1);
+    const loyaltyFit = clamp(((1 - profile.compPressure) * 0.58) + (profile.socialMomentum * 0.3) + (Math.max(0, profile.wowUnitsPct) * 0.12), 0, 1);
+    const trialFit = clamp((profile.valueScore * 0.68) + (profile.promoSupport * 0.32), 0, 1);
+
+    const affinityRaw =
+      (weights.value * profile.valueScore) +
+      (weights.premium * profile.premiumScore) +
+      (weights.trend * trendFit) +
+      (weights.promo * promoFit) +
+      (weights.loyalty * loyaltyFit) +
+      (weights.channelSwitch * profile.channelSwitchFit) +
+      (weights.trial * trialFit) +
+      (weights.routine * routineFit);
+
+    return { ...profile, routineFit, trendFit, promoFit, loyaltyFit, trialFit, affinityRaw };
+  });
+
+  const affinityTotal = Math.max(0.0001, scored.reduce((sum, row) => sum + row.affinityRaw, 0));
+  scored.forEach(row => {
+    row.affinityShare = row.affinityRaw / affinityTotal;
+    const competitionEffect = row.compPressure * 0.32;
+    const socialEffect = (0.5 - row.socialMomentum) * 0.24;
+    const promoEffect = Math.max(0, promoSensitivity - row.promoSupport) * 0.22;
+    const trendEffect = Math.max(0, -row.wowUnitsPct) * 0.14;
+    row.riskMultiplier = clamp(1 + competitionEffect + socialEffect + promoEffect + trendEffect, 0.72, 1.85);
+    row.lossEstimate = Math.max(0, atRiskCustomers * row.affinityShare * row.riskMultiplier);
+    row.recoverableCustomers = row.lossEstimate * clamp(0.16 + (row.promoFit * 0.36) + (row.compPressure * 0.18), 0.08, 0.66);
+    row.channelFocus = getWatchlistChannelFocusLabel(row);
+    row.action = getWatchlistSkuAction(row, promoSensitivity, entry);
+  });
+
+  scored.sort((a, b) => b.lossEstimate - a.lossEstimate);
+  const topSkus = scored.slice(0, 4);
+  const topLossTotal = Math.max(0.0001, topSkus.reduce((sum, row) => sum + row.lossEstimate, 0));
+  const weighted = fn => topSkus.reduce((sum, row) => sum + (fn(row) * (row.lossEstimate / topLossTotal)), 0);
+
+  const competitionIndex = weighted(row => row.compPressure);
+  const socialIndex = weighted(row => row.socialMomentum);
+  const promoGapIndex = weighted(row => Math.max(0, promoSensitivity - row.promoSupport));
+
+  const baseDriver = atRiskCustomers;
+  const competitionDriver = atRiskCustomers * (0.1 + (competitionIndex * 0.24));
+  const socialDriver = atRiskCustomers * ((0.5 - socialIndex) * 0.2);
+  const promoDriver = atRiskCustomers * promoGapIndex * 0.2;
+  const projectedNet = Math.max(0, baseDriver + competitionDriver + socialDriver + promoDriver);
+
+  return {
+    currentWeek: context.currentWeek,
+    atRiskCustomers,
+    promoSensitivity,
+    repeatSensitivity,
+    projectedNet,
+    topSkus,
+    drivers: [
+      { key: 'base', label: 'Base repeat-loss risk', value: baseDriver, color: 'secondary' },
+      { key: 'competition', label: 'Competitive price pressure', value: competitionDriver, color: 'danger' },
+      { key: 'social', label: 'Social momentum effect', value: socialDriver, color: socialDriver >= 0 ? 'warning' : 'success' },
+      { key: 'promo_gap', label: 'Promo mismatch vs elasticity', value: promoDriver, color: 'danger' }
+    ]
+  };
+}
+
+function updateSegmentDetailFromWatchlist(entry, drilldown) {
+  const titleEl = document.getElementById('segment-detail-title');
+  const bodyEl = document.getElementById('segment-detail-body');
+  if (!titleEl || !bodyEl || !entry) return;
+
+  const topSkus = (drilldown?.topSkus || []).slice(0, 2).map(row => row.sku_name).join(', ');
+  titleEl.textContent = `Watchlist focus: ${entry.labelParts.join(' • ')}`;
+  bodyEl.innerHTML = `
+    <div>
+      Current price-point risk in week ${drilldown?.currentWeek || '--'} is <strong>${(entry.repeatLoss * 100).toFixed(1)}%</strong>
+      (${Math.round(entry.atRiskCustomers).toLocaleString()} customers). ${topSkus ? `Most exposed SKUs: ${topSkus}.` : ''}
+    </div>
+  `;
+}
+
+function renderWatchlistDrilldown(entry, drilldown, containerEl) {
+  if (!containerEl) return;
+  if (!entry || !drilldown) {
+    containerEl.innerHTML = `
+      <div class="text-center py-4 text-body-secondary small">
+        <i class="bi bi-hourglass-split fs-5 d-block mb-1"></i>
+        SKU drilldown is loading...
+      </div>
+    `;
+    return;
+  }
+
+  const riskPct = entry.repeatLoss * 100;
+  const riskBand = getWatchlistRiskBandMeta(riskPct);
+  const driverMax = Math.max(1, ...drilldown.drivers.map(driver => Math.abs(driver.value)));
+  const segmentChips = [
+    `<span class="badge text-bg-light border">${entry.acquisitionLabel}</span>`,
+    `<span class="badge text-bg-light border">${entry.engagementLabel}</span>`,
+    `<span class="badge text-bg-light border">${entry.monetizationLabel}</span>`
+  ].join('');
+
+  const skuRiskBars = drilldown.topSkus.slice(0, 3).map(row => {
+    const width = clamp((row.lossEstimate / Math.max(1, drilldown.topSkus[0]?.lossEstimate || 1)) * 100, 6, 100);
+    return `
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small">
+          <span>${row.sku_name}</span>
+          <span class="text-body-secondary">${Math.round(row.lossEstimate).toLocaleString()} customers</span>
+        </div>
+        <div class="progress rounded-pill">
+          <div class="progress-bar bg-danger" role="progressbar" style="width: ${width}%;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  containerEl.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+      <div class="small text-body-secondary">Drilldown: specific SKUs this cohort is likely to churn on</div>
+      <span class="badge bg-${riskBand.color}-subtle text-${riskBand.color}-emphasis">${riskPct.toFixed(1)}% at risk</span>
+    </div>
+    <div class="d-flex flex-wrap gap-1 mb-2">${segmentChips}</div>
+
+    <div class="row g-2 mb-2">
+      <div class="col-6 col-lg-3">
+        <div class="watchlist-kpi h-100">
+          <div class="label">Customers</div>
+          <div class="value">${entry.customers.toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="watchlist-kpi h-100">
+          <div class="label">At-Risk Now</div>
+          <div class="value">${Math.round(drilldown.atRiskCustomers).toLocaleString()}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="watchlist-kpi h-100">
+          <div class="label">Promo Sensitivity</div>
+          <div class="value">${drilldown.promoSensitivity.toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="watchlist-kpi h-100">
+          <div class="label">Projected Net Risk</div>
+          <div class="value">${Math.round(drilldown.projectedNet).toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="small text-body-secondary mb-2">
+      Modeled at week ${drilldown.currentWeek} effective prices, competitor website deltas, and current social signal.
+    </div>
+
+    <div class="mb-2">${skuRiskBars}</div>
+
+    <div class="table-responsive mb-2">
+      <table class="table table-sm watchlist-sku-table mb-0">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Channel Focus</th>
+            <th class="text-end">Comp Gap</th>
+            <th class="text-end">Social</th>
+            <th class="text-end">At-Risk</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${drilldown.topSkus.map(row => `
+            <tr>
+              <td>
+                <div class="watchlist-sku-name">${row.sku_name}</div>
+                <div class="text-body-secondary">${formatProductGroupLabel(row.product_group)}</div>
+              </td>
+              <td>${row.channelFocus}</td>
+              <td class="text-end ${row.avgGapPct > 0 ? 'text-danger' : 'text-success'}">${(row.avgGapPct * 100).toFixed(1)}%</td>
+              <td class="text-end">${row.avgSocial.toFixed(1)}</td>
+              <td class="text-end">${Math.round(row.lossEstimate).toLocaleString()}</td>
+              <td>${row.action}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      ${drilldown.drivers.map(driver => {
+        const width = clamp((Math.abs(driver.value) / driverMax) * 100, 8, 100);
+        const sign = driver.key === 'base' ? '' : (driver.value >= 0 ? '+' : '');
+        return `
+          <div class="watchlist-driver-row mb-2">
+            <div class="d-flex justify-content-between small">
+              <span>${driver.label}</span>
+              <span class="text-${driver.color}">${sign}${Math.round(driver.value).toLocaleString()} customers</span>
+            </div>
+            <div class="progress rounded-pill">
+              <div class="progress-bar bg-${driver.color}" role="progressbar" style="width: ${width}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function updateCohortWatchlist() {
   const badge = document.getElementById('segment-watchlist-badge');
   const body = document.getElementById('segment-watchlist-body');
+  const drilldownEl = document.getElementById('segment-watchlist-drilldown');
   if (!badge || !body || !window.segmentEngine || !window.segmentEngine.isDataLoaded()) return;
 
   const tier = document.getElementById('segment-tier-select')?.value || 'ad_free';
@@ -2364,6 +3381,7 @@ function updateCohortWatchlist() {
 
   const segments = window.segmentEngine.filterSegments(filters).filter(s => s.tier === tier);
   if (!segments.length) {
+    selectedWatchlistCompositeKey = null;
     badge.textContent = '0';
     body.innerHTML = `
       <div class="text-center py-3 text-body-secondary small">
@@ -2371,60 +3389,126 @@ function updateCohortWatchlist() {
         No cohorts match the current filters.
       </div>
     `;
+    if (drilldownEl) {
+      drilldownEl.innerHTML = `
+        <div class="text-center py-4 text-body-secondary small">
+          <i class="bi bi-funnel fs-5 d-block mb-1"></i>
+          Expand filters to bring back cohort drilldown.
+        </div>
+      `;
+    }
     return;
   }
 
   const scored = segments.map(seg => {
     const customers = parseInt(seg.customer_count || 0);
     const repeatLoss = parseFloat(seg.repeat_loss_rate || 0);
-    const score = customers * repeatLoss;
+    const atRiskCustomers = customers * repeatLoss;
+    const score = atRiskCustomers;
+    const segmentData = window.segmentEngine.getSegmentData(seg.compositeKey, tier) || null;
+    const promoElasticity = Math.abs(
+      Number(segmentData?.acquisition_axis?.elasticity) ||
+      Number(window.segmentEngine.getElasticity(tier, seg.compositeKey, 'acquisition')) ||
+      1.8
+    );
+    const repeatElasticity = Math.abs(
+      Number(segmentData?.repeat_loss_axis?.elasticity) ||
+      Number(window.segmentEngine.getElasticity(tier, seg.compositeKey, 'engagement')) ||
+      0.8
+    );
+
     return {
       compositeKey: seg.compositeKey,
       label: window.segmentEngine.formatCompositeKey(seg.compositeKey),
+      labelParts: [
+        window.segmentEngine.formatSegmentLabel(seg.acquisition),
+        window.segmentEngine.formatSegmentLabel(seg.engagement),
+        window.segmentEngine.formatSegmentLabel(seg.monetization)
+      ],
+      acquisition: seg.acquisition,
+      engagement: seg.engagement,
+      monetization: seg.monetization,
+      acquisitionLabel: window.segmentEngine.formatSegmentLabel(seg.acquisition),
+      engagementLabel: window.segmentEngine.formatSegmentLabel(seg.engagement),
+      monetizationLabel: window.segmentEngine.formatSegmentLabel(seg.monetization),
       customers,
       repeatLoss,
+      atRiskCustomers,
+      promoElasticity,
+      repeatElasticity,
+      profileWeights: segmentData?.profile_weights || null,
       score
     };
   });
 
   scored.sort((a, b) => b.score - a.score);
   const top = scored.slice(0, 5);
-
   badge.textContent = `Top ${top.length} at risk`;
 
-  function repeatLossBarColor(pct) {
-    if (pct < 12) return 'success';
-    if (pct < 18) return 'warning';
-    return 'danger';
+  if (!selectedWatchlistCompositeKey || !top.some(item => item.compositeKey === selectedWatchlistCompositeKey)) {
+    selectedWatchlistCompositeKey = top[0].compositeKey;
   }
 
-  body.innerHTML = top.map((item, i) => {
+  const hasContext = !!(cohortWatchlistContext?.skuProfiles?.length);
+  if (!hasContext && !cohortWatchlistContextPromise) {
+    ensureCohortWatchlistContextLoaded().then(() => updateCohortWatchlist());
+  }
+
+  const topWithDrilldown = top.map(item => ({
+    ...item,
+    drilldown: hasContext ? computeCohortSkuDrilldown(item, cohortWatchlistContext) : null
+  }));
+
+  body.innerHTML = topWithDrilldown.map((item, i) => {
     const rank = i + 1;
     const pct = item.repeatLoss * 100;
-    const barColor = repeatLossBarColor(pct);
-    const parts = item.label.split(/\s*\|\s*/).filter(Boolean);
+    const riskBand = getWatchlistRiskBandMeta(pct);
+    const isActive = item.compositeKey === selectedWatchlistCompositeKey;
+    const topSkuChips = item.drilldown?.topSkus?.slice(0, 2).map(row => `
+      <span class="watchlist-sku-chip">${row.sku_name}</span>
+    `).join('') || '<span class="text-body-secondary small">Loading SKU mapping...</span>';
+
     return `
-      <div class="cohort-watchlist-item d-flex align-items-start gap-2 py-2 border-bottom border-body-secondary border-opacity-25 ${rank === top.length ? 'border-0 pb-0' : ''} ${rank === 1 ? 'pt-0' : ''}" title="Customer group: ${item.label}&#10;Customers: ${item.customers.toLocaleString()}&#10;At risk of not coming back: ${pct.toFixed(1)}%">
-        <span class="cohort-rank badge rounded-circle flex-shrink-0 ${rank <= 2 ? 'bg-danger' : rank === 3 ? 'bg-warning text-dark' : 'bg-secondary'}" title="Place in this list (1 = highest risk)">${rank}</span>
-        <div class="flex-grow-1 min-w-0">
-          <div class="small fw-semibold text-body-emphasis mb-1">
-            ${parts.map(p => p.trim()).join(' · ')}
-          </div>
-          <div class="d-flex align-items-center gap-2 small mb-1">
-            <div class="flex-grow-1">
-              <div class="progress rounded-pill" style="height: 8px;" title="Share of this group at risk of not coming back">
-                <div class="progress-bar bg-${barColor}" role="progressbar" style="width: ${Math.min(pct * 4, 100)}%;" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="25"></div>
-              </div>
+      <button
+        type="button"
+        class="cohort-watchlist-item ${isActive ? 'active' : ''}"
+        data-watchlist-key="${item.compositeKey}"
+        title="Customer group: ${item.label}&#10;Customers: ${item.customers.toLocaleString()}&#10;At risk now: ${pct.toFixed(1)}%"
+      >
+        <div class="d-flex align-items-start gap-2">
+          <span class="cohort-rank badge rounded-circle flex-shrink-0 ${rank <= 2 ? 'bg-danger' : rank === 3 ? 'bg-warning text-dark' : 'bg-secondary'}">${rank}</span>
+          <div class="flex-grow-1 min-w-0">
+            <div class="small fw-semibold text-body-emphasis mb-1">
+              ${item.labelParts.join(' &middot; ')}
             </div>
-            <span class="badge bg-${barColor}-subtle text-${barColor}-emphasis" title="Percent of this group at risk">${pct.toFixed(1)}% at risk</span>
-          </div>
-          <div class="small text-body-secondary">
-            About ${item.customers.toLocaleString()} customers in this group.
+            <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+              <span class="badge bg-${riskBand.color}-subtle text-${riskBand.color}-emphasis">${pct.toFixed(1)}% at risk</span>
+              <span class="badge text-bg-light border watchlist-at-risk-count">${Math.round(item.atRiskCustomers).toLocaleString()} customers</span>
+            </div>
+            <div class="progress rounded-pill mb-1" style="height: 8px;" title="${riskBand.label}">
+              <div class="progress-bar bg-${riskBand.color}" role="progressbar" style="width: ${Math.min(pct * 4, 100)}%;"></div>
+            </div>
+            <div class="d-flex flex-wrap gap-1 align-items-center">
+              ${topSkuChips}
+            </div>
           </div>
         </div>
-      </div>
+      </button>
     `;
   }).join('');
+
+  body.querySelectorAll('[data-watchlist-key]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedWatchlistCompositeKey = button.getAttribute('data-watchlist-key');
+      updateCohortWatchlist();
+    });
+  });
+
+  const selectedEntry =
+    topWithDrilldown.find(item => item.compositeKey === selectedWatchlistCompositeKey) ||
+    topWithDrilldown[0];
+  renderWatchlistDrilldown(selectedEntry, selectedEntry?.drilldown, drilldownEl);
+  updateSegmentDetailFromWatchlist(selectedEntry, selectedEntry?.drilldown);
 }
 
 /**
@@ -2557,7 +3641,10 @@ async function init() {
   document.getElementById('clear-scenarios-btn')?.addEventListener('click', clearScenarios);
 
   // Chat event listeners
-  document.getElementById('configure-llm')?.addEventListener('click', configureLLM);
+  document.getElementById('configure-llm')?.addEventListener('click', async () => {
+    await configureLLM();
+    refreshLlmStatuses(true);
+  });
   document.getElementById('chat-send-btn')?.addEventListener('click', handleChatSend);
   document.getElementById('chat-reset-btn')?.addEventListener('click', () => {
     clearHistory();
@@ -2585,6 +3672,8 @@ async function init() {
       handleChatSend();
     });
   });
+
+  initializeLlmAssistPanels();
 
   // Initialize popovers (will be initialized again after data loads)
   initializePopovers();
@@ -3801,3 +4890,4 @@ function displayTop3Scenarios(top3) {
   // Scroll to results
   container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+

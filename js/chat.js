@@ -1015,3 +1015,169 @@ export function clearHistory() {
     </div>
   `;
 }
+
+function extractJsonObject(text) {
+  if (!text || typeof text !== 'string') return null;
+  const first = text.indexOf('{');
+  const last = text.lastIndexOf('}');
+  if (first < 0 || last <= first) return null;
+  const candidate = text.slice(first, last + 1);
+  try {
+    return parse(candidate);
+  } catch {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function getLLMConfigSafe() {
+  try {
+    const config = await openaiConfig({
+      defaultBaseUrls: DEFAULT_BASE_URLS,
+      show: false
+    });
+    if (!config || !config.apiKey || !config.baseUrl) return null;
+    return config;
+  } catch {
+    return null;
+  }
+}
+
+async function requestStructuredJson({ systemPrompt, userPrompt, temperature = 0.2, maxTokens = 900 }) {
+  const cfg = await getLLMConfigSafe();
+  if (!cfg) {
+    throw new Error('LLM is not configured');
+  }
+
+  const response = await fetch(`${cfg.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${cfg.apiKey}`
+    },
+    body: JSON.stringify({
+      model: getModelName(),
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature,
+      max_tokens: maxTokens
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`LLM request failed (${response.status})`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content || '';
+  const parsed = extractJsonObject(content);
+  if (!parsed) {
+    throw new Error('LLM returned invalid JSON payload');
+  }
+  return parsed;
+}
+
+export async function isLLMConfigured() {
+  const cfg = await getLLMConfigSafe();
+  return Boolean(cfg && cfg.apiKey);
+}
+
+export async function generateLiveCopilot(payload = {}) {
+  const liveSnapshot = payload.liveSnapshot
+    || (dataContext?.getVisualizationData ? dataContext.getVisualizationData()?.livePromoSnapshot : null)
+    || null;
+  const businessContext = payload.businessContext || dataContext?.businessContext || {};
+
+  const systemPrompt = `You are a promotion optimization copilot.
+Return ONLY valid JSON with schema:
+{
+  "summary": "string <= 240 chars",
+  "posture": "Win-Win|Volume Defense|Margin Guard|Unfavorable|Balanced",
+  "confidence": 0-100 number,
+  "actions": ["string", "string", "string"],
+  "risks": ["string", "string"],
+  "why_now": "string <= 160 chars"
+}
+Use only the provided data and avoid fabricating metrics.`;
+
+  const userPrompt = JSON.stringify({
+    task: 'Analyze current live promo scenario and recommend immediate actions.',
+    live_snapshot: liveSnapshot,
+    business_context: {
+      competitorSignals: businessContext.competitorSignals || null,
+      socialSignal: businessContext.socialSignal || null,
+      currentSeasonWeek: businessContext.currentSeasonWeek || null,
+      seasonWeeks: businessContext.seasonWeeks || null
+    }
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.15, maxTokens: 700 });
+}
+
+export async function generateScenarioPlanFromText(payload = {}) {
+  const userText = String(payload.userText || '').trim();
+  if (!userText) throw new Error('No plan text provided');
+  const liveSnapshot = payload.liveSnapshot
+    || (dataContext?.getVisualizationData ? dataContext.getVisualizationData()?.livePromoSnapshot : null)
+    || null;
+
+  const systemPrompt = `You convert natural-language promo strategy into simulator controls.
+Return ONLY valid JSON with schema:
+{
+  "objective": "balance|sales|profit",
+  "massPromoDepthPct": number 0..40,
+  "prestigePromoDepthPct": number 0..30,
+  "skuBoostPct": number 0..20,
+  "competitorShockPct": number -20..20,
+  "socialShockPts": number -20..20,
+  "applyMass": boolean,
+  "applyPrestige": boolean,
+  "productGroup": "all|sunscreen|moisturizer",
+  "skuFocusName": "string or empty",
+  "reasoning": "string <= 220 chars"
+}
+Use conservative defaults if unclear.`;
+
+  const userPrompt = JSON.stringify({
+    instruction: userText,
+    current_live_snapshot: liveSnapshot
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.1, maxTokens: 600 });
+}
+
+export async function generateEventAnalyst(payload = {}) {
+  const event = payload.event || null;
+  if (!event) throw new Error('No event provided');
+  const liveSnapshot = payload.liveSnapshot
+    || (dataContext?.getVisualizationData ? dataContext.getVisualizationData()?.livePromoSnapshot : null)
+    || null;
+  const businessContext = payload.businessContext || dataContext?.businessContext || {};
+
+  const systemPrompt = `You are an in-season event analyst for promotion optimization.
+Return ONLY valid JSON with schema:
+{
+  "summary": "string <= 220 chars",
+  "impact": ["string", "string", "string"],
+  "actions": ["string", "string", "string"],
+  "urgency": "low|medium|high"
+}
+Tie analysis to competitor delta, social momentum, inventory runway, and channel context when available.`;
+
+  const userPrompt = JSON.stringify({
+    selected_event: event,
+    live_snapshot: liveSnapshot,
+    context: {
+      competitorSignals: businessContext.competitorSignals || null,
+      socialSignal: businessContext.socialSignal || null,
+      currentSeasonWeek: businessContext.currentSeasonWeek || null
+    }
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.2, maxTokens: 700 });
+}

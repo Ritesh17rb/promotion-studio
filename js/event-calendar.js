@@ -10,7 +10,8 @@ import {
   loadValidationWindows,
   loadExternalFactors,
   loadSocialSignals,
-  loadSkuWeeklyData
+  loadSkuWeeklyData,
+  loadCompetitorPriceFeed
 } from './data-loader.js';
 import { formatCurrency, formatPercent, formatNumber } from './utils.js';
 
@@ -19,6 +20,7 @@ let allEvents = [];
 let promoMetadata = {};
 let validationWindows = {};
 let skuCatalog = new Map();
+let competitorFeed = [];
 let activeFilters = {
   priceChange: true,
   competitorPriceChange: true,
@@ -32,6 +34,8 @@ let activePromoFilters = {
 let selectedPromoId = null;
 let eventCompetitiveSignalsChart = null;
 let eventSocialSignalsChart = null;
+let promoStoryPhaseChart = null;
+let promoChannelLiftChart = null;
 
 const RETAIL_CHANNELS = ['sephora', 'ulta', 'target', 'amazon', 'dtc'];
 const CHANNEL_LABELS = {
@@ -92,11 +96,12 @@ export async function initializeEventCalendar() {
   try {
     // Load all data
     let skuWeeklyData = [];
-    [allEvents, promoMetadata, validationWindows, skuWeeklyData] = await Promise.all([
+    [allEvents, promoMetadata, validationWindows, skuWeeklyData, competitorFeed] = await Promise.all([
       loadEventCalendar(),
       loadPromoMetadata(),
       loadValidationWindows(),
-      loadSkuWeeklyData()
+      loadSkuWeeklyData(),
+      loadCompetitorPriceFeed()
     ]);
     hydrateSkuCatalog(skuWeeklyData || []);
 
@@ -110,6 +115,7 @@ export async function initializeEventCalendar() {
     initializePromoControls();
     renderPromoMethodology();
     renderPromoCards();
+    renderPromoStoryVisuals(getFilteredPromos());
     renderValidationWindows();
 
     // Setup event listeners
@@ -203,11 +209,17 @@ function renderPromoMethodology() {
   const competitorEvents = (allEvents || []).filter(e => e.event_type === 'Competitor Price Change').length;
   const socialEvents = (allEvents || []).filter(e => e.event_type === 'Social Spike').length;
   const promoEvents = (allEvents || []).filter(e => (e.event_type || '').includes('Promo')).length;
+  const feedRows = Array.isArray(competitorFeed) ? competitorFeed : [];
+  const sourceDomains = [...new Set(feedRows.map(row => row.source_domain).filter(Boolean))];
+  const avgMatchConfidence = feedRows.length
+    ? feedRows.reduce((sum, row) => sum + Number(row.match_confidence || 0), 0) / feedRows.length
+    : 0;
 
   container.innerHTML = `
-    <div><strong>How this is built:</strong> Events come from <code>retail_events.csv</code>, campaign outcomes from <code>promo_metadata.json</code>, product names from <code>sku_channel_weekly.csv</code>, and market/social context from <code>market_signals.csv</code> + <code>social_signals.csv</code>.</div>
-    <div class="mt-1"><strong>How this is analyzed:</strong> We classify event types (price, competitor, promo, tentpole), compute SKU/channel uplift from historical campaigns, and flag repeat underperformers for next-cycle exclusions.</div>
-    <div class="mt-1 text-muted">Coverage in this demo: ${promos.length} campaigns, ${promoEvents} promo events, ${competitorEvents} competitor-price events, ${socialEvents} social spikes; average SKU uplift ${avgSkuUplift >= 0 ? '+' : ''}${avgSkuUplift.toFixed(1)}%.</div>
+    <div><strong>How this is built:</strong> Event stream from <code>retail_events.csv</code>, campaign outcomes from <code>promo_metadata.json</code>, SKU names + inventory from <code>sku_channel_weekly.csv</code>, market context from <code>market_signals.csv</code>, and social context from <code>social_signals.csv</code>.</div>
+    <div class="mt-1"><strong>Competitor pricing source:</strong> <code>competitor_price_feed.csv</code> simulates website-scraped prices from ${sourceDomains.join(', ') || 'retail websites'} and SKU-matching confidence (avg ${avgMatchConfidence.toFixed(3)}).</div>
+    <div class="mt-1"><strong>How this is analyzed:</strong> We classify event type, map each campaign to promoted products and channels, compute product-channel uplift from <code>sku_results</code>, and extract include/exclude policy signals for the next cycle.</div>
+    <div class="mt-1 text-muted">Coverage: ${promos.length} campaigns, ${promoEvents} promo events, ${competitorEvents} competitor-price events, ${socialEvents} social spikes, ${feedRows.length} scraped competitor rows; average SKU uplift ${avgSkuUplift >= 0 ? '+' : ''}${avgSkuUplift.toFixed(1)}%.</div>
   `;
 }
 
@@ -550,6 +562,30 @@ function renderEventTimeline() {
   });
 }
 
+function buildEventPromoContext(event) {
+  if (!event || !event.promo_id) return '';
+  const promo = promoMetadata ? promoMetadata[event.promo_id] : null;
+  if (!promo) return '';
+
+  const phaseLabel = STORY_PHASE_LABELS[promo.story_phase] || 'Campaign';
+  const promotedSkus = Array.isArray(promo.promoted_skus) ? promo.promoted_skus : [];
+  const promotedProducts = promotedSkus.length
+    ? promotedSkus.map(skuId => formatSkuDisplay(skuId, null, false)).join(', ')
+    : 'Not specified';
+  const channels = Array.isArray(promo.eligible_channels)
+    ? promo.eligible_channels.map(channel => CHANNEL_LABELS[channel] || channel).join(', ')
+    : 'Not specified';
+
+  return `
+    <div class="alert alert-light border mt-2 mb-0 small">
+      <div><strong>Campaign Context:</strong> ${promo.campaign_name} (${phaseLabel})</div>
+      <div><strong>Promoted Products:</strong> ${promotedProducts}</div>
+      <div><strong>Channels:</strong> ${channels}</div>
+      ${promo.story_summary ? `<div class="text-muted mt-1">${promo.story_summary}</div>` : ''}
+    </div>
+  `;
+}
+
 /**
  * Show detailed information for a selected event
  * @param {object} event - Event object
@@ -562,6 +598,7 @@ function showEventDetails(event) {
   const dateStr = eventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const badge = getEventBadge(event.event_type);
   const priceInfo = getEventPriceInfo(event);
+  const promoContext = buildEventPromoContext(event);
 
   let html = `
     <div class="glass-card p-4">
@@ -579,11 +616,16 @@ function showEventDetails(event) {
       </div>
       <p class="mb-2">${event.notes || 'No description available'}</p>
       ${priceInfo ? `<div class="alert alert-info mb-0"><i class="bi bi-info-circle me-2"></i>${priceInfo}</div>` : ''}
+      ${promoContext}
     </div>
   `;
 
   detailsPanel.innerHTML = html;
   detailsPanel.style.display = 'block';
+
+  if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+    window.onEventCalendarEventSelected(event);
+  }
 }
 
 /**
@@ -641,6 +683,9 @@ function renderPromoCards() {
     container.innerHTML = '<div class="col-12 text-center text-muted">No promo campaigns match the selected filters.</div>';
     if (summaryEl) summaryEl.textContent = 'No campaigns for the selected season/channel filters.';
     renderPromoDrilldown(null);
+    renderPromoOutcomeMatrix([]);
+    renderPromoPolicyExtractor([]);
+    renderPromoStoryVisuals([]);
     return;
   }
 
@@ -649,9 +694,16 @@ function renderPromoCards() {
     ? filteredSkuRows.reduce((sum, row) => sum + Number(row.sales_uplift_pct || 0), 0) / filteredSkuRows.length
     : 0;
   const filteredDownCount = filteredSkuRows.filter(row => Number(row.sales_uplift_pct || 0) < 0 || row.outcome === 'down').length;
+  const phaseCounts = promos.reduce((acc, promo) => {
+    const key = String(promo.story_phase || '').toLowerCase();
+    if (key === 'baseline') acc.baseline += 1;
+    else if (key === 'pivot') acc.pivot += 1;
+    else if (key === 'future') acc.future += 1;
+    return acc;
+  }, { baseline: 0, pivot: 0, future: 0 });
   if (summaryEl) {
     summaryEl.textContent =
-      `Showing ${promos.length} campaigns. SKU outcomes tracked: ${filteredSkuRows.length}, average uplift ${filteredAvgUplift >= 0 ? '+' : ''}${filteredAvgUplift.toFixed(1)}%, down outcomes ${filteredDownCount}.`;
+      `Showing ${promos.length} campaigns. Story flow: ${phaseCounts.baseline} start-of-season, ${phaseCounts.pivot} in-season pivots, ${phaseCounts.future} future-vision. SKU outcomes: ${filteredSkuRows.length}, average uplift ${filteredAvgUplift >= 0 ? '+' : ''}${filteredAvgUplift.toFixed(1)}%, down outcomes ${filteredDownCount}.`;
   }
 
   let html = '';
@@ -753,6 +805,308 @@ function renderPromoCards() {
     selectedPromoId = promos[0].promo_id;
   }
   renderPromoDrilldown(selectedPromoId);
+  renderPromoOutcomeMatrix(promos);
+  renderPromoPolicyExtractor(promos);
+  renderPromoStoryVisuals(promos);
+}
+
+function renderPromoStoryVisuals(promos) {
+  const phaseCanvas = document.getElementById('promo-story-phase-chart');
+  const channelCanvas = document.getElementById('promo-channel-impact-chart');
+  const noteEl = document.getElementById('promo-story-visual-note');
+  if (!phaseCanvas || !channelCanvas || !noteEl) return;
+
+  const campaignList = Array.isArray(promos) ? promos : [];
+  if (!campaignList.length) {
+    if (promoStoryPhaseChart) {
+      promoStoryPhaseChart.destroy();
+      promoStoryPhaseChart = null;
+    }
+    if (promoChannelLiftChart) {
+      promoChannelLiftChart.destroy();
+      promoChannelLiftChart = null;
+    }
+    noteEl.textContent = 'No campaigns in current filter selection to render story visuals.';
+    return;
+  }
+
+  const phaseKeys = ['baseline', 'pivot', 'future'];
+  const phaseLabels = ['Start of Season', 'In-Season Pivot', 'Future Vision'];
+  const phaseData = phaseKeys.map(key =>
+    campaignList.filter(p => String(p.story_phase || '').toLowerCase() === key).length
+  );
+
+  if (promoStoryPhaseChart) {
+    promoStoryPhaseChart.data.labels = phaseLabels;
+    promoStoryPhaseChart.data.datasets[0].data = phaseData;
+    promoStoryPhaseChart.update();
+  } else if (window.Chart) {
+    promoStoryPhaseChart = new Chart(phaseCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: phaseLabels,
+        datasets: [
+          {
+            data: phaseData,
+            backgroundColor: [
+              'rgba(14, 165, 233, 0.85)',
+              'rgba(245, 158, 11, 0.88)',
+              'rgba(34, 197, 94, 0.88)'
+            ],
+            borderWidth: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  }
+
+  const channelOrder = ['target', 'amazon', 'sephora', 'ulta'];
+  const channelLabels = channelOrder.map(c => CHANNEL_LABELS[c] || c);
+  const channelAgg = new Map(channelOrder.map(c => [c, { sum: 0, count: 0 }]));
+  campaignList.forEach(promo => {
+    (promo.sku_results || []).forEach(row => {
+      const channel = String(row.channel || '').toLowerCase();
+      if (!channelAgg.has(channel)) return;
+      const metric = channelAgg.get(channel);
+      metric.sum += Number(row.sales_uplift_pct || 0);
+      metric.count += 1;
+    });
+  });
+  const channelData = channelOrder.map(channel => {
+    const metric = channelAgg.get(channel);
+    return metric.count > 0 ? (metric.sum / metric.count) : 0;
+  });
+
+  if (promoChannelLiftChart) {
+    promoChannelLiftChart.data.labels = channelLabels;
+    promoChannelLiftChart.data.datasets[0].data = channelData;
+    promoChannelLiftChart.update();
+  } else if (window.Chart) {
+    promoChannelLiftChart = new Chart(channelCanvas, {
+      type: 'bar',
+      data: {
+        labels: channelLabels,
+        datasets: [
+          {
+            label: 'Avg sales uplift %',
+            data: channelData,
+            backgroundColor: channelData.map(value =>
+              value >= 0 ? 'rgba(22, 163, 74, 0.85)' : 'rgba(220, 38, 38, 0.85)'
+            )
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            ticks: {
+              callback: (value) => `${value}%`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const bestChannelIdx = channelData.reduce((bestIdx, value, idx, arr) =>
+    value > arr[bestIdx] ? idx : bestIdx, 0
+  );
+  const avgUplift = channelData.length
+    ? channelData.reduce((sum, value) => sum + value, 0) / channelData.length
+    : 0;
+  noteEl.textContent =
+    `Story mix in current filters: ${phaseData[0]} baseline, ${phaseData[1]} pivot, ${phaseData[2]} future campaigns. ` +
+    `Best channel response is ${channelLabels[bestChannelIdx]} (${channelData[bestChannelIdx] >= 0 ? '+' : ''}${channelData[bestChannelIdx].toFixed(1)}% avg uplift). ` +
+    `Portfolio average: ${avgUplift >= 0 ? '+' : ''}${avgUplift.toFixed(1)}%.`;
+}
+
+function renderPromoOutcomeMatrix(promos) {
+  const summaryEl = document.getElementById('promo-outcome-summary');
+  const tbody = document.getElementById('promo-outcome-matrix-body');
+  if (!summaryEl || !tbody) return;
+
+  const campaignList = Array.isArray(promos) ? promos : [];
+  const channels = ['target', 'amazon', 'sephora', 'ulta'];
+  const bySku = new Map();
+
+  campaignList.forEach(promo => {
+    (promo.sku_results || []).forEach(row => {
+      const skuId = normalizeSkuId(row.sku_id);
+      const skuInfo = skuCatalog.get(skuId);
+      const skuName = getSkuName(skuId, row.sku_name);
+      const productGroup = String(skuInfo?.product_group || row.product_group || '').toLowerCase();
+      const channel = String(row.channel || '').toLowerCase();
+      if (!channels.includes(channel)) return;
+
+      if (!bySku.has(skuId)) {
+        bySku.set(skuId, {
+          sku_id: skuId,
+          sku_name: skuName,
+          product_group: productGroup,
+          channels: {}
+        });
+      }
+      const entry = bySku.get(skuId);
+      if (!entry.channels[channel]) {
+        entry.channels[channel] = { sum: 0, count: 0 };
+      }
+      const uplift = Number(row.sales_uplift_pct || 0);
+      entry.channels[channel].sum += uplift;
+      entry.channels[channel].count += 1;
+    });
+  });
+
+  const rows = [...bySku.values()].sort((a, b) => {
+    const groupCmp = String(a.product_group).localeCompare(String(b.product_group));
+    if (groupCmp !== 0) return groupCmp;
+    return String(a.sku_name).localeCompare(String(b.sku_name));
+  });
+
+  if (!rows.length) {
+    summaryEl.textContent = 'No SKU-by-channel outcomes available for current filters.';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No matrix rows.</td></tr>';
+    return;
+  }
+
+  const allAverages = [];
+  rows.forEach(row => {
+    channels.forEach(channel => {
+      const cell = row.channels[channel];
+      if (!cell || !cell.count) return;
+      allAverages.push(cell.sum / cell.count);
+    });
+  });
+  const strongPositive = allAverages.filter(v => v >= 8).length;
+  const negativeCells = allAverages.filter(v => v < 0).length;
+  summaryEl.textContent =
+    `Matrix built from ${campaignList.length} campaigns: ${allAverages.length} product-channel cells, ${strongPositive} strong positive cells (>= +8%), ${negativeCells} negative cells.`;
+
+  const groupLabel = (group) => {
+    if (!group) return '-';
+    return group.charAt(0).toUpperCase() + group.slice(1);
+  };
+
+  const renderCell = (stats) => {
+    if (!stats || !stats.count) {
+      return '<td class="text-end text-muted">--</td>';
+    }
+    const avg = stats.sum / stats.count;
+    const intensity = Math.min(0.55, 0.14 + (Math.abs(avg) / 18) * 0.41);
+    const color = avg >= 0
+      ? `rgba(22, 163, 74, ${intensity.toFixed(3)})`
+      : `rgba(220, 38, 38, ${intensity.toFixed(3)})`;
+    return `
+      <td class="text-end fw-semibold" style="background: ${color};" title="${stats.count} campaign outcomes">
+        ${avg >= 0 ? '+' : ''}${avg.toFixed(1)}%
+      </td>
+    `;
+  };
+
+  tbody.innerHTML = rows.map(row => `
+    <tr>
+      <td>${row.sku_name}</td>
+      <td>${groupLabel(row.product_group)}</td>
+      ${channels.map(channel => renderCell(row.channels[channel])).join('')}
+    </tr>
+  `).join('');
+}
+
+function renderPromoPolicyExtractor(promos) {
+  const summaryEl = document.getElementById('promo-policy-summary');
+  const tbody = document.getElementById('promo-policy-table-body');
+  if (!summaryEl || !tbody) return;
+
+  const campaignList = Array.isArray(promos) ? promos : [];
+  const skuStats = new Map();
+
+  campaignList.forEach(promo => {
+    (promo.sku_results || []).forEach(row => {
+      const skuId = normalizeSkuId(row.sku_id);
+      if (!skuStats.has(skuId)) {
+        skuStats.set(skuId, {
+          sku_id: skuId,
+          sku_name: getSkuName(skuId, row.sku_name),
+          campaigns: 0,
+          up: 0,
+          down: 0,
+          upliftSum: 0,
+          channelUplift: {}
+        });
+      }
+      const entry = skuStats.get(skuId);
+      const uplift = Number(row.sales_uplift_pct || 0);
+      const channel = String(row.channel || '').toLowerCase();
+      entry.campaigns += 1;
+      entry.upliftSum += uplift;
+      if (uplift >= 0 || row.outcome === 'up') entry.up += 1;
+      if (uplift < 0 || row.outcome === 'down') entry.down += 1;
+      if (!entry.channelUplift[channel]) entry.channelUplift[channel] = [];
+      entry.channelUplift[channel].push(uplift);
+    });
+  });
+
+  const policies = [...skuStats.values()].map(entry => {
+    const avgUplift = entry.campaigns > 0 ? entry.upliftSum / entry.campaigns : 0;
+    const downRate = entry.campaigns > 0 ? entry.down / entry.campaigns : 0;
+    const channelAverages = Object.entries(entry.channelUplift).map(([channel, vals]) => ({
+      channel,
+      avg: vals.reduce((sum, v) => sum + v, 0) / vals.length
+    })).sort((a, b) => b.avg - a.avg);
+    const bestChannel = channelAverages[0]?.channel || '-';
+    const bestChannelLabel = CHANNEL_LABELS[bestChannel] || bestChannel || '-';
+
+    let policy = 'Test Selective Promo';
+    let policyClass = 'bg-info-subtle text-info';
+    if (entry.down >= 2 || downRate >= 0.5) {
+      policy = 'Avoid Broad Promo';
+      policyClass = 'bg-danger-subtle text-danger';
+    } else if (entry.up >= 2 && avgUplift >= 8) {
+      policy = 'Scale in Responsive Channels';
+      policyClass = 'bg-success-subtle text-success';
+    } else if (entry.up > entry.down && avgUplift > 2) {
+      policy = 'Selective Include';
+      policyClass = 'bg-primary-subtle text-primary';
+    }
+
+    return {
+      ...entry,
+      avgUplift,
+      bestChannelLabel,
+      policy,
+      policyClass
+    };
+  }).sort((a, b) => b.avgUplift - a.avgUplift);
+
+  if (!policies.length) {
+    summaryEl.textContent = 'No SKU outcome history available for policy extraction in current filter.';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No policy rows.</td></tr>';
+    return;
+  }
+
+  const avoidCount = policies.filter(p => p.policy === 'Avoid Broad Promo').length;
+  const scaleCount = policies.filter(p => p.policy === 'Scale in Responsive Channels').length;
+  summaryEl.textContent =
+    `Policy extraction from ${campaignList.length} campaigns: ${scaleCount} SKUs to scale, ${avoidCount} SKUs to avoid in broad promos.`;
+
+  tbody.innerHTML = policies.map(row => `
+    <tr>
+      <td>${row.sku_name}</td>
+      <td class="text-end">${formatNumber(row.campaigns, 0)}</td>
+      <td class="text-end ${row.avgUplift >= 0 ? 'text-success' : 'text-danger'}">${row.avgUplift >= 0 ? '+' : ''}${row.avgUplift.toFixed(1)}%</td>
+      <td>${row.bestChannelLabel}</td>
+      <td><span class="badge ${row.policyClass}">${row.policy}</span></td>
+    </tr>
+  `).join('');
 }
 
 function renderPromoDrilldown(promoId) {
