@@ -33,7 +33,87 @@ let latestPromoSnapshot = null;
 let livePlaybackTimer = null;
 let pitchModeTimer = null;
 let pitchModeActive = false;
-const SEASON_WEEKS = 17;
+const DEFAULT_SEASON_WEEKS = 17;
+const PLANNING_HORIZON_PRESETS = [8, 12, 17, 24];
+let planningHorizonWeeks = DEFAULT_SEASON_WEEKS;
+let maxObservedSeasonWeek = DEFAULT_SEASON_WEEKS;
+
+function getSeasonWeeks() {
+  return Math.max(1, Number(planningHorizonWeeks) || DEFAULT_SEASON_WEEKS);
+}
+
+function normalizePlanningHorizonWeeks(raw, maxWeek = maxObservedSeasonWeek) {
+  const maxAllowed = Math.max(1, Number(maxWeek) || DEFAULT_SEASON_WEEKS);
+  const allowedValues = [...PLANNING_HORIZON_PRESETS];
+  const numeric = Math.round(Number(raw));
+  if (!Number.isFinite(numeric)) {
+    if (allowedValues.includes(DEFAULT_SEASON_WEEKS)) return DEFAULT_SEASON_WEEKS;
+    if (DEFAULT_SEASON_WEEKS > maxAllowed) return allowedValues[allowedValues.length - 1];
+    return allowedValues[0];
+  }
+  return allowedValues.reduce((closest, current) => {
+    const currentDistance = Math.abs(current - numeric);
+    const closestDistance = Math.abs(closest - numeric);
+    return currentDistance < closestDistance ? current : closest;
+  }, allowedValues[0]);
+}
+
+function applyPlanningHorizonLabels() {
+  const horizon = getSeasonWeeks();
+  const liveLeftLabelEl = document.getElementById('channel-promo-live-leftover-label');
+  const baselineLabelEl = document.getElementById('channel-promo-season-end-baseline-label');
+  const scenarioLabelEl = document.getElementById('channel-promo-season-end-scenario-label');
+  const inventoryTitleEl = document.getElementById('channel-promo-inventory-chart-title');
+  const frontierTitleEl = document.getElementById('channel-promo-frontier-title');
+  const frontierHeaderEl = document.getElementById('channel-promo-frontier-leftover-header');
+  const horizonInputEl = document.getElementById('channel-promo-horizon-input');
+  const horizonHelpEl = document.getElementById('channel-promo-horizon-help');
+
+  if (liveLeftLabelEl) liveLeftLabelEl.textContent = `Week-${horizon} Left`;
+  if (baselineLabelEl) baselineLabelEl.textContent = `Week-${horizon} baseline leftover`;
+  if (scenarioLabelEl) scenarioLabelEl.textContent = `Week-${horizon} scenario leftover`;
+  if (inventoryTitleEl) inventoryTitleEl.textContent = `${horizon}-Week Inventory Projection (Baseline vs Scenario)`;
+  if (frontierTitleEl) frontierTitleEl.textContent = `Objective Frontier (Revenue vs Profit vs Week-${horizon} Leftover)`;
+  if (frontierHeaderEl) frontierHeaderEl.textContent = `Week-${horizon} Leftover`;
+  if (horizonInputEl) horizonInputEl.value = String(horizon);
+  if (horizonHelpEl) {
+    horizonHelpEl.textContent = `Default is 17. Current horizon is ${horizon} week${horizon === 1 ? '' : 's'}.`;
+  }
+}
+
+function populatePlanningHorizonOptions(maxWeek = maxObservedSeasonWeek, selectedWeek = null) {
+  const horizonInputEl = document.getElementById('channel-promo-horizon-input');
+  if (!horizonInputEl) return;
+
+  const maxAllowed = Math.max(1, Number(maxWeek) || DEFAULT_SEASON_WEEKS);
+  const allowedValues = [...PLANNING_HORIZON_PRESETS];
+  const desiredWeek = Number.isFinite(Number(selectedWeek))
+    ? Number(selectedWeek)
+    : Number(horizonInputEl.value || planningHorizonWeeks || DEFAULT_SEASON_WEEKS);
+  const normalizedWeek = normalizePlanningHorizonWeeks(desiredWeek, maxAllowed);
+
+  const optionsHtml = allowedValues.map(week => {
+    const suffix = week === 1 ? 'week' : 'weeks';
+    return `<option value="${week}">${week} ${suffix}</option>`;
+  }).join('');
+  horizonInputEl.innerHTML = optionsHtml;
+  horizonInputEl.value = String(normalizedWeek);
+}
+
+function setPlanningHorizonWeeks(rawWeeks, options = {}) {
+  const normalized = normalizePlanningHorizonWeeks(rawWeeks, options.maxWeekObserved);
+  planningHorizonWeeks = normalized;
+  window.promoPlanningHorizonWeeks = normalized;
+  populatePlanningHorizonOptions(options.maxWeekObserved || maxObservedSeasonWeek, normalized);
+  applyPlanningHorizonLabels();
+  if (options.emit !== false) {
+    window.dispatchEvent(new CustomEvent('promo:horizon-change', { detail: { weeks: normalized } }));
+  }
+  return normalized;
+}
+
+window.getPromoPlanningHorizonWeeks = () => getSeasonWeeks();
+window.setPromoPlanningHorizonWeeks = (weeks, options = {}) => setPlanningHorizonWeeks(weeks, options);
 
 const OBJECTIVE_CONFIG = {
   balance: {
@@ -335,7 +415,7 @@ function renderLivePulseChart() {
   const canvas = document.getElementById('channel-promo-live-pulse-chart');
   if (!canvas || !window.Chart) return;
 
-  const maxWeek = clamp(Number(currentSeasonWeek) || 1, 1, SEASON_WEEKS);
+  const maxWeek = clamp(Number(currentSeasonWeek) || 1, 1, getSeasonWeeks());
   const labels = [];
   const competitorSeries = [];
   const socialSeries = [];
@@ -401,7 +481,7 @@ function renderLiveFeed(weekOfSeason) {
   const feedEl = document.getElementById('channel-promo-live-feed');
   if (!feedEl) return;
 
-  const week = clamp(Number(weekOfSeason) || 1, 1, SEASON_WEEKS);
+  const week = clamp(Number(weekOfSeason) || 1, 1, getSeasonWeeks());
   const seasonDate = getSeasonDateForWeek(week);
   if (weekEl) {
     const dateLabel = seasonDate
@@ -753,7 +833,7 @@ function projectWeek17Inventory(group, sku, applyMass, applyPrestige, groupLift 
 
   let baselineInv = startingInventory;
   let scenarioInv = startingInventory;
-  for (let w = currentSeasonWeek + 1; w <= SEASON_WEEKS; w += 1) {
+  for (let w = currentSeasonWeek + 1; w <= getSeasonWeeks(); w += 1) {
     const weekRows = allRows.filter(row => Number(row.week_of_season) === w);
     const baselineDemand = weekRows.reduce((sum, row) => sum + (Number(row.net_units_sold) || 0), 0);
     const scenarioDemand = weekRows.reduce((sum, row) => {
@@ -844,7 +924,7 @@ function renderObjectiveFrontier(frontierRows, currentObjective) {
               label: (ctx) => {
                 const idx = ctx.dataIndex;
                 const row = frontierRows[idx];
-                return `${row.label}: Revenue ${formatPercent(row.revenueDeltaPct)}, Profit ${formatPercent(row.profitDeltaPct)}, W17 Left ${formatNumber(row.scenarioEnd, 0)}`;
+                return `${row.label}: Revenue ${formatPercent(row.revenueDeltaPct)}, Profit ${formatPercent(row.profitDeltaPct)}, W${getSeasonWeeks()} Left ${formatNumber(row.scenarioEnd, 0)}`;
               }
             }
           }
@@ -857,7 +937,7 @@ function renderObjectiveFrontier(frontierRows, currentObjective) {
     });
   }
 
-  noteEl.textContent = 'Each bubble is an objective mode. Larger bubble indicates stronger week-17 clearance from current inventory.';
+  noteEl.textContent = `Each bubble is an objective mode. Larger bubble indicates stronger week-${getSeasonWeeks()} clearance from current inventory.`;
 }
 
 function renderSkuResponseView(scenarios, noActionScenarios, transfers, competitorShockPct, socialShockPts) {
@@ -1275,7 +1355,7 @@ function renderSeasonStory(seasonRows, inventoryProjection) {
   const baselineNorm100 = seasonStartInventory > 0 ? (baselineEnd / seasonStartInventory) * 100 : 0;
   const scenarioNorm100 = seasonStartInventory > 0 ? (scenarioEnd / seasonStartInventory) * 100 : 0;
 
-  weekLabelEl.textContent = `Week ${currentSeasonWeek} of ${SEASON_WEEKS}`;
+  weekLabelEl.textContent = `Week ${currentSeasonWeek} of ${getSeasonWeeks()}`;
   if (storyActEl) {
     if (currentSeasonWeek <= 4) {
       storyActEl.textContent = 'Start of Season';
@@ -1295,15 +1375,15 @@ function renderSeasonStory(seasonRows, inventoryProjection) {
 
   if (scenarioEnd < baselineEnd) {
     guidanceEl.innerHTML =
-      `<strong>In-season pivot:</strong> current promo plan improves week-${SEASON_WEEKS} clearance by <strong>${formatNumber(baselineEnd - scenarioEnd)}</strong> units. ` +
+      `<strong>In-season pivot:</strong> current promo plan improves week-${getSeasonWeeks()} clearance by <strong>${formatNumber(baselineEnd - scenarioEnd)}</strong> units. ` +
       `If we normalize start inventory to 100 units, baseline ends at ${baselineNorm100.toFixed(1)} and scenario ends at ${scenarioNorm100.toFixed(1)} units.`;
   } else if (scenarioEnd > baselineEnd) {
     guidanceEl.innerHTML =
-      `<strong>Warning:</strong> scenario leaves <strong>${formatNumber(scenarioEnd - baselineEnd)}</strong> more units than baseline by week ${SEASON_WEEKS}. ` +
+      `<strong>Warning:</strong> scenario leaves <strong>${formatNumber(scenarioEnd - baselineEnd)}</strong> more units than baseline by week ${getSeasonWeeks()}. ` +
       `If normalized to 100 start units, scenario ends at ${scenarioNorm100.toFixed(1)} vs ${baselineNorm100.toFixed(1)} in baseline.`;
   } else {
     guidanceEl.innerHTML =
-      `<strong>Status:</strong> scenario and baseline end at a similar week-${SEASON_WEEKS} inventory position. ` +
+      `<strong>Status:</strong> scenario and baseline end at a similar week-${getSeasonWeeks()} inventory position. ` +
       `Normalized to 100 start units, both paths end near ${baselineNorm100.toFixed(1)}.`;
   }
 }
@@ -1337,7 +1417,7 @@ function updateInventoryProjectionChart(groupLift = { mass: 1, prestige: 1 }) {
   const baselineSeries = [baselineInv];
   const scenarioSeries = [scenarioInv];
 
-  for (let w = currentSeasonWeek + 1; w <= SEASON_WEEKS; w += 1) {
+  for (let w = currentSeasonWeek + 1; w <= getSeasonWeeks(); w += 1) {
     const weekRows = allRows.filter(row => Number(row.week_of_season) === w);
     const baselineDemand = weekRows.reduce((sum, row) => sum + (Number(row.net_units_sold) || 0), 0);
     const scenarioDemand = weekRows.reduce((sum, row) => {
@@ -1395,7 +1475,7 @@ function updateInventoryProjectionChart(groupLift = { mass: 1, prestige: 1 }) {
   const scenarioEnd = scenarioSeries[scenarioSeries.length - 1] || 0;
   noteEl.textContent =
     `Start inventory now: ${formatNumber(startingInventory)} units. ` +
-    `Projected week-${SEASON_WEEKS} left: baseline ${formatNumber(baselineEnd)}, scenario ${formatNumber(scenarioEnd)}.`;
+    `Projected week-${getSeasonWeeks()} left: baseline ${formatNumber(baselineEnd)}, scenario ${formatNumber(scenarioEnd)}.`;
 
   return {
     startingInventory,
@@ -1503,7 +1583,7 @@ function updateAiRecommendation(rows, objectiveKey, socialScore, inventoryProjec
     ? ((totalCurrentInv - projectedEnd) / totalCurrentInv) * 100
     : 0;
 
-  summaryEl.textContent = `Objective: ${OBJECTIVE_CONFIG[objectiveKey]?.label || objectiveKey}. Forecast clearance by week ${SEASON_WEEKS}: ${clearancePct.toFixed(1)}% of currently selected inventory.`;
+  summaryEl.textContent = `Objective: ${OBJECTIVE_CONFIG[objectiveKey]?.label || objectiveKey}. Forecast clearance by week ${getSeasonWeeks()}: ${clearancePct.toFixed(1)}% of currently selected inventory.`;
   includeEl.textContent = include.length
     ? include.map(x => `${x.sku_name || x.sku_id} (${x.reasons[0] || 'fit'})`).join(', ')
     : 'No strong promo candidates.';
@@ -1512,7 +1592,7 @@ function updateAiRecommendation(rows, objectiveKey, socialScore, inventoryProjec
     : 'No SKU exclusions suggested.';
 
   const riskBits = [];
-  if (projectedEnd > 0) riskBits.push(`${formatNumber(projectedEnd)} units may remain by week ${SEASON_WEEKS}`);
+  if (projectedEnd > 0) riskBits.push(`${formatNumber(projectedEnd)} units may remain by week ${getSeasonWeeks()}`);
   if (Number.isFinite(socialScore) && socialScore >= 75) riskBits.push('high social score favors selective discounting');
   if (ranked.some(x => x.avgGap > 0.05)) riskBits.push('some SKUs are materially above competitor pricing');
   riskEl.textContent = riskBits.length ? riskBits.join('; ') : 'No immediate risk flags.';
@@ -1540,7 +1620,7 @@ function updateAiRecommendation(rows, objectiveKey, socialScore, inventoryProjec
     `1. <strong>Include:</strong> ${topInclude}.<br>` +
     `2. <strong>Exclude/Hold:</strong> ${topExclude}.<br>` +
     `3. <strong>Channel Plan:</strong> ${channelAction}<br>` +
-    `4. <strong>Expected Week-${SEASON_WEEKS} Inventory Effect:</strong> ${liftVsBaseline >= 0 ? '+' : ''}${formatPercent(liftVsBaseline)} clearance vs current stock baseline.`;
+    `4. <strong>Expected Week-${getSeasonWeeks()} Inventory Effect:</strong> ${liftVsBaseline >= 0 ? '+' : ''}${formatPercent(liftVsBaseline)} clearance vs current stock baseline.`;
 }
 
 function updateChannelPromoSimulator() {
@@ -1856,6 +1936,7 @@ function updateChannelPromoSimulator() {
   const marketRow = getExternalFactorsForWeek(currentSeasonWeek) || {};
   latestPromoSnapshot = {
     weekOfSeason: currentSeasonWeek,
+    planningHorizonWeeks: getSeasonWeeks(),
     weekStartDate: getSeasonDateForWeek(currentSeasonWeek),
     objective: objectiveKey,
     selectedGroup: group,
@@ -1959,17 +2040,25 @@ async function initializeChannelPromoSimulator() {
     const socialShockValue = document.getElementById('channel-promo-social-shock-value');
     const weekSlider = document.getElementById('channel-promo-week-slider');
     const weekValue = document.getElementById('channel-promo-week-value');
+    const horizonInput = document.getElementById('channel-promo-horizon-input');
     const liveToggleBtn = document.getElementById('channel-promo-live-toggle');
     const liveResetBtn = document.getElementById('channel-promo-live-reset');
     const liveSpeedSelect = document.getElementById('channel-promo-live-speed');
     const liveAutoSignal = document.getElementById('channel-promo-live-autosignal');
 
-    const maxWeekObserved = skuWeeklyData.reduce(
+    maxObservedSeasonWeek = skuWeeklyData.reduce(
       (max, row) => Math.max(max, Number(row.week_of_season) || 0),
-      SEASON_WEEKS
+      DEFAULT_SEASON_WEEKS
     );
-    if (weekSlider) weekSlider.max = String(maxWeekObserved);
-    if (currentSeasonWeek > maxWeekObserved) currentSeasonWeek = maxWeekObserved;
+    const requestedHorizon = Number(window.promoPlanningHorizonWeeks || horizonInput?.value || DEFAULT_SEASON_WEEKS);
+    populatePlanningHorizonOptions(maxObservedSeasonWeek, requestedHorizon);
+    setPlanningHorizonWeeks(requestedHorizon, {
+      maxWeekObserved: maxObservedSeasonWeek,
+      emit: false
+    });
+    const getEffectiveMaxWeek = () => Math.min(maxObservedSeasonWeek, getSeasonWeeks());
+    if (weekSlider) weekSlider.max = String(getEffectiveMaxWeek());
+    if (currentSeasonWeek > getEffectiveMaxWeek()) currentSeasonWeek = getEffectiveMaxWeek();
 
     const setLivePlaybackButton = (playing) => {
       if (!liveToggleBtn) return;
@@ -2023,7 +2112,7 @@ async function initializeChannelPromoSimulator() {
 
     const applyAutoSignalsForWeek = (weekOfSeason) => {
       if (!liveAutoSignal?.checked) return;
-      const week = clamp(Number(weekOfSeason) || 1, 1, maxWeekObserved);
+      const week = clamp(Number(weekOfSeason) || 1, 1, getEffectiveMaxWeek());
       const marketCurrent = getExternalFactorsForWeek(week);
       const marketPrev = getExternalFactorsForWeek(Math.max(1, week - 1));
       const socialCurrent = getSocialSignalForWeek(week);
@@ -2048,7 +2137,7 @@ async function initializeChannelPromoSimulator() {
 
     const setWeek = (weekOfSeason, options = {}) => {
       const { applyAutoSignals = false } = options;
-      currentSeasonWeek = clamp(Math.round(Number(weekOfSeason) || 1), 1, maxWeekObserved);
+      currentSeasonWeek = clamp(Math.round(Number(weekOfSeason) || 1), 1, getEffectiveMaxWeek());
       if (weekSlider) weekSlider.value = String(currentSeasonWeek);
       if (weekValue) weekValue.textContent = `W${currentSeasonWeek}`;
       if (applyAutoSignals) applyAutoSignalsForWeek(currentSeasonWeek);
@@ -2152,7 +2241,7 @@ async function initializeChannelPromoSimulator() {
         if (applyMass) applyMass.checked = true;
         if (applyPrestige) applyPrestige.checked = true;
         updateSkuBoostState();
-        setNarrative(`Future Vision: push a guided SKU mix to move inventory close to zero by week ${SEASON_WEEKS}.`);
+        setNarrative(`Future Vision: push a guided SKU mix to move inventory close to zero by week ${getSeasonWeeks()}.`);
       }
       updateValues();
     };
@@ -2181,6 +2270,7 @@ async function initializeChannelPromoSimulator() {
       stopLivePlayback();
       pitchModeActive = true;
       setPitchButtons(true);
+      const finalActWeek = clamp(getSeasonWeeks() - 2, 1, getEffectiveMaxWeek());
 
       const acts = [
         {
@@ -2206,11 +2296,11 @@ async function initializeChannelPromoSimulator() {
         },
         {
           title: 'Act 3/3: Future Vision',
-          caption: `Push guided clearance strategy toward week-${SEASON_WEEKS} close while managing cannibalization.`,
+          caption: `Push guided clearance strategy toward week-${getSeasonWeeks()} close while managing cannibalization.`,
           durationMs: 6400,
           run: () => {
             applyPreset('clearance');
-            setWeek(15, { applyAutoSignals: false });
+            setWeek(finalActWeek, { applyAutoSignals: false });
             updateValues();
           }
         }
@@ -2219,7 +2309,7 @@ async function initializeChannelPromoSimulator() {
       const playAct = (idx) => {
         if (!pitchModeActive) return;
         if (idx >= acts.length) {
-          stopPitchMode(`Pitch complete: baseline -> pivot -> week-${SEASON_WEEKS} optimization walkthrough finished.`);
+          stopPitchMode(`Pitch complete: baseline -> pivot -> week-${getSeasonWeeks()} optimization walkthrough finished.`);
           return;
         }
         const act = acts[idx];
@@ -2287,7 +2377,7 @@ async function initializeChannelPromoSimulator() {
       clearInterval(livePlaybackTimer);
       livePlaybackTimer = setInterval(() => {
         const nextWeek = currentSeasonWeek + 1;
-        if (nextWeek > maxWeekObserved) {
+        if (nextWeek > getEffectiveMaxWeek()) {
           stopLivePlayback();
           return;
         }
@@ -2304,13 +2394,23 @@ async function initializeChannelPromoSimulator() {
       setLivePlaybackButton(true);
       livePlaybackTimer = setInterval(() => {
         const nextWeek = currentSeasonWeek + 1;
-        if (nextWeek > maxWeekObserved) {
+        if (nextWeek > getEffectiveMaxWeek()) {
           stopLivePlayback();
           return;
         }
         setWeek(nextWeek, { applyAutoSignals: true });
         updateValues();
       }, getPlaybackIntervalMs());
+    });
+    horizonInput?.addEventListener('change', () => {
+      const updated = setPlanningHorizonWeeks(horizonInput.value, { maxWeekObserved: maxObservedSeasonWeek });
+      if (weekSlider) weekSlider.max = String(getEffectiveMaxWeek());
+      if (currentSeasonWeek > updated) {
+        setWeek(updated, { applyAutoSignals: true });
+      }
+      stopPitchMode('Planning horizon updated.');
+      stopLivePlayback();
+      updateValues();
     });
     liveResetBtn?.addEventListener('click', () => {
       stopPitchMode();

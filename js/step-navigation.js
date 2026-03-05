@@ -6,6 +6,7 @@
 
 const TOTAL_STEPS = 10; // 0-9
 let currentStep = 0;
+const DEFAULT_PLANNING_HORIZON_WEEKS = 17;
 const stepSectionMap = {
   0: 'section-0',
   1: 'section-1',
@@ -19,6 +20,16 @@ const stepSectionMap = {
   9: 'section-9'
 };
 const stepVisualCharts = {};
+
+function getPlanningHorizonWeeks() {
+  const fromGlobalGetter = typeof window.getPromoPlanningHorizonWeeks === 'function'
+    ? Number(window.getPromoPlanningHorizonWeeks())
+    : Number(window.promoPlanningHorizonWeeks);
+  if (Number.isFinite(fromGlobalGetter) && fromGlobalGetter > 0) {
+    return Math.max(1, Math.round(fromGlobalGetter));
+  }
+  return DEFAULT_PLANNING_HORIZON_WEEKS;
+}
 
 function renderStepVisualChart(chartKey, canvasId, config) {
   if (!window.Chart) return null;
@@ -588,6 +599,7 @@ function getNarrativeRowsForSnapshot(skuWeeklyRows, snapshot) {
 
 function buildInventoryTrajectory(rows, snapshot, marketSignals = [], socialSignals = []) {
   const currentWeek = safeNumber(snapshot?.weekOfSeason, 1);
+  const horizonWeeks = getPlanningHorizonWeeks();
   const inventoryProjection = snapshot?.inventoryProjection || {};
   const startInventory = safeNumber(inventoryProjection.startingInventory);
   const baselineTargetEnd = safeNumber(inventoryProjection.baselineEnd);
@@ -596,7 +608,7 @@ function buildInventoryTrajectory(rows, snapshot, marketSignals = [], socialSign
   const weeklyDemandMap = new Map();
   rows.forEach(row => {
     const week = safeNumber(row.week_of_season, 0);
-    if (week <= currentWeek || week > 17) return;
+    if (week <= currentWeek || week > horizonWeeks) return;
     if (!weeklyDemandMap.has(week)) {
       weeklyDemandMap.set(week, { demand: 0, weekStart: row.week_start || '' });
     }
@@ -628,7 +640,7 @@ function buildInventoryTrajectory(rows, snapshot, marketSignals = [], socialSign
     socialIndex: safeNumber(snapshot?.socialScore, null)
   }];
 
-  for (let week = currentWeek + 1; week <= 17; week += 1) {
+  for (let week = currentWeek + 1; week <= horizonWeeks; week += 1) {
     const weekDemand = safeNumber(weeklyDemandMap.get(week)?.demand);
     baselineLeft = Math.max(0, baselineLeft - (weekDemand * baselineMultiplier));
     scenarioLeft = Math.max(0, scenarioLeft - (weekDemand * scenarioMultiplier));
@@ -694,6 +706,7 @@ function rankPromoAdvancedScenarios(objective = 'balanced') {
 }
 
 function getPromoPythonPresets(stepKey) {
+  const horizonWeeks = getPlanningHorizonWeeks();
   const baseByStep = {
     step6: [
       {
@@ -745,7 +758,7 @@ function getPromoPythonPresets(stepKey) {
       },
       {
         id: 'aggressive_liquidation',
-        name: 'Aggressive Week-17 Liquidation',
+        name: `Aggressive Week-${horizonWeeks} Liquidation`,
         tier: 'ad_supported',
         currentPrice: 18,
         discountPct: 22,
@@ -1364,6 +1377,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
         }).join('');
 
       const pivotSignalText = `Competitor shock ${safeNumber(snapshot.competitorShockPct).toFixed(0)}%, social shock ${safeNumber(snapshot.socialShockPts).toFixed(0)} pts, objective ${getObjectiveLabel(objective)}.`;
+      const horizonWeeks = getPlanningHorizonWeeks();
       const step6SkuOptions = [
         '<option value="all">All Products</option>',
         ...skuProfiles.map(row => `<option value="${row.sku_id}">${row.sku_name}</option>`)
@@ -1421,7 +1435,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
             <div class="card border-0 bg-body-tertiary h-100">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <h6 class="text-uppercase text-muted mb-0">Season Trajectory to Week 17</h6>
+                  <h6 class="text-uppercase text-muted mb-0">Season Trajectory to Week ${horizonWeeks}</h6>
                   <span class="badge text-bg-light border">Baseline vs Scenario</span>
                 </div>
                 <div class="table-responsive">
@@ -1535,7 +1549,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
               </div>
               <div class="col-md-3">
                 <div class="border rounded p-2 bg-body h-100">
-                  <div class="small text-muted">Week-17 Left</div>
+                  <div class="small text-muted">Week-${horizonWeeks} Left</div>
                   <div class="fw-semibold" id="step6-sim-leftover">--</div>
                 </div>
               </div>
@@ -1549,7 +1563,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
             <div class="row g-3 mt-1">
               <div class="col-lg-7">
                 <div class="border rounded p-2 bg-body h-100">
-                  <div class="small text-muted fw-semibold mb-1">Inventory Runway Diagram (W${week} -> W17)</div>
+                  <div class="small text-muted fw-semibold mb-1">Inventory Runway Diagram (W${week} -> W${horizonWeeks})</div>
                   <div style="height: 220px;">
                     <canvas id="step6-sim-trajectory-chart"></canvas>
                   </div>
@@ -1827,7 +1841,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
             <div class="story-arrow">&rarr;</div>
             <div class="story-node">
               <div class="label">Outcome</div>
-              <div class="value">${posture}, W17 left ${formatUnits(simLeftover)}</div>
+              <div class="value">${posture}, W${getPlanningHorizonWeeks()} left ${formatUnits(simLeftover)}</div>
             </div>
           `;
         }
@@ -1875,7 +1889,12 @@ function renderRoadmapFutureModule(type, contentAreaId) {
       const scopedRows = getNarrativeRowsForSnapshot(data.skuWeekly || [], snapshot);
       const skuProfiles = summarizeSkuRowsForWeek(scopedRows, week);
       const promoEvidence = derivePromoEvidenceRows(data.promoMetadata || {});
-      const ladderWeeks = [14, 15, 16, 17];
+      const horizonWeeks = getPlanningHorizonWeeks();
+      const ladderStart = Math.max(week + 1, horizonWeeks - 3);
+      const ladderWeeks = Array.from(
+        { length: Math.max(1, horizonWeeks - ladderStart + 1) },
+        (_, idx) => ladderStart + idx
+      );
       const remainingStart = Math.max(0, scenarioEnd);
       const markdownTarget = Math.max(0, Math.round(remainingStart * 0.28));
       let running = remainingStart;
@@ -1976,18 +1995,18 @@ function renderRoadmapFutureModule(type, contentAreaId) {
 
       contentArea.innerHTML = `
         <div class="alert alert-primary mb-3">
-          <strong>Past Promotion Effect + Markdown Model:</strong> choose markdown SKUs from historical lift evidence by channel, then sequence markdown depth to land closer to zero by week 17.
+          <strong>Past Promotion Effect + Markdown Model:</strong> choose markdown SKUs from historical lift evidence by channel, then sequence markdown depth to land closer to zero by week ${horizonWeeks}.
         </div>
         <div class="row g-3 mb-3">
           <div class="col-md-3">
             <div class="border rounded p-3 h-100 bg-body">
-              <div class="small text-muted">Week-17 Baseline Left</div>
+              <div class="small text-muted">Week-${horizonWeeks} Baseline Left</div>
               <div class="fs-5 fw-semibold">${formatUnits(baselineEnd)}</div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="border rounded p-3 h-100 bg-body">
-              <div class="small text-muted">Week-17 Scenario Left</div>
+              <div class="small text-muted">Week-${horizonWeeks} Scenario Left</div>
               <div class="fs-5 fw-semibold">${formatUnits(scenarioEnd)}</div>
             </div>
           </div>
@@ -2076,7 +2095,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
         <div class="card border-0 bg-body-tertiary mb-3">
           <div class="card-body">
             <h6 class="text-uppercase text-muted mb-2">Model C: End-of-Season Markdown Ladder</h6>
-            <div class="small text-muted mb-2">Target is to drive inventory closer to zero by week 17 without collapsing margin.</div>
+            <div class="small text-muted mb-2">Target is to drive inventory closer to zero by week ${horizonWeeks} without collapsing margin.</div>
             <div class="table-responsive">
               <table class="table table-sm align-middle mb-0">
                 <thead class="table-light">
@@ -2146,7 +2165,7 @@ function renderRoadmapFutureModule(type, contentAreaId) {
                 <div class="row g-2">
                   <div class="col-md-4">
                     <div class="border rounded p-2 bg-body h-100">
-                      <div class="small text-muted">Sim Week-17 Left</div>
+                      <div class="small text-muted">Sim Week-${horizonWeeks} Left</div>
                       <div class="fw-semibold" id="step7-sim-left">--</div>
                     </div>
                   </div>
@@ -3517,6 +3536,13 @@ function initStepNavigation() {
 
   // Hook up steps overview modal
   initStepsOverviewModal();
+
+  // Refresh advanced model sections when planning horizon changes (default 17 -> configurable)
+  window.addEventListener('promo:horizon-change', () => {
+    if ([6, 7, 8].includes(currentStep)) {
+      showStepContent(currentStep);
+    }
+  });
 
   // Start at step 0 (hero)
   goToStep(0);

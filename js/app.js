@@ -134,6 +134,131 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function formatClockTime(value) {
+  if (!value) return 'Not simulated yet';
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'Not simulated yet';
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+function formatShortDate(value) {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return 'N/A';
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function startButtonLoading(buttonOrId, loadingText) {
+  const buttonEl = typeof buttonOrId === 'string'
+    ? document.getElementById(buttonOrId)
+    : buttonOrId;
+  if (!buttonEl) return () => {};
+
+  const originalHtml = buttonEl.innerHTML;
+  const originalDisabled = buttonEl.disabled;
+  buttonEl.disabled = true;
+  buttonEl.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>${loadingText}`;
+
+  return ({ disabled } = {}) => {
+    buttonEl.innerHTML = originalHtml;
+    if (typeof disabled === 'boolean') {
+      buttonEl.disabled = disabled;
+    } else {
+      buttonEl.disabled = originalDisabled;
+    }
+  };
+}
+
+function updateRecommendationBrief(text = '') {
+  const briefEl = document.getElementById('recommended-scenario-brief');
+  if (!briefEl) return;
+
+  if (text) {
+    briefEl.innerHTML = text;
+    return;
+  }
+
+  const count = savedScenariosByModel[activeModelType]?.length || 0;
+  if (count === 0) {
+    briefEl.textContent = 'Save at least one simulated scenario for this step to enable quick recommendation.';
+    return;
+  }
+  briefEl.textContent = `${count} saved scenario(s) available for one-click recommendation.`;
+}
+
+function updateAdvancedScenarioStatePanels() {
+  const panelMap = {
+    acquisition: {
+      stateId: 'acquisition-advanced-state',
+      updatedId: 'acquisition-advanced-updated',
+      modelNote: 'Start-of-season baseline with in-season acquisition push.'
+    },
+    churn: {
+      stateId: 'churn-advanced-state',
+      updatedId: 'churn-advanced-updated',
+      modelNote: 'Markdown path with delayed repeat-risk across 0-4 / 4-8 / 8-12 / 12+ weeks.'
+    },
+    migration: {
+      stateId: 'migration-advanced-state',
+      updatedId: 'migration-advanced-updated',
+      modelNote: 'Competitor capture vs internal SKU cannibalization route economics.'
+    }
+  };
+
+  Object.entries(panelMap).forEach(([modelType, meta]) => {
+    const stateEl = document.getElementById(meta.stateId);
+    const updatedEl = document.getElementById(meta.updatedId);
+    if (!stateEl || !updatedEl) return;
+
+    const scenario = selectedScenarioByModel[modelType];
+    const activeResultForModel = currentResultByModel[modelType];
+
+    if (!scenario) {
+      stateEl.textContent = 'Select a scenario and run simulation to populate this state.';
+      updatedEl.textContent = 'No scenario selected';
+      return;
+    }
+
+    const result = activeResultForModel && activeResultForModel.scenario_id === scenario.id
+      ? activeResultForModel
+      : null;
+
+    const currentPrice = Number(scenario?.config?.current_price);
+    const newPrice = Number(scenario?.config?.new_price);
+    const priceMovePctRaw = Number(scenario?.config?.price_change_pct);
+    const fallbackPriceMovePct = (Number.isFinite(currentPrice) && currentPrice > 0 && Number.isFinite(newPrice))
+      ? ((newPrice - currentPrice) / currentPrice) * 100
+      : 0;
+    const priceMovePct = Number.isFinite(priceMovePctRaw) ? priceMovePctRaw : fallbackPriceMovePct;
+    const promoStart = scenario?.config?.promotion?.start_date || scenario?.config?.effective_date;
+    const promoEnd = scenario?.config?.promotion?.end_date || scenario?.config?.effective_date;
+    const revDelta = Number(result?.delta?.revenue_pct) || 0;
+    const volumeDelta = Number(result?.delta?.customers_pct) || 0;
+    const repeatRiskDelta = Number(result?.delta?.repeat_loss_rate) || 0;
+
+    const resultLine = result
+      ? `Latest sim: Revenue ${revDelta >= 0 ? '+' : ''}${formatPercent(revDelta, 1)}, Volume proxy ${volumeDelta >= 0 ? '+' : ''}${formatPercent(volumeDelta, 1)}, Repeat-risk ${repeatRiskDelta >= 0 ? '+' : ''}${formatPercent(repeatRiskDelta, 2)} pp.`
+      : 'No simulation yet for this scenario in current session.';
+
+    stateEl.innerHTML = `
+      <strong>${scenario.name}</strong><br>
+      Price path: ${formatCurrency(currentPrice)} to ${formatCurrency(newPrice)} (${priceMovePct >= 0 ? '+' : ''}${formatPercent(priceMovePct, 1)}).<br>
+      Window: ${formatShortDate(promoStart)} to ${formatShortDate(promoEnd)}.<br>
+      ${meta.modelNote}<br>
+      ${resultLine}
+    `;
+    updatedEl.textContent = result?.recalculated_at
+      ? `Last recalculated ${formatClockTime(result.recalculated_at)}`
+      : 'Selected, not simulated';
+  });
+
+  updateRecommendationBrief();
+}
+
 function normalizeSocialScore(rawScore) {
   const score = Number(rawScore);
   if (!Number.isFinite(score)) return null;
@@ -296,6 +421,7 @@ function setActiveModelType(modelType) {
   updateSimulateButtonState();
   // Update Decision Engine display for this model
   updateDecisionEngineDisplay();
+  updateAdvancedScenarioStatePanels();
 }
 
 function resolveModelTypeForResult(result) {
@@ -1109,7 +1235,7 @@ async function initializeChatContext() {
           objective_note: 'Prioritize high-elastic SKUs with low leftover risk; avoid SKUs with repeated negative promo lift.'
         },
         recommendedQuestions: [
-          'Which SKUs should I include in a week-17 clearance promo by channel?',
+          `Which SKUs should I include in a week-${window.getPromoPlanningHorizonWeeks ? window.getPromoPlanningHorizonWeeks() : seasonWeeks} clearance promo by channel?`,
           'Which SKUs are inelastic and should be held at higher prices despite competitor pressure?'
         ]
       },
@@ -1236,7 +1362,7 @@ async function initializeChatContext() {
           },
           rationale: `Recommendation uses week-${currentWeek} inventory, elasticity, competitor gap, social trend, and historical promo outcomes.`,
           estimated_impact: `Focus on ${includeSkuLabels.join(', ') || 'top elastic products'} and avoid ${excludeSkuLabels.join(', ') || 'historical underperformers'}.`,
-          next_steps: 'Apply this mix in Step 1 and compare baseline vs scenario inventory runway to week 17.'
+          next_steps: `Apply this mix in Step 1 and compare baseline vs scenario inventory runway to week ${window.getPromoPlanningHorizonWeeks ? window.getPromoPlanningHorizonWeeks() : seasonWeeks}.`
         };
       },
 
@@ -1244,11 +1370,11 @@ async function initializeChatContext() {
       analyzeChart: async (chartName) => {
         const chartAnalysis = {
           inventory_projection: {
-            name: '17-Week Inventory Projection',
+            name: `${window.getPromoPlanningHorizonWeeks ? window.getPromoPlanningHorizonWeeks() : seasonWeeks}-Week Inventory Projection`,
             description: 'Baseline versus scenario projection for end-of-season inventory.',
             current_week: currentWeek,
             data: getLivePromoSnapshot()?.inventoryProjection || null,
-            interpretation: 'Use this chart to determine whether current promo plan gets inventory close to zero by week 17.'
+            interpretation: `Use this chart to determine whether current promo plan gets inventory close to zero by week ${window.getPromoPlanningHorizonWeeks ? window.getPromoPlanningHorizonWeeks() : seasonWeeks}.`
           },
           promo_history: {
             name: 'Historical Promo Effectiveness',
@@ -1646,6 +1772,7 @@ function saveScenario() {
   savedScenarios = savedScenariosByModel[activeModelType];
 
   updateScenarioComparisonUI();
+  updateRecommendationBrief();
 
   alert(`Scenario "${activeResult.scenario_name}" saved! You can now compare it with other scenarios.`);
 }
@@ -1725,6 +1852,7 @@ function clearScenarios() {
 
     updateScenarioComparisonUI();
     updateDecisionEngineDisplay();
+    updateRecommendationBrief();
   }
 }
 
@@ -1958,26 +2086,36 @@ function applyScenarioPlanToControls(plan) {
   }
 }
 
-async function runLiveCopilotAnalysis({ force = false } = {}) {
+async function runLiveCopilotAnalysis({ force = false, source = 'auto' } = {}) {
   const summaryEl = document.getElementById('channel-promo-llm-summary');
   const actionsEl = document.getElementById('channel-promo-llm-actions');
   const risksEl = document.getElementById('channel-promo-llm-risks');
   const autoEl = document.getElementById('channel-promo-llm-auto');
   if (!summaryEl || !actionsEl || !risksEl) return;
   if (!force && autoEl && !autoEl.checked) return;
-  if (liveCopilotInFlight) return;
+  if (liveCopilotInFlight) {
+    if (source === 'manual') {
+      summaryEl.textContent = 'Analysis already running. Please wait...';
+    }
+    return;
+  }
+  const stopAnalyzeLoading = source === 'manual'
+    ? startButtonLoading('channel-promo-llm-analyze', 'Analyzing...')
+    : () => {};
 
   const snapshot = getLivePromoSnapshotSafe();
   if (!snapshot) {
     summaryEl.textContent = 'Run simulator controls first to generate a live scenario snapshot.';
     renderList(actionsEl, [], 'No actions available yet.');
     renderList(risksEl, [], 'No risks available yet.');
+    stopAnalyzeLoading();
     return;
   }
 
   const ready = await refreshLlmStatuses();
   if (!ready) {
     summaryEl.textContent = 'LLM not configured. Use settings key icon to connect and enable co-pilot.';
+    stopAnalyzeLoading();
     return;
   }
 
@@ -2001,6 +2139,7 @@ async function runLiveCopilotAnalysis({ force = false } = {}) {
     renderList(risksEl, [], 'Could not generate risks.');
   } finally {
     liveCopilotInFlight = false;
+    stopAnalyzeLoading();
   }
 }
 
@@ -2025,9 +2164,11 @@ async function applyLlmPlanFromText() {
     return;
   }
 
+  const stopApplyLoading = startButtonLoading('channel-promo-llm-plan-apply', 'Applying...');
   const ready = await refreshLlmStatuses();
   if (!ready) {
     resultEl.textContent = 'LLM not configured. Connect API first.';
+    stopApplyLoading();
     return;
   }
 
@@ -2044,6 +2185,8 @@ async function applyLlmPlanFromText() {
     setTimeout(() => scheduleLiveCopilotAnalysis({ force: true }), 180);
   } catch (error) {
     resultEl.textContent = `Failed to apply plan: ${error.message}`;
+  } finally {
+    stopApplyLoading();
   }
 }
 
@@ -2072,9 +2215,11 @@ async function runEventLlmAnalysis() {
     return;
   }
 
+  const stopEventLoading = startButtonLoading('event-llm-analyze-btn', 'Analyzing...');
   const ready = await refreshLlmStatuses();
   if (!ready) {
     summaryEl.textContent = 'LLM not configured. Connect API first.';
+    stopEventLoading();
     return;
   }
 
@@ -2092,6 +2237,8 @@ async function runEventLlmAnalysis() {
     summaryEl.textContent = `Event analysis failed: ${error.message}`;
     renderList(impactEl, [], 'Unable to compute impact.');
     renderList(actionsEl, [], 'Unable to compute actions.');
+  } finally {
+    stopEventLoading();
   }
 }
 
@@ -2099,7 +2246,7 @@ function initializeLlmAssistPanels() {
   refreshLlmStatuses(true);
 
   document.getElementById('channel-promo-llm-analyze')?.addEventListener('click', () => {
-    runLiveCopilotAnalysis({ force: true });
+    runLiveCopilotAnalysis({ force: true, source: 'manual' });
   });
 
   document.getElementById('channel-promo-llm-auto')?.addEventListener('change', (e) => {
@@ -2129,19 +2276,21 @@ function initializeLlmAssistPanels() {
 // Handle chat message send
 async function handleChatSend() {
   const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send-btn');
   const message = input.value.trim();
 
   if (!message) return;
 
+  const stopChatLoading = startButtonLoading(sendBtn, 'Sending...');
   input.value = '';
   input.disabled = true;
-  document.getElementById('chat-send-btn').disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
 
   try {
     await sendMessage(message);
   } finally {
     input.disabled = false;
-    document.getElementById('chat-send-btn').disabled = false;
+    stopChatLoading({ disabled: false });
     input.focus();
   }
 }
@@ -3777,6 +3926,7 @@ function populateElasticityModelTabs() {
           selectedScenario = selected;
         }
         updateSimulateButtonState();
+        updateAdvancedScenarioStatePanels();
         console.log('Selected scenario:', scenarioId);
       }
     });
@@ -3819,15 +3969,21 @@ function populateElasticityModelTabs() {
   // Add decision engine event listeners (RFP Slide 18)
   const objectiveLensSelect = document.getElementById('objective-lens-select');
   if (objectiveLensSelect) {
-    objectiveLensSelect.addEventListener('change', (e) => {
+    objectiveLensSelect.onchange = (e) => {
       const description = getObjectiveDescription(e.target.value);
       document.getElementById('objective-description').textContent = description;
-    });
+      updateRecommendationBrief();
+    };
   }
 
   const rankScenariosBtn = document.getElementById('rank-scenarios-btn');
   if (rankScenariosBtn) {
-    rankScenariosBtn.addEventListener('click', rankAndDisplayScenarios);
+    rankScenariosBtn.onclick = rankAndDisplayScenarios;
+  }
+
+  const recommendScenarioBtn = document.getElementById('recommend-scenario-btn');
+  if (recommendScenarioBtn) {
+    recommendScenarioBtn.onclick = recommendBestScenario;
   }
 
   // Export button event listeners
@@ -3987,6 +4143,7 @@ function populateElasticityModelTabs() {
       }
     });
   }
+  updateAdvancedScenarioStatePanels();
 }
 
 // Expose populateElasticityModelTabs globally for step navigation
@@ -4250,6 +4407,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
 
   // Only store the result if this is a NEW simulation, not a re-display
   if (!isRedisplay) {
+    result.recalculated_at = new Date().toISOString();
     currentResultByModel[modelType] = result;
     console.log(`💾 Storing result for ${modelType} model:`, result.scenario_id);
   } else {
@@ -4323,6 +4481,16 @@ function displayResultsInTabs(result, isRedisplay = false) {
   // Calculate Payback Metrics (RFP Slide 15-16)
   const acquisitionPayback = calculateAcquisitionPayback(result);
   const churnPayback = calculateChurnPayback(result);
+  const volumeLabel = modelType === 'acquisition'
+    ? 'Demand Volume (Proxy)'
+    : modelType === 'churn'
+      ? 'Repeat Volume (Proxy)'
+      : 'Route Volume (Proxy)';
+  const revenueLabel = modelType === 'migration' ? 'Route Revenue (Monthly)' : 'Projected Revenue (Monthly)';
+  const priceLabel = modelType === 'migration' ? 'Avg Selling Price' : 'AOV';
+  const riskLabel = modelType === 'churn' ? 'Repeat-Risk Rate' : 'Repeat-Risk Guardrail';
+  const primaryPaybackLabel = modelType === 'acquisition' ? 'Acquisition Payback' : 'Promo Payback';
+  const secondaryPaybackLabel = modelType === 'churn' ? 'Risk Stabilization' : 'Repeat-Risk Payback';
 
   console.log(`💳 Rendering KPI cards for ${modelType}:`, {
     scenario_id: result.scenario_id,
@@ -4340,7 +4508,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     <div class="col-md-3">
       <div class="card">
         <div class="card-body text-center">
-          <div class="text-muted small">Customers</div>
+          <div class="text-muted small">${volumeLabel}</div>
           <div class="h4 mb-1">${formatNumber(customers)}</div>
           <div class="small ${deltaCustomers >= 0 ? 'text-success' : 'text-danger'}">
             ${deltaCustomers >= 0 ? '+' : ''}${formatNumber(deltaCustomers)}
@@ -4352,7 +4520,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     <div class="col-md-3">
       <div class="card">
         <div class="card-body text-center">
-          <div class="text-muted small">Revenue (Monthly)</div>
+          <div class="text-muted small">${revenueLabel}</div>
           <div class="h4 mb-1">${formatCurrency(result.forecasted.revenue)}</div>
           <div class="small ${result.delta.revenue >= 0 ? 'text-success' : 'text-danger'}">
             ${result.delta.revenue >= 0 ? '+' : ''}${formatCurrency(result.delta.revenue)}
@@ -4364,7 +4532,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     <div class="col-md-3">
       <div class="card">
         <div class="card-body text-center">
-          <div class="text-muted small">AOV</div>
+          <div class="text-muted small">${priceLabel}</div>
           <div class="h4 mb-1">${formatCurrency(result.forecasted.aov)}</div>
           <div class="small ${result.delta.aov >= 0 ? 'text-success' : 'text-danger'}">
             ${result.delta.aov >= 0 ? '+' : ''}${formatCurrency(result.delta.aov)}
@@ -4376,7 +4544,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     <div class="col-md-3">
       <div class="card">
         <div class="card-body text-center">
-          <div class="text-muted small">Repeat-Risk Rate</div>
+          <div class="text-muted small">${riskLabel}</div>
           <div class="h4 mb-1">${formatPercent((result.forecasted.repeatLossRate || result.forecasted.repeat_loss_rate || 0), 2)}</div>
           <div class="small ${result.delta.repeat_loss_rate <= 0 ? 'text-success' : 'text-danger'}">
             ${result.delta.repeat_loss_rate >= 0 ? '+' : ''}${formatPercent(result.delta.repeat_loss_rate, 2)}
@@ -4388,7 +4556,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
       <div class="card border-primary">
         <div class="card-body text-center">
           <div class="text-muted small">
-            <i class="bi bi-calendar-check me-1"></i>Acquisition Payback
+            <i class="bi bi-calendar-check me-1"></i>${primaryPaybackLabel}
           </div>
           <div class="h4 mb-1 text-primary">${acquisitionPayback.value}</div>
           <div class="small text-muted">${acquisitionPayback.label}</div>
@@ -4399,7 +4567,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
       <div class="card border-info">
         <div class="card-body text-center">
           <div class="text-muted small">
-            <i class="bi bi-hourglass-split me-1"></i>Repeat-Risk Payback
+            <i class="bi bi-hourglass-split me-1"></i>${secondaryPaybackLabel}
           </div>
           <div class="h4 mb-1 text-info">${churnPayback.value}</div>
           <div class="small text-muted">${churnPayback.label}</div>
@@ -4432,6 +4600,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     churn: churnDetail?.style.display,
     migration: migrationDetail?.style.display
   });
+  updateAdvancedScenarioStatePanels();
 }
 
 /**
@@ -4920,6 +5089,50 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
 }
 
 /**
+ * One-click recommendation based on currently saved scenarios for active model
+ */
+function recommendBestScenario() {
+  const objective = document.getElementById('objective-lens-select')?.value || 'revenue-max';
+  const activeSaved = savedScenariosByModel[activeModelType] || [];
+  const activeResult = currentResultByModel[activeModelType];
+  const candidates = activeSaved.length > 0 ? activeSaved : (activeResult ? [activeResult] : []);
+
+  if (candidates.length === 0) {
+    updateRecommendationBrief('Run and save at least one scenario in this step before requesting recommendation.');
+    return;
+  }
+
+  const ranked = rankScenarios(candidates, objective, {});
+  if (!ranked || ranked.length === 0) {
+    updateRecommendationBrief('No valid recommendation under current objective/constraints. Try another objective lens.');
+    return;
+  }
+
+  const best = ranked[0];
+  displayTop3Scenarios(ranked);
+  if (best) {
+    // Render recommended scenario results immediately for pitch flow continuity
+    displayResultsInTabs(best, true);
+  }
+
+  const scenarioLabel = best.scenario_name || best.id || best.scenario_id || 'Top scenario';
+  const rev = Number(best?.delta?.revenue_pct) || 0;
+  const vol = Number(best?.delta?.customers_pct) || 0;
+  const risk = Number(best?.delta?.repeat_loss_rate) || 0;
+  const rationaleText = String(best.rationale || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  updateRecommendationBrief(`
+    <strong>Recommended:</strong> ${scenarioLabel}<br>
+    Revenue ${rev >= 0 ? '+' : ''}${formatPercent(rev, 1)} | Volume proxy ${vol >= 0 ? '+' : ''}${formatPercent(vol, 1)} | Repeat-risk ${risk >= 0 ? '+' : ''}${formatPercent(risk, 2)} pp<br>
+    <span class="text-muted">${rationaleText || 'Best score under selected objective.'}</span>
+  `);
+}
+
+/**
  * Rank and display scenarios using decision engine (RFP Slide 18)
  */
 async function rankAndDisplayScenarios() {
@@ -4942,6 +5155,11 @@ async function rankAndDisplayScenarios() {
 
     // Display top 3
     displayTop3Scenarios(rankedScenarios);
+    const top = rankedScenarios[0];
+    if (top) {
+      const topLabel = top.scenario_name || top.id || top.scenario_id || 'Top scenario';
+      updateRecommendationBrief(`Top ranked under current objective: <strong>${topLabel}</strong>. Click "Recommend Best Scenario" to load it instantly.`);
+    }
 
   } catch (error) {
     console.error('Error ranking scenarios:', error);

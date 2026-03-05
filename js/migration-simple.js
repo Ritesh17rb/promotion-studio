@@ -148,6 +148,16 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function getPlanningHorizonWeeks() {
+  const fromGlobalGetter = typeof window.getPromoPlanningHorizonWeeks === 'function'
+    ? Number(window.getPromoPlanningHorizonWeeks())
+    : Number(window.promoPlanningHorizonWeeks);
+  if (Number.isFinite(fromGlobalGetter) && fromGlobalGetter > 0) {
+    return Math.max(1, Math.round(fromGlobalGetter));
+  }
+  return 17;
+}
+
 function socialElasticityModifier(score) {
   const numeric = Number(score);
   if (!Number.isFinite(numeric)) return 1;
@@ -758,6 +768,10 @@ function setupMigrationInteractivity() {
     promoHistorySelect.value = promoId;
     renderPromoHistoryRows(promoId);
   });
+
+  window.addEventListener('promo:horizon-change', () => {
+    updateMigrationModel();
+  });
 }
 
 /**
@@ -1089,9 +1103,9 @@ function updateMigrationModel() {
   const startInvEl = document.getElementById('mig-sku-start-inventory');
   const leftBaseEl = document.getElementById('mig-sku-leftover-baseline');
   const leftAdjEl = document.getElementById('mig-sku-leftover-adjusted');
-  const weeks = [...new Set((selectedSku !== 'all' ? skuWeeklyRows.filter(r => r.sku_id === selectedSku) : getSkuRowsForSelection())
-    .map(r => Number(r.week_of_season || 0)))].filter(Boolean).sort((a, b) => a - b);
-  const labels = weeks.length ? weeks.map(w => `W${w}`) : Array.from({ length: 17 }, (_, i) => `W${i + 1}`);
+  const horizonWeeks = getPlanningHorizonWeeks();
+  const projectedSteps = Math.max(1, horizonWeeks - currentWeek);
+  const labels = Array.from({ length: projectedSteps }, (_, idx) => `W${currentWeek + idx + 1}`);
   const scopeRows = selectedSku !== 'all'
     ? skuWeeklyRows.filter(row => row.sku_id === selectedSku)
     : getSkuRowsForSelection();
@@ -1193,7 +1207,7 @@ function updateMigrationModel() {
   if (narrativeEl) {
     const baselineLeft = baselineSeries[baselineSeries.length - 1] ?? 0;
     const adjustedLeft = adjustedSeries[adjustedSeries.length - 1] ?? 0;
-    narrativeEl.textContent = `Start-of-season inventory ${startInventory.toLocaleString()} units. We are at week ${currentWeek} with ${currentInventory.toLocaleString()} units left. Baseline ends with ${baselineLeft.toLocaleString()} units by week 17; adjusted plan ends with ${adjustedLeft.toLocaleString()} units.`;
+    narrativeEl.textContent = `Start-of-season inventory ${startInventory.toLocaleString()} units. We are at week ${currentWeek} with ${currentInventory.toLocaleString()} units left. Baseline ends with ${baselineLeft.toLocaleString()} units by week ${horizonWeeks}; adjusted plan ends with ${adjustedLeft.toLocaleString()} units.`;
   }
   if (startInvEl) startInvEl.textContent = startInventory.toLocaleString();
   if (leftBaseEl) leftBaseEl.textContent = (baselineSeries[baselineSeries.length - 1] ?? 0).toLocaleString();

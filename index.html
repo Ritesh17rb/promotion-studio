@@ -270,7 +270,44 @@
         <div class="row g-4" id="channel-promo-simulator">
           <!-- Controls -->
           <div class="col-lg-4">
-            <div class="card channel-promo-controls-card">
+            <div class="card channel-promo-secondary-card">
+              <div class="card-body">
+                <h6 class="text-uppercase text-muted mb-3">Story Presets & Context</h6>
+                <label class="form-label fw-bold small text-uppercase mb-2">Narrative Presets</label>
+                <div class="d-grid gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-preset-baseline">
+                    Start of Season Baseline
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="channel-promo-preset-pivot">
+                    In-Season Pivot: Competitor Drop
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-success" id="channel-promo-preset-social">
+                    Social Spike: Hold Price
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning" id="channel-promo-preset-clearance">
+                    End-of-Horizon Clearance Push
+                  </button>
+                </div>
+                <div class="small text-muted mt-2" id="channel-promo-narrative-note">
+                  Use presets to tell the story: baseline, in-season pivot, and optimized finish.
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                  <button type="button" class="btn btn-sm btn-primary" id="channel-promo-run-pitch">
+                    Run 3-Act Pitch Mode
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-stop-pitch" disabled>
+                    Stop Pitch Mode
+                  </button>
+                </div>
+                <div class="small text-muted mt-2 channel-promo-pitch-caption" id="channel-promo-pitch-caption">
+                  Pitch mode will auto-run: Start of Season -> In-Season Pivot -> Future Vision.
+                </div>
+                <p class="small text-muted mb-0 mt-3">
+                  Elasticity is modulated by social trend and competitor price delta from <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, and <code>social_signals.csv</code>.
+                </p>
+              </div>
+            </div>
+            <div class="card mt-3 channel-promo-controls-card">
               <div class="card-body">
                 <h6 class="text-uppercase text-muted mb-3">Promo Depth by Channel Group</h6>
 
@@ -280,6 +317,18 @@
                     <span class="fw-semibold small" id="channel-promo-week-value">W7</span>
                   </div>
                   <input type="range" class="form-range" id="channel-promo-week-slider" min="1" max="17" step="1" value="7">
+                  <div class="mt-2">
+                    <label for="channel-promo-horizon-input" class="form-label mb-1 small text-uppercase fw-semibold">Planning Horizon (Weeks)</label>
+                    <select
+                      class="form-select form-select-sm"
+                      id="channel-promo-horizon-input"
+                    >
+                      <option value="17" selected>17 weeks</option>
+                    </select>
+                    <div class="small text-muted mt-1" id="channel-promo-horizon-help">
+                      Choose a preset horizon to recalculate season-end inventory outcomes.
+                    </div>
+                  </div>
                   <div class="d-flex justify-content-between align-items-center gap-2 mt-2">
                     <button type="button" class="btn btn-sm btn-primary" id="channel-promo-live-toggle">
                       <i class="bi bi-play-fill me-1"></i>Play Live
@@ -316,7 +365,7 @@
                       <div class="fw-semibold" id="channel-promo-live-profit">--</div>
                     </div>
                     <div class="col-4">
-                      <div class="text-muted">Week-17 Left</div>
+                      <div class="text-muted" id="channel-promo-live-leftover-label">End-of-Horizon Left</div>
                       <div class="fw-semibold" id="channel-promo-live-leftover">--</div>
                     </div>
                   </div>
@@ -440,43 +489,6 @@
 
               </div>
             </div>
-            <div class="card mt-3 channel-promo-secondary-card">
-              <div class="card-body">
-                <h6 class="text-uppercase text-muted mb-3">Story Presets & Context</h6>
-                <label class="form-label fw-bold small text-uppercase mb-2">Narrative Presets</label>
-                <div class="d-grid gap-2">
-                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-preset-baseline">
-                    Start of Season Baseline
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-primary" id="channel-promo-preset-pivot">
-                    In-Season Pivot: Competitor Drop
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-success" id="channel-promo-preset-social">
-                    Social Spike: Hold Price
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning" id="channel-promo-preset-clearance">
-                    Week-17 Clearance Push
-                  </button>
-                </div>
-                <div class="small text-muted mt-2" id="channel-promo-narrative-note">
-                  Use presets to tell the story: baseline, in-season pivot, and optimized finish.
-                </div>
-                <div class="d-grid gap-2 mt-3">
-                  <button type="button" class="btn btn-sm btn-primary" id="channel-promo-run-pitch">
-                    Run 3-Act Pitch Mode
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-stop-pitch" disabled>
-                    Stop Pitch Mode
-                  </button>
-                </div>
-                <div class="small text-muted mt-2 channel-promo-pitch-caption" id="channel-promo-pitch-caption">
-                  Pitch mode will auto-run: Start of Season -> In-Season Pivot -> Future Vision.
-                </div>
-                <p class="small text-muted mb-0 mt-3">
-                  Elasticity is modulated by social trend and competitor price delta from <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, and <code>social_signals.csv</code>.
-                </p>
-              </div>
-            </div>
           </div>
 
           <!-- Summary + Charts -->
@@ -541,7 +553,7 @@
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="small text-muted text-uppercase">Season Story</div>
-                        <span id="channel-promo-week-label" class="badge rounded-pill bg-info-subtle text-info-emphasis">Week -- of 17</span>
+                        <span id="channel-promo-week-label" class="badge rounded-pill bg-info-subtle text-info-emphasis">Week -- of --</span>
                       </div>
                       <div class="row g-2 small">
                         <div class="col-md-2">
@@ -557,11 +569,11 @@
                           <div class="fw-semibold" id="channel-promo-season-current">--</div>
                         </div>
                         <div class="col-md-3">
-                          <div class="text-muted">Week-17 baseline leftover</div>
+                          <div class="text-muted" id="channel-promo-season-end-baseline-label">Baseline end-of-horizon leftover</div>
                           <div class="fw-semibold" id="channel-promo-season-end-baseline">--</div>
                         </div>
                         <div class="col-md-3">
-                          <div class="text-muted">Week-17 scenario leftover</div>
+                          <div class="text-muted" id="channel-promo-season-end-scenario-label">Scenario end-of-horizon leftover</div>
                           <div class="fw-semibold" id="channel-promo-season-end-scenario">--</div>
                         </div>
                       </div>
@@ -586,7 +598,7 @@
                     </div>
                   </div>
                   <div class="col-12">
-                    <h6 class="small text-uppercase text-muted mb-2">17-Week Inventory Projection (Baseline vs Scenario)</h6>
+                    <h6 class="small text-uppercase text-muted mb-2" id="channel-promo-inventory-chart-title">Inventory Projection (Baseline vs Scenario)</h6>
                     <div class="chart-container" style="height: 260px;">
                       <canvas id="channel-promo-inventory-chart"></canvas>
                     </div>
@@ -729,7 +741,7 @@
                   <div class="col-12">
                     <div class="card border-0 bg-body-tertiary">
                       <div class="card-body p-3">
-                        <h6 class="small text-uppercase text-muted mb-2">Objective Frontier (Revenue vs Profit vs Week-17 Leftover)</h6>
+                        <h6 class="small text-uppercase text-muted mb-2" id="channel-promo-frontier-title">Objective Frontier (Revenue vs Profit vs End-of-Horizon Leftover)</h6>
                         <div class="chart-container mb-3" style="height: 250px;">
                           <canvas id="channel-promo-frontier-chart"></canvas>
                         </div>
@@ -740,7 +752,7 @@
                                 <th>Objective</th>
                                 <th class="text-end">Revenue Delta</th>
                                 <th class="text-end">Profit Delta</th>
-                                <th class="text-end">Week-17 Leftover</th>
+                                <th class="text-end" id="channel-promo-frontier-leftover-header">End-of-Horizon Leftover</th>
                                 <th class="text-end">Clearance from Current</th>
                               </tr>
                             </thead>
@@ -752,7 +764,7 @@
                           </table>
                         </div>
                         <div class="small text-muted mt-2" id="channel-promo-frontier-note">
-                          Bubble size represents lower week-17 leftover inventory.
+                          Bubble size represents lower end-of-horizon leftover inventory.
                         </div>
                       </div>
                     </div>
@@ -1041,7 +1053,7 @@
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Evidence-led markdown planning using historical campaign outcomes by SKU/channel and week-17 inventory targets.</p>
+        <p class="section-subtitle">Evidence-led markdown planning using historical campaign outcomes by SKU/channel and configurable season-end inventory targets.</p>
       </div>
     </div>
 
@@ -1526,8 +1538,18 @@
                     <p class="mb-0"><strong>Key Insight:</strong> Loyal fans join regardless of price. Budget-conscious users drop off sharply when prices increase.</p>
                   </div>
 
+                  <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Live Scenario State</h6>
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis" id="acquisition-advanced-updated">Not simulated yet</span>
+                    </div>
+                    <div class="small text-muted" id="acquisition-advanced-state">
+                      Select a scenario and run simulation to see live baseline vs in-season recommendation.
+                    </div>
+                  </div>
+
                   <!-- Acquisition Scenarios -->
-                  <h6 class="mb-3">Pre-Built Scenarios</h6>
+                  <h6 class="mb-3">Scenario Experiments (Try These)</h6>
                   <div class="row g-3 mb-4" id="acquisition-scenarios">
                     <!-- Will be populated by JavaScript -->
                   </div>
@@ -1729,6 +1751,16 @@
                   </div>
 
                   <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Live Scenario State</h6>
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis" id="churn-advanced-updated">Not simulated yet</span>
+                    </div>
+                    <div class="small text-muted" id="churn-advanced-state">
+                      Select a scenario and run simulation to see lag-window repeat-risk and revenue trade-off.
+                    </div>
+                  </div>
+
+                  <div class="alert alert-light border mb-3">
                     <h6 class="mb-2"><i class="bi bi-signpost-split me-2"></i>Narrative To Pitch In This Step</h6>
                     <div class="small">
                       <strong>Start of Season:</strong> Set baseline inventory and repeat propensity by product group.<br>
@@ -1897,9 +1929,9 @@
                 </div>
 
                 <div class="glass-card mt-4">
-                  <h5 class="mb-3"><i class="bi bi-graph-up-arrow me-2"></i>17-Week SKU Inventory Projection</h5>
+                  <h5 class="mb-3"><i class="bi bi-graph-up-arrow me-2"></i>SKU Inventory Projection (Configurable Horizon)</h5>
                   <div class="small text-muted mb-2" id="mig-season-narrative">
-                    Select a SKU to project baseline vs adjusted inventory through week 17.
+                    Select a SKU to project baseline vs adjusted inventory through the selected planning horizon.
                   </div>
                   <div style="position: relative; height: 280px;">
                     <canvas id="mig-sku-inventory-chart"></canvas>
@@ -1913,13 +1945,13 @@
                     </div>
                     <div class="col-md-4">
                       <div class="border rounded p-2 bg-body-tertiary">
-                        <div class="small text-muted">Baseline Week-17 Left</div>
+                        <div class="small text-muted">Baseline End-of-Horizon Left</div>
                         <div class="fw-semibold" id="mig-sku-leftover-baseline">--</div>
                       </div>
                     </div>
                     <div class="col-md-4">
                       <div class="border rounded p-2 bg-body-tertiary">
-                        <div class="small text-muted">Adjusted Week-17 Left</div>
+                        <div class="small text-muted">Adjusted End-of-Horizon Left</div>
                         <div class="fw-semibold" id="mig-sku-leftover-adjusted">--</div>
                       </div>
                     </div>
@@ -2067,6 +2099,16 @@
                   </div>
 
                   <div class="alert alert-light border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Live Scenario State</h6>
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis" id="migration-advanced-updated">Not simulated yet</span>
+                    </div>
+                    <div class="small text-muted" id="migration-advanced-state">
+                      Select a scenario and run simulation to compare competitor capture vs internal cannibalization.
+                    </div>
+                  </div>
+
+                  <div class="alert alert-light border mb-3">
                     <h6 class="mb-2"><i class="bi bi-diagram-3 me-2"></i>Decision Checklist</h6>
                     <div class="small">
                       1. Test Sunscreen and Moisturizer groups separately.<br>
@@ -2156,6 +2198,16 @@
                     <i class="bi bi-sort-numeric-down me-2"></i>
                     Rank Scenarios
                   </button>
+                </div>
+                <div class="col-md-4">
+                  <span class="form-label fw-bold decision-engine-spacer">Recommendation</span>
+                  <button id="recommend-scenario-btn" class="btn btn-outline-primary w-100 decision-engine-action">
+                    <i class="bi bi-magic me-2"></i>
+                    Recommend Best Scenario
+                  </button>
+                  <div class="small text-muted mt-2" id="recommended-scenario-brief">
+                    Run simulations and save scenarios, then click here for one-click recommendation.
+                  </div>
                 </div>
               </div>
 
@@ -3012,7 +3064,7 @@
 
         <!-- Input -->
         <div class="input-group mb-3">
-          <input type="text" id="chat-input" class="form-control" placeholder="Ask about promotion optimization: SKU mix, inventory to week 17, competitor moves, or promo effectiveness..." disabled />
+          <input type="text" id="chat-input" class="form-control" placeholder="Ask about promotion optimization: SKU mix, inventory to season-end horizon, competitor moves, or promo effectiveness..." disabled />
           <button id="chat-send-btn" class="btn btn-primary" disabled>
             <i class="bi bi-send"></i> Send
           </button>
@@ -3025,11 +3077,11 @@
             Try asking:
           </small>
           <div class="d-flex flex-wrap gap-2">
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>What should I promote this week to clear inventory by week 17 with minimal margin damage?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>What should I promote this week to clear inventory by season-end horizon with minimal margin damage?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Competitor dropped prices on Amazon. Which SKUs should be in a mass-channel defense promo?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Social engagement is high. Which SKUs should we hold at full price?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>From past promos, which SKUs underperformed and should be excluded next cycle?</button>
-            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Which SKUs should I include in a week-17 clearance promo by channel?</button>
+            <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Which SKUs should I include in a season-end clearance promo by channel?</button>
             <button class="btn btn-sm btn-outline-secondary suggested-query" disabled>Where are we over-promoting in inelastic SKUs and what should we stop discounting?</button>
           </div>
         </div>
@@ -3215,7 +3267,7 @@
           <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i> Active Model Stack</h6>
           <p>This section combines four active models: own promo response, competitor delta impact, social momentum impact, and SKU migration/cannibalization to produce weekly channel-specific actions.</p>
           <div class="alert alert-info mb-0">
-            <strong>Current implementation:</strong> Step 1 already delivers the core promotion optimization logic for a 17-week season, including objective-based controls and baseline-vs-scenario inventory projection.
+            <strong>Current implementation:</strong> Step 1 delivers core promotion optimization logic with a configurable planning horizon (default 17 weeks), including objective-based controls and baseline-vs-scenario inventory projection.
           </div>
         </div>
         <div class="modal-footer">
@@ -3237,9 +3289,9 @@
         </div>
         <div class="modal-body">
           <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i> Active Model Stack</h6>
-          <p>This section combines historical promotion effectiveness by SKU/channel with a markdown ladder model to reduce week-17 leftover inventory while preserving margin floors.</p>
+          <p>This section combines historical promotion effectiveness by SKU/channel with a markdown ladder model to reduce season-end leftover inventory while preserving margin floors.</p>
           <div class="alert alert-info mb-0">
-            <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through week-17 projection and AI recommendation guidance.
+            <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through configurable-horizon projection and AI recommendation guidance.
           </div>
         </div>
         <div class="modal-footer">

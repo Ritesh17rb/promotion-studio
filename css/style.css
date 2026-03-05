@@ -1555,7 +1555,11 @@ html {
   border: 1px solid rgba(0, 102, 255, 0.15);
 }
 
-/* Step 1 channel promo controls: keep sliders + immediate impact visible */
+/* Step 1 channel promo controls: panel stays visible, but live-impact block does not overlay */
+.channel-promo-secondary-card {
+  position: static;
+}
+
 .channel-promo-controls-card {
   position: sticky;
   top: 108px;
@@ -1578,11 +1582,11 @@ html {
 
 .channel-promo-live-impact {
   border-color: rgba(37, 99, 235, 0.24) !important;
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(6px);
+  position: static;
+  top: auto;
+  z-index: auto;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 [data-bs-theme="dark"] .channel-promo-live-impact {
