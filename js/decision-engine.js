@@ -51,6 +51,14 @@ export function rankScenarios(scenarios, objective = 'revenue-max', constraints 
 function calculateObjectiveScore(scenario, objective, constraints) {
   const delta = scenario.delta || {};
   const forecasted = scenario.forecasted || {};
+  const socialPricingPower = scenario.commercial_context?.socialPricingPower || null;
+  const priceMovePct = scenario.commercial_context?.scenarioPrice?.priceChangePct || 0;
+  const socialSupportBonus = socialPricingPower
+    ? Math.max(-6, Math.min(8, (socialPricingPower.headroomPct || 0) * 40))
+    : 0;
+  const priceSupportPenalty = socialPricingPower && priceMovePct > 0 && socialPricingPower.headroomPct < priceMovePct
+    ? Math.min(10, (priceMovePct - socialPricingPower.headroomPct) * 80)
+    : 0;
 
   switch (objective) {
     case 'growth-max':
@@ -58,14 +66,14 @@ function calculateObjectiveScore(scenario, objective, constraints) {
       const subGrowth = delta.customers_pct || 0;
       const revenueGrowth = delta.revenue_pct || 0;
       const churnPenalty = Math.abs(delta.repeat_loss_rate || 0) * 50; // Penalize high repeat loss
-      return (subGrowth * 2) + revenueGrowth - churnPenalty;
+      return (subGrowth * 2) + revenueGrowth - churnPenalty + (socialSupportBonus * 0.4);
 
     case 'revenue-max':
       // Maximize revenue with acceptable repeat loss
       const revGrowth = delta.revenue_pct || 0;
       const aovGrowth = delta.aov_pct || 0;
       const churnImpact = (delta.repeat_loss_rate || 0) * 100;
-      return (revGrowth * 2) + aovGrowth - (churnImpact * 2);
+      return (revGrowth * 2) + aovGrowth - (churnImpact * 2) + socialSupportBonus - priceSupportPenalty;
 
     case 'churn-capped':
       // Minimize repeat loss while maintaining revenue
@@ -75,7 +83,7 @@ function calculateObjectiveScore(scenario, objective, constraints) {
         return -1000; // Fails constraint
       }
       const revMaintain = delta.revenue_pct || 0;
-      return -churnDelta * 100 + revMaintain;
+      return -churnDelta * 100 + revMaintain + (socialSupportBonus * 0.25);
 
     case 'mix-targeted':
       // Optimize tier mix (Ad-Free share growth)
@@ -83,7 +91,7 @@ function calculateObjectiveScore(scenario, objective, constraints) {
       const mixTarget = constraints.adfree_share_target || 0.5;
       const mixDelta = Math.abs(adFreeMix - mixTarget);
       const aovBonus = (delta.aov_pct || 0) * 0.5;
-      return (100 - mixDelta * 100) + aovBonus;
+      return (100 - mixDelta * 100) + aovBonus + (socialSupportBonus * 0.5) - (priceSupportPenalty * 0.5);
 
     default:
       return delta.revenue_pct || 0;
@@ -146,6 +154,9 @@ function validateConstraints(scenario, constraints) {
 function generateRationale(scenario, objective, isTop) {
   const delta = scenario.delta || {};
   const config = scenario.scenario_config || {};
+  const socialPricingPower = scenario.commercial_context?.socialPricingPower || null;
+  const checkpoint = scenario.commercial_context?.checkpoint || null;
+  const projection = scenario.commercial_context?.projection || null;
 
   const revChange = delta.revenue_pct || 0;
   const subChange = scenario.delta.customers_pct || 0;
@@ -223,6 +234,20 @@ function generateRationale(scenario, objective, isTop) {
   }
   if (scenario.is_new_tier) {
     rationale.push(`ℹ️ Introduces new tier: ${config.tier}`);
+  }
+
+  if (checkpoint) {
+    rationale.push(`Note: Week-${checkpoint.week} sell-through is already ${(checkpoint.sellThroughPct * 100).toFixed(1)}%`);
+  }
+  if (projection) {
+    rationale.push(`Note: Rest-of-season revenue vs baseline is ${projection.scenarioVsBaselineRevenuePct >= 0 ? '+' : ''}${(projection.scenarioVsBaselineRevenuePct * 100).toFixed(1)}%`);
+  }
+  if (socialPricingPower) {
+    if (socialPricingPower.headroomPct > 0) {
+      rationale.push(`Note: Social momentum supports about ${(socialPricingPower.headroomPct * 100).toFixed(1)}% extra pricing headroom`);
+    } else {
+      rationale.push(`Note: Social signal does not support additional pricing power right now`);
+    }
   }
 
   return rationale.join('<br>');

@@ -1,0 +1,10 @@
+# Local browser/debug artifacts
+.tmp-chrome/
+
+# Generated demo assets
+screenshots/
+*.pptx
+
+# Python cache
+__pycache__/
+*.py[cod]

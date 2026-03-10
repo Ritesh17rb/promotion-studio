@@ -81,6 +81,9 @@ let currentResult = currentResultByModel[activeModelType];
 let step2CompetitiveChart = null;
 let step2SocialChart = null;
 let step2SkuImpactChart = null;
+let commercialSalesProjectionChart = null;
+let commercialSocialPowerChart = null;
+let comparisonWeek5Chart = null;
 let llmStatusCached = null;
 let llmStatusLastCheckedAt = 0;
 let liveCopilotDebounceTimer = null;
@@ -280,6 +283,36 @@ function socialDemandMultiplier(score) {
   return clamp(0.8 + ((clipped - 35) * 0.0067), 0.75, 1.22);
 }
 
+function getScenarioConfigFromResult(result) {
+  if (result?.scenario_config) return result.scenario_config;
+  if (result?.scenario_id) {
+    const match = allScenarios.find(s => s.id === result.scenario_id);
+    if (match?.config) return match.config;
+  }
+  const modelType = resolveModelTypeForResult(result);
+  return selectedScenarioByModel[modelType]?.config || selectedScenario?.config || {};
+}
+
+function safeNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function formatSignedPercentFromRatio(ratio, decimals = 1) {
+  if (!Number.isFinite(ratio)) return 'N/A';
+  const pct = ratio * 100;
+  return `${pct >= 0 ? '+' : ''}${pct.toFixed(decimals)}%`;
+}
+
+function getCommercialPosture(priceHeadroomPct, priceMovePct, socialTrendDelta) {
+  if (priceHeadroomPct >= 0.08) return 'Raise selectively / trim discounts';
+  if (priceHeadroomPct >= 0.03) return 'Hold price, do not over-discount';
+  if (priceMovePct > 0 && priceHeadroomPct <= 0) return 'Price increase needs stronger support';
+  if (priceMovePct < 0 && priceHeadroomPct >= 0.04) return 'Discount may be deeper than needed';
+  if (socialTrendDelta < -4) return 'Demand support is fading; stay tactical';
+  return 'Use targeted promotion only';
+}
+
 function getModelTypeFromTabId(tabId) {
   if (tabId === 'acquisition-tab') return 'acquisition';
   if (tabId === 'churn-tab') return 'churn';
@@ -315,6 +348,11 @@ function updateScenarioComparisonUI() {
   }
   if (comparisonCharts && count < 2) {
     comparisonCharts.style.display = 'none';
+    if (comparisonWeek5Chart) {
+      comparisonWeek5Chart.destroy();
+      comparisonWeek5Chart = null;
+    }
+    renderScenarioComparisonOutlookTable();
   }
 }
 
@@ -349,9 +387,19 @@ function clearResultsUI() {
   const acquisitionDetail = document.getElementById('acquisition-results-detail');
   const churnDetail = document.getElementById('churn-results-detail');
   const migrationDetail = document.getElementById('migration-results-detail');
+  const commercialSection = document.getElementById('commercial-context-section');
   if (acquisitionDetail) acquisitionDetail.style.display = 'none';
   if (churnDetail) churnDetail.style.display = 'none';
   if (migrationDetail) migrationDetail.style.display = 'none';
+  if (commercialSection) commercialSection.style.display = 'none';
+  if (commercialSalesProjectionChart) {
+    commercialSalesProjectionChart.destroy();
+    commercialSalesProjectionChart = null;
+  }
+  if (commercialSocialPowerChart) {
+    commercialSocialPowerChart.destroy();
+    commercialSocialPowerChart = null;
+  }
 }
 
 function hideScenarioResults() {
@@ -1734,6 +1782,7 @@ async function loadData() {
     initializePopovers();
 
     dataLoaded = true;
+    window.dataLoaded = true;
 
     // Initialize Pyodide models in background (non-blocking)
     initializePyodideModels().then(success => {
@@ -1746,6 +1795,8 @@ async function loadData() {
 
   } catch (error) {
     console.error('Error loading data:', error);
+    dataLoaded = false;
+    window.dataLoaded = false;
 
     // Show error state
     progressBar.classList.remove('bg-success');
@@ -1778,11 +1829,13 @@ function saveScenario() {
 }
 
 // Compare saved scenarios
-function compareScenarios() {
+async function compareScenarios() {
   if (savedScenarios.length < 2) {
     alert('Please save at least 2 scenarios to compare.');
     return;
   }
+
+  await Promise.all(savedScenarios.map(scenario => enrichScenarioWithCommercialContext(scenario)));
 
   // Prepare data for grouped bar chart with proper null/undefined handling
   const barChartData = savedScenarios.map(s => {
@@ -1832,6 +1885,7 @@ function compareScenarios() {
 
   // Show comparison charts
   document.getElementById('comparison-charts').style.display = 'block';
+  renderScenarioComparisonOutlookTable();
 
   // Scroll to comparison
   document.getElementById('comparison-section').scrollIntoView({ behavior: 'smooth' });
@@ -4123,6 +4177,7 @@ function populateElasticityModelTabs() {
         activeModelType: activeModelType
       });
 
+      await enrichScenarioWithCommercialContext(result);
       await loadingState.done;
       loadingState.stop();
 
@@ -4382,6 +4437,795 @@ function calculateChurnPayback(result) {
   }
 }
 
+function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapshot) {
+  if (!result || !Array.isArray(skuRows) || skuRows.length === 0) {
+    return null;
+  }
+
+  const selectedGroup = liveSnapshot?.selectedGroup || 'all';
+  const selectedSku = liveSnapshot?.selectedSku || 'all';
+  const applyMass = liveSnapshot?.applyMass ?? true;
+  const applyPrestige = liveSnapshot?.applyPrestige ?? true;
+  const maxDataWeek = skuRows.reduce((max, row) => Math.max(max, safeNumber(row.week_of_season, 0)), 0);
+  const horizonWeek = Math.min(
+    safeNumber(liveSnapshot?.planningHorizonWeeks, maxDataWeek || 17),
+    maxDataWeek || 17
+  );
+
+  const filteredRows = skuRows.filter(row => {
+    const week = safeNumber(row.week_of_season, 0);
+    if (week <= 0 || week > horizonWeek) return false;
+    if (selectedGroup !== 'all' && row.product_group !== selectedGroup) return false;
+    if (selectedSku !== 'all' && row.sku_id !== selectedSku) return false;
+    if (row.channel_group === 'mass' && !applyMass) return false;
+    if (row.channel_group === 'prestige' && !applyPrestige) return false;
+    return true;
+  });
+
+  if (!filteredRows.length) {
+    return null;
+  }
+
+  const weekly = new Map();
+  filteredRows.forEach(row => {
+    const week = safeNumber(row.week_of_season, 0);
+    if (!weekly.has(week)) {
+      weekly.set(week, {
+        week,
+        date: row.date,
+        units: 0,
+        revenue: 0,
+        endInventory: 0,
+        startInventory: 0,
+        elasticityWeightedSum: 0,
+        elasticityWeight: 0
+      });
+    }
+    const bucket = weekly.get(week);
+    const units = safeNumber(row.net_units_sold, 0);
+    const revenue = safeNumber(row.revenue, 0);
+    const weight = Math.max(units, 1);
+    bucket.units += units;
+    bucket.revenue += revenue;
+    bucket.endInventory += safeNumber(row.end_inventory_units, 0);
+    if (week === 1) {
+      bucket.startInventory += safeNumber(row.start_inventory_units, 0);
+    }
+    bucket.elasticityWeightedSum += safeNumber(row.base_elasticity, 0) * weight;
+    bucket.elasticityWeight += weight;
+  });
+
+  const currentWeek = Math.min(
+    safeNumber(
+      liveSnapshot?.weekOfSeason,
+      filteredRows.find(row => row.is_current_week === true)?.week_of_season ||
+        [...weekly.keys()].reduce((max, week) => Math.max(max, week), 1)
+    ),
+    horizonWeek
+  );
+  const checkpointWeek = Math.min(5, horizonWeek);
+  const seasonStartInventory = safeNumber(weekly.get(1)?.startInventory, 0);
+
+  let cumulativeUnits = 0;
+  let cumulativeRevenue = 0;
+  const cumulativeUnitsByWeek = new Map();
+  const cumulativeRevenueByWeek = new Map();
+  for (let week = 1; week <= horizonWeek; week += 1) {
+    cumulativeUnits += safeNumber(weekly.get(week)?.units, 0);
+    cumulativeRevenue += safeNumber(weekly.get(week)?.revenue, 0);
+    cumulativeUnitsByWeek.set(week, cumulativeUnits);
+    cumulativeRevenueByWeek.set(week, cumulativeRevenue);
+  }
+
+  const checkpointUnits = safeNumber(cumulativeUnitsByWeek.get(checkpointWeek), 0);
+  const checkpointRevenue = safeNumber(cumulativeRevenueByWeek.get(checkpointWeek), 0);
+  const checkpointInventory = safeNumber(weekly.get(checkpointWeek)?.endInventory, 0);
+  const currentUnits = safeNumber(cumulativeUnitsByWeek.get(currentWeek), checkpointUnits);
+  const currentRevenue = safeNumber(cumulativeRevenueByWeek.get(currentWeek), checkpointRevenue);
+  const currentInventory = safeNumber(weekly.get(currentWeek)?.endInventory, checkpointInventory);
+  const anchorUnits = safeNumber(cumulativeUnitsByWeek.get(checkpointWeek), 0);
+  const anchorRevenue = safeNumber(cumulativeRevenueByWeek.get(checkpointWeek), 0);
+  const anchorInventory = safeNumber(weekly.get(checkpointWeek)?.endInventory, 0);
+  const baselineRemainingUnits = [...weekly.values()]
+    .filter(entry => entry.week > checkpointWeek)
+    .reduce((sum, entry) => sum + safeNumber(entry.units, 0), 0);
+  const baselineRemainingRevenue = [...weekly.values()]
+    .filter(entry => entry.week > checkpointWeek)
+    .reduce((sum, entry) => sum + safeNumber(entry.revenue, 0), 0);
+
+  const config = getScenarioConfigFromResult(result);
+  const currentPrice = safeNumber(config.current_price, safeNumber(result?.baseline?.aov, 0));
+  const newPrice = safeNumber(config.new_price, safeNumber(result?.forecasted?.aov, currentPrice));
+  const priceMovePct = currentPrice > 0 ? (newPrice - currentPrice) / currentPrice : 0;
+  const priceRatio = currentPrice > 0 ? newPrice / currentPrice : 1;
+
+  const currentWeekElasticityEntry = weekly.get(currentWeek);
+  const fallbackElasticity = currentWeekElasticityEntry?.elasticityWeight
+    ? currentWeekElasticityEntry.elasticityWeightedSum / currentWeekElasticityEntry.elasticityWeight
+    : -1.8;
+  const baseElasticity = safeNumber(result.elasticity, fallbackElasticity || -1.8);
+
+  const getSocialScoreForWeek = (week) => {
+    const seasonDate = weekly.get(week)?.date || null;
+    if (seasonDate) {
+      const exact = socialRows.find(row => row.week_start === seasonDate || row.date === seasonDate);
+      if (exact) {
+        return normalizeSocialScore(exact.brand_social_index ?? exact.social_sentiment);
+      }
+    }
+    const idx = clamp(week - 1, 0, socialRows.length - 1);
+    const row = socialRows[idx];
+    return normalizeSocialScore(row?.brand_social_index ?? row?.social_sentiment);
+  };
+
+  const checkpointSocialScores = [];
+  for (let week = 1; week <= checkpointWeek; week += 1) {
+    const score = getSocialScoreForWeek(week);
+    if (Number.isFinite(score)) checkpointSocialScores.push(score);
+  }
+  const neutralSocialScore = checkpointSocialScores.length
+    ? checkpointSocialScores.reduce((sum, score) => sum + score, 0) / checkpointSocialScores.length
+    : 60;
+  const currentSocialScore = safeNumber(
+    liveSnapshot?.socialScore,
+    getSocialScoreForWeek(currentWeek)
+  );
+  const priorSocialScore = safeNumber(
+    getSocialScoreForWeek(Math.max(1, currentWeek - 1)),
+    neutralSocialScore
+  );
+  const socialTrendDelta = currentSocialScore - priorSocialScore;
+
+  const neutralElasticity = baseElasticity * socialElasticityModifier(neutralSocialScore);
+  const neutralDemand = socialDemandMultiplier(neutralSocialScore);
+
+  const scenarioUnitMultiplier = clamp(
+    Number.isFinite(result?.delta?.customers_pct)
+      ? 1 + (safeNumber(result.delta.customers_pct, 0) / 100)
+      : Math.pow(priceRatio || 1, baseElasticity || -1.8),
+    0.45,
+    1.9
+  );
+  const scenarioRevenueMultiplier = clamp(
+    Number.isFinite(result?.delta?.revenue_pct)
+      ? 1 + (safeNumber(result.delta.revenue_pct, 0) / 100)
+      : scenarioUnitMultiplier * priceRatio,
+    0.45,
+    2.4
+  );
+
+  function computeStateForScore(label, score, variant = 'generic') {
+    const normalizedScore = clamp(safeNumber(score, neutralSocialScore), 35, 95);
+    const scenarioElasticity = baseElasticity * socialElasticityModifier(normalizedScore);
+    const demandMultiplier = socialDemandMultiplier(normalizedScore);
+    const demandRatioVsNeutral = neutralDemand > 0 ? demandMultiplier / neutralDemand : 1;
+    const noSocialVolumeMultiplier = Math.pow(priceRatio || 1, baseElasticity || -1.8);
+    const withSocialVolumeMultiplier = Math.pow(priceRatio || 1, scenarioElasticity || -1.8) * demandRatioVsNeutral;
+    const socialTailwindMultiplier = noSocialVolumeMultiplier !== 0
+      ? clamp(withSocialVolumeMultiplier / noSocialVolumeMultiplier, 0.8, 1.4)
+      : 1;
+    const unitMultiplier = clamp(scenarioUnitMultiplier * socialTailwindMultiplier, 0.4, 2.1);
+    const revenueMultiplier = clamp(scenarioRevenueMultiplier * socialTailwindMultiplier, 0.4, 2.6);
+    const demandTailwindPct = socialTailwindMultiplier - 1;
+
+    let priceHeadroomPct = 0;
+    if (demandRatioVsNeutral > 1 && scenarioElasticity < 0) {
+      priceHeadroomPct = clamp(Math.pow(1 / demandRatioVsNeutral, 1 / scenarioElasticity) - 1, 0, 0.25);
+    } else if (demandRatioVsNeutral < 1 && scenarioElasticity < 0) {
+      priceHeadroomPct = clamp(Math.pow(1 / demandRatioVsNeutral, 1 / scenarioElasticity) - 1, -0.15, 0);
+    }
+
+    const projectedRemainingUnits = baselineRemainingUnits * unitMultiplier;
+    const projectedRemainingRevenue = baselineRemainingRevenue * revenueMultiplier;
+    const fullSeasonUnits = anchorUnits + projectedRemainingUnits;
+    const fullSeasonRevenue = anchorRevenue + projectedRemainingRevenue;
+    const posture = getCommercialPosture(priceHeadroomPct, priceMovePct, normalizedScore - priorSocialScore);
+
+    const chartSeries = [];
+    let running = anchorUnits;
+    for (let week = 1; week <= horizonWeek; week += 1) {
+      if (week < checkpointWeek) {
+        chartSeries.push(null);
+        continue;
+      }
+      if (week === checkpointWeek) {
+        chartSeries.push(Math.round(anchorUnits));
+        continue;
+      }
+      const weekUnits = safeNumber(weekly.get(week)?.units, 0);
+      const rampFactor = Math.min((week - checkpointWeek) / 2, 1);
+      const weekMultiplier = 1 + ((unitMultiplier - 1) * rampFactor);
+      running += weekUnits * weekMultiplier;
+      chartSeries.push(Math.round(running));
+    }
+
+    return {
+      label,
+      variant,
+      socialScore: normalizedScore,
+      effectiveElasticity: scenarioElasticity,
+      demandTailwindPct,
+      headroomPct: priceHeadroomPct,
+      projectedRemainingUnits,
+      projectedRemainingRevenue,
+      fullSeasonUnits,
+      fullSeasonRevenue,
+      posture,
+      chartSeries
+    };
+  }
+
+  const momentumStates = [
+    computeStateForScore('Cooling Off', currentSocialScore - 10, 'cooling'),
+    computeStateForScore('Neutral Buzz', neutralSocialScore, 'neutral'),
+    computeStateForScore('Current Trend', currentSocialScore, 'current'),
+    computeStateForScore('Viral Spike', Math.max(currentSocialScore + 12, 82), 'viral')
+  ];
+  const selectedState = momentumStates.find(state => state.variant === 'current') || momentumStates[2];
+  const neutralState = momentumStates.find(state => state.variant === 'neutral') || momentumStates[1];
+
+  const labels = [];
+  const actualSeries = [];
+  const baselineSeries = [];
+  let baselineProjected = anchorUnits;
+  for (let week = 1; week <= horizonWeek; week += 1) {
+    labels.push(`W${week}`);
+    actualSeries.push(week <= checkpointWeek ? Math.round(safeNumber(cumulativeUnitsByWeek.get(week), 0)) : null);
+    if (week < checkpointWeek) {
+      baselineSeries.push(null);
+      continue;
+    }
+    if (week === checkpointWeek) {
+      baselineSeries.push(Math.round(anchorUnits));
+      continue;
+    }
+    baselineProjected += safeNumber(weekly.get(week)?.units, 0);
+    baselineSeries.push(Math.round(baselineProjected));
+  }
+
+  const summary = `After 5 weeks, ${formatNumber(checkpointUnits)} units are sold (${formatSignedPercentFromRatio(seasonStartInventory > 0 ? checkpointUnits / seasonStartInventory : 0, 1).replace('+', '')} sell-through). From that week-5 checkpoint to week ${horizonWeek}, the selected scenario changes remaining-season revenue ${formatSignedPercentFromRatio(baselineRemainingRevenue > 0 ? (selectedState.projectedRemainingRevenue / baselineRemainingRevenue) - 1 : 0, 1)} vs baseline, while current social momentum adds ${formatSignedPercentFromRatio(selectedState.demandTailwindPct, 1)} demand support and ${formatSignedPercentFromRatio(selectedState.headroomPct, 1)} pricing headroom.`;
+
+  return {
+    filters: {
+      selectedGroup,
+      selectedSku,
+      applyMass,
+      applyPrestige
+    },
+    checkpoint: {
+      week: checkpointWeek,
+      actualUnitsSold: checkpointUnits,
+      actualRevenue: checkpointRevenue,
+      inventoryRemaining: checkpointInventory,
+      sellThroughPct: seasonStartInventory > 0 ? checkpointUnits / seasonStartInventory : 0
+    },
+    anchorPosition: {
+      week: checkpointWeek,
+      cumulativeUnits: anchorUnits,
+      cumulativeRevenue: anchorRevenue,
+      inventoryRemaining: anchorInventory
+    },
+    currentPosition: {
+      week: currentWeek,
+      cumulativeUnits: currentUnits,
+      cumulativeRevenue: currentRevenue,
+      inventoryRemaining: currentInventory
+    },
+    scenarioPrice: {
+      currentPrice,
+      newPrice,
+      priceChangePct: priceMovePct
+    },
+    projection: {
+      currentWeek,
+      anchorWeek: checkpointWeek,
+      horizonWeek,
+      baselineRemainingUnits,
+      baselineRemainingRevenue,
+      scenarioRemainingUnitsNeutral: neutralState.projectedRemainingUnits,
+      scenarioRemainingRevenueNeutral: neutralState.projectedRemainingRevenue,
+      scenarioRemainingUnitsSocial: selectedState.projectedRemainingUnits,
+      scenarioRemainingRevenueSocial: selectedState.projectedRemainingRevenue,
+      fullSeasonBaselineUnits: anchorUnits + baselineRemainingUnits,
+      fullSeasonBaselineRevenue: anchorRevenue + baselineRemainingRevenue,
+      fullSeasonScenarioUnits: selectedState.fullSeasonUnits,
+      fullSeasonScenarioRevenue: selectedState.fullSeasonRevenue,
+      scenarioVsBaselineUnitsPct: baselineRemainingUnits > 0 ? (selectedState.projectedRemainingUnits / baselineRemainingUnits) - 1 : 0,
+      scenarioVsBaselineRevenuePct: baselineRemainingRevenue > 0 ? (selectedState.projectedRemainingRevenue / baselineRemainingRevenue) - 1 : 0,
+      socialStates: momentumStates,
+      chart: {
+        labels,
+        actualSeries,
+        baselineSeries,
+        scenarioNeutralSeries: neutralState.chartSeries,
+        scenarioSocialSeries: selectedState.chartSeries,
+        coolingSeries: momentumStates[0].chartSeries,
+        viralSeries: momentumStates[3].chartSeries
+      }
+    },
+    socialPricingPower: {
+      currentScore: currentSocialScore,
+      neutralScore: neutralSocialScore,
+      trendDelta: socialTrendDelta,
+      baseElasticity,
+      neutralElasticity,
+      effectiveElasticity: selectedState.effectiveElasticity,
+      elasticityChangePct: baseElasticity !== 0 ? (selectedState.effectiveElasticity / baseElasticity) - 1 : 0,
+      demandTailwindPct: selectedState.demandTailwindPct,
+      headroomPct: selectedState.headroomPct,
+      posture: selectedState.posture,
+      states: momentumStates,
+      note: Number.isFinite(selectedState.headroomPct) && selectedState.headroomPct > 0
+        ? `Current social momentum supports roughly ${formatSignedPercentFromRatio(selectedState.headroomPct, 1).replace('+', '')} additional price headroom before unit demand returns to neutral baseline.`
+        : 'Current social signal does not justify incremental pricing beyond the base scenario.'
+    },
+    summary
+  };
+}
+
+async function enrichScenarioWithCommercialContext(result) {
+  if (!result) return result;
+  if (result.commercial_context?.summary) return result;
+
+  try {
+    const [skuRows, socialRows] = await Promise.all([
+      loadSkuWeeklyData(),
+      loadSocialSignals()
+    ]);
+    const context = buildCommercialScenarioContext(
+      result,
+      skuRows || [],
+      socialRows || [],
+      getLivePromoSnapshotSafe()
+    );
+    if (context) {
+      result.commercial_context = context;
+    }
+  } catch (error) {
+    console.error('Error enriching scenario with commercial context:', error);
+  }
+
+  return result;
+}
+
+function renderCommercialSalesProjectionChart(context) {
+  const canvas = document.getElementById('commercial-sales-projection-chart');
+  if (!canvas || !window.Chart) return;
+
+  const chart = context?.projection?.chart;
+  if (!chart) return;
+
+  if (commercialSalesProjectionChart) {
+    commercialSalesProjectionChart.destroy();
+  }
+
+  commercialSalesProjectionChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: chart.labels,
+      datasets: [
+        {
+          label: 'Actual cumulative sold (weeks 1-5)',
+          data: chart.actualSeries,
+          borderColor: 'rgba(15, 23, 42, 0.9)',
+          backgroundColor: 'rgba(15, 23, 42, 0.08)',
+          tension: 0.25,
+          pointRadius: 2,
+          spanGaps: false
+        },
+        {
+          label: 'Baseline projection',
+          data: chart.baselineSeries,
+          borderColor: 'rgba(100, 116, 139, 0.95)',
+          backgroundColor: 'rgba(100, 116, 139, 0.12)',
+          borderDash: [6, 5],
+          tension: 0.2,
+          pointRadius: 1.5,
+          spanGaps: true
+        },
+        {
+          label: 'Scenario (price only)',
+          data: chart.scenarioNeutralSeries,
+          borderColor: 'rgba(37, 99, 235, 0.95)',
+          backgroundColor: 'rgba(37, 99, 235, 0.12)',
+          borderDash: [4, 4],
+          tension: 0.2,
+          pointRadius: 1.5,
+          spanGaps: true
+        },
+        {
+          label: 'Selected scenario + current trend',
+          data: chart.scenarioSocialSeries,
+          borderColor: 'rgba(16, 185, 129, 0.95)',
+          backgroundColor: 'rgba(16, 185, 129, 0.16)',
+          tension: 0.2,
+          pointRadius: 1.5,
+          spanGaps: true
+        },
+        {
+          label: 'Cooling-off trend case',
+          data: chart.coolingSeries,
+          borderColor: 'rgba(245, 158, 11, 0.95)',
+          backgroundColor: 'rgba(245, 158, 11, 0.12)',
+          tension: 0.2,
+          pointRadius: 0,
+          borderDash: [3, 4],
+          spanGaps: true
+        },
+        {
+          label: 'Viral spike case',
+          data: chart.viralSeries,
+          borderColor: 'rgba(168, 85, 247, 0.95)',
+          backgroundColor: 'rgba(168, 85, 247, 0.12)',
+          tension: 0.2,
+          pointRadius: 0,
+          borderDash: [8, 4],
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        },
+        tooltip: {
+          callbacks: {
+            label: (tooltipItem) => `${tooltipItem.dataset.label}: ${formatNumber(tooltipItem.parsed.y || 0)} units`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (value) => formatNumber(value)
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCommercialSocialPowerChart(context) {
+  const canvas = document.getElementById('commercial-social-power-chart');
+  if (!canvas || !window.Chart) return;
+
+  const states = context?.socialPricingPower?.states || [];
+  if (!states.length) return;
+
+  if (commercialSocialPowerChart) {
+    commercialSocialPowerChart.destroy();
+  }
+
+  commercialSocialPowerChart = new Chart(canvas, {
+    data: {
+      labels: states.map(state => state.label),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Price headroom %',
+          data: states.map(state => Number((state.headroomPct || 0) * 100).toFixed(2)),
+          backgroundColor: [
+            'rgba(245, 158, 11, 0.7)',
+            'rgba(148, 163, 184, 0.7)',
+            'rgba(16, 185, 129, 0.78)',
+            'rgba(168, 85, 247, 0.78)'
+          ],
+          borderRadius: 8,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Effective elasticity',
+          data: states.map(state => Number(state.effectiveElasticity.toFixed(2))),
+          borderColor: 'rgba(37, 99, 235, 0.95)',
+          backgroundColor: 'rgba(37, 99, 235, 0.14)',
+          tension: 0.25,
+          pointRadius: 4,
+          pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (tooltipItem) => {
+              if (tooltipItem.dataset.yAxisID === 'y1') {
+                return `${tooltipItem.dataset.label}: ${tooltipItem.parsed.y.toFixed(2)}`;
+              }
+              return `${tooltipItem.dataset.label}: ${tooltipItem.parsed.y >= 0 ? '+' : ''}${tooltipItem.parsed.y.toFixed(1)}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false }
+        },
+        y: {
+          position: 'left',
+          ticks: {
+            callback: (value) => `${value >= 0 ? '+' : ''}${value}%`
+          }
+        },
+        y1: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: {
+            callback: (value) => Number(value).toFixed(1)
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderComparisonWeek5Chart() {
+  const canvas = document.getElementById('comparison-week5-chart');
+  const noteEl = document.getElementById('comparison-week5-note');
+  if (!canvas || !window.Chart) return;
+
+  const validScenarios = savedScenarios.filter(scenario => scenario?.commercial_context?.projection?.chart);
+  if (comparisonWeek5Chart) {
+    comparisonWeek5Chart.destroy();
+    comparisonWeek5Chart = null;
+  }
+
+  if (!validScenarios.length) {
+    if (noteEl) {
+      noteEl.textContent = 'Save multiple scenarios to see how the remaining season changes from the same week-5 checkpoint.';
+    }
+    return;
+  }
+
+  const baseContext = validScenarios[0].commercial_context;
+  const labels = baseContext.projection.chart.labels;
+  const datasets = [
+    {
+      label: 'Actual cumulative sold (weeks 1-5)',
+      data: baseContext.projection.chart.actualSeries,
+      borderColor: 'rgba(15, 23, 42, 0.9)',
+      backgroundColor: 'rgba(15, 23, 42, 0.08)',
+      tension: 0.2,
+      pointRadius: 2,
+      spanGaps: false
+    },
+    {
+      label: 'Baseline projection',
+      data: baseContext.projection.chart.baselineSeries,
+      borderColor: 'rgba(100, 116, 139, 0.95)',
+      backgroundColor: 'rgba(100, 116, 139, 0.1)',
+      borderDash: [6, 5],
+      tension: 0.2,
+      pointRadius: 0,
+      spanGaps: true
+    }
+  ];
+
+  const palette = [
+    'rgba(37, 99, 235, 0.95)',
+    'rgba(16, 185, 129, 0.95)',
+    'rgba(168, 85, 247, 0.95)',
+    'rgba(245, 158, 11, 0.95)'
+  ];
+
+  validScenarios.slice(0, 4).forEach((scenario, index) => {
+    datasets.push({
+      label: scenario.scenario_name || scenario.scenario_id || `Scenario ${index + 1}`,
+      data: scenario.commercial_context.projection.chart.scenarioSocialSeries,
+      borderColor: palette[index % palette.length],
+      backgroundColor: palette[index % palette.length].replace('0.95', '0.12'),
+      tension: 0.2,
+      pointRadius: 0,
+      spanGaps: true
+    });
+  });
+
+  comparisonWeek5Chart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (value) => formatNumber(value)
+          }
+        }
+      }
+    }
+  });
+
+  if (noteEl) {
+    noteEl.textContent = `All curves start from the same week-${baseContext.checkpoint.week} checkpoint so scenario differences represent the remaining-season effect only.`;
+  }
+}
+
+function renderCommercialScenarioBoard(result) {
+  const context = result?.commercial_context;
+  const section = document.getElementById('commercial-context-section');
+  if (!section) return;
+
+  if (!context) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  const anchorEl = document.getElementById('commercial-context-anchor');
+  const summaryEl = document.getElementById('commercial-context-summary');
+  const checkpointUnitsEl = document.getElementById('commercial-checkpoint-units');
+  const checkpointRevenueEl = document.getElementById('commercial-checkpoint-revenue');
+  const checkpointSellThroughEl = document.getElementById('commercial-checkpoint-sellthrough');
+  const checkpointInventoryEl = document.getElementById('commercial-checkpoint-inventory');
+  const restScenarioUnitsEl = document.getElementById('commercial-rest-scenario-units');
+  const restBaselineUnitsEl = document.getElementById('commercial-rest-baseline-units');
+  const socialHeadroomEl = document.getElementById('commercial-social-headroom');
+  const socialPostureEl = document.getElementById('commercial-social-posture');
+  const chartNoteEl = document.getElementById('commercial-chart-note');
+  const week5TableBodyEl = document.getElementById('commercial-week5-scenario-body');
+  const week5NoteEl = document.getElementById('commercial-week5-note');
+  const socialScoreEl = document.getElementById('commercial-social-score');
+  const socialTrendEl = document.getElementById('commercial-social-trend');
+  const baseElasticityEl = document.getElementById('commercial-base-elasticity');
+  const effectiveElasticityEl = document.getElementById('commercial-effective-elasticity');
+  const priceMoveEl = document.getElementById('commercial-price-move');
+  const demandTailwindEl = document.getElementById('commercial-demand-tailwind');
+  const socialStateBodyEl = document.getElementById('commercial-social-state-body');
+  const socialNoteEl = document.getElementById('commercial-social-note');
+
+  if (anchorEl) {
+    anchorEl.textContent = `Week ${context.checkpoint.week} checkpoint | Live week ${context.currentPosition.week}`;
+  }
+  if (summaryEl) {
+    summaryEl.textContent = context.summary;
+  }
+  if (checkpointUnitsEl) {
+    checkpointUnitsEl.textContent = `${formatNumber(context.checkpoint.actualUnitsSold)} units`;
+  }
+  if (checkpointRevenueEl) {
+    checkpointRevenueEl.textContent = `${formatCurrency(context.checkpoint.actualRevenue)} revenue by week ${context.checkpoint.week}`;
+  }
+  if (checkpointSellThroughEl) {
+    checkpointSellThroughEl.textContent = formatSignedPercentFromRatio(context.checkpoint.sellThroughPct, 1).replace('+', '');
+  }
+  if (checkpointInventoryEl) {
+    checkpointInventoryEl.textContent = `${formatNumber(context.checkpoint.inventoryRemaining)} units left at checkpoint`;
+  }
+  if (restScenarioUnitsEl) {
+    restScenarioUnitsEl.textContent = `${formatNumber(context.projection.scenarioRemainingUnitsSocial)} units`;
+  }
+  if (restBaselineUnitsEl) {
+    restBaselineUnitsEl.textContent = `Baseline ${formatNumber(context.projection.baselineRemainingUnits)} | ${formatSignedPercentFromRatio(context.projection.scenarioVsBaselineUnitsPct, 1)} vs baseline`;
+  }
+  if (socialHeadroomEl) {
+    socialHeadroomEl.textContent = formatSignedPercentFromRatio(context.socialPricingPower.headroomPct, 1);
+  }
+  if (socialPostureEl) {
+    socialPostureEl.textContent = context.socialPricingPower.posture;
+  }
+  if (chartNoteEl) {
+    chartNoteEl.textContent = `Weeks 1-${context.checkpoint.week} are actuals. Weeks ${context.checkpoint.week + 1}-${context.projection.horizonWeek} show scenario-sensitive projection.`;
+  }
+  if (socialScoreEl) {
+    socialScoreEl.textContent = Number.isFinite(context.socialPricingPower.currentScore)
+      ? context.socialPricingPower.currentScore.toFixed(1)
+      : 'N/A';
+  }
+  if (socialTrendEl) {
+    socialTrendEl.textContent = Number.isFinite(context.socialPricingPower.trendDelta)
+      ? `${context.socialPricingPower.trendDelta >= 0 ? '+' : ''}${context.socialPricingPower.trendDelta.toFixed(1)} vs prior week`
+      : 'N/A';
+  }
+  if (baseElasticityEl) {
+    baseElasticityEl.textContent = context.socialPricingPower.baseElasticity.toFixed(2);
+  }
+  if (effectiveElasticityEl) {
+    effectiveElasticityEl.textContent = `${context.socialPricingPower.effectiveElasticity.toFixed(2)} (${formatSignedPercentFromRatio(context.socialPricingPower.elasticityChangePct, 1)})`;
+  }
+  if (priceMoveEl) {
+    priceMoveEl.textContent = formatSignedPercentFromRatio(context.scenarioPrice.priceChangePct, 1);
+  }
+  if (demandTailwindEl) {
+    demandTailwindEl.textContent = formatSignedPercentFromRatio(context.socialPricingPower.demandTailwindPct, 1);
+  }
+  if (socialNoteEl) {
+    socialNoteEl.textContent = context.socialPricingPower.note;
+  }
+
+  if (week5TableBodyEl) {
+    const states = context.projection.socialStates || [];
+    week5TableBodyEl.innerHTML = states.map(state => `
+      <tr>
+        <td>${state.label}</td>
+        <td class="text-end">${formatNumber(state.projectedRemainingUnits)}</td>
+        <td class="text-end">${formatCurrency(state.projectedRemainingRevenue)}</td>
+      </tr>
+    `).join('');
+  }
+  if (week5NoteEl) {
+    week5NoteEl.textContent = `The selected scenario is shown as "${(context.projection.socialStates || []).find(state => state.variant === 'current')?.label || 'Current Trend'}". Viral and cooling cases show how the same price move behaves if brand buzz changes.`;
+  }
+  if (socialStateBodyEl) {
+    const states = context.socialPricingPower.states || [];
+    socialStateBodyEl.innerHTML = states.map(state => `
+      <tr>
+        <td>${state.label}</td>
+        <td class="text-end">${state.effectiveElasticity.toFixed(2)}</td>
+        <td class="text-end ${state.headroomPct >= 0 ? 'text-success' : 'text-danger'}">${formatSignedPercentFromRatio(state.headroomPct, 1)}</td>
+      </tr>
+    `).join('');
+  }
+
+  renderCommercialSalesProjectionChart(context);
+  renderCommercialSocialPowerChart(context);
+}
+
+function renderScenarioComparisonOutlookTable() {
+  const body = document.getElementById('comparison-outlook-body');
+  if (!body) return;
+
+  if (!savedScenarios.length) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Save and compare scenarios to render the reforecast table.</td></tr>';
+    renderComparisonWeek5Chart();
+    return;
+  }
+
+  body.innerHTML = savedScenarios.map(scenario => {
+    const context = scenario.commercial_context;
+    if (!context) {
+      return `
+        <tr>
+          <td>${scenario.scenario_name || scenario.scenario_id}</td>
+          <td colspan="6" class="text-muted">Commercial reforecast not available.</td>
+        </tr>
+      `;
+    }
+
+    const priceMove = formatSignedPercentFromRatio(context.scenarioPrice.priceChangePct, 1);
+    const restUnits = formatNumber(context.projection.scenarioRemainingUnitsSocial);
+    const restRevenue = formatCurrency(context.projection.scenarioRemainingRevenueSocial);
+    const vsBaseline = formatSignedPercentFromRatio(context.projection.scenarioVsBaselineRevenuePct, 1);
+    const headroom = formatSignedPercentFromRatio(context.socialPricingPower.headroomPct, 1);
+    const readout = context.socialPricingPower.headroomPct > 0.04
+      ? 'Brand heat supports firmer pricing.'
+      : context.projection.scenarioVsBaselineRevenuePct > 0
+        ? 'Scenario lifts revenue, but pricing power is limited.'
+        : 'Scenario needs tighter targeting or less discount depth.';
+
+    return `
+      <tr>
+        <td><strong>${scenario.scenario_name || scenario.scenario_id}</strong></td>
+        <td class="text-end">${priceMove}</td>
+        <td class="text-end">${restUnits}</td>
+        <td class="text-end">${restRevenue}</td>
+        <td class="text-end ${context.projection.scenarioVsBaselineRevenuePct >= 0 ? 'text-success' : 'text-danger'}">${vsBaseline}</td>
+        <td class="text-end ${context.socialPricingPower.headroomPct >= 0 ? 'text-primary' : 'text-danger'}">${headroom}</td>
+        <td>${readout}</td>
+      </tr>
+    `;
+  }).join('');
+  renderComparisonWeek5Chart();
+}
+
 /**
  * Display simulation results in the tabbed interface
  * @param {Object} result - The simulation result to display
@@ -4600,6 +5444,7 @@ function displayResultsInTabs(result, isRedisplay = false) {
     churn: churnDetail?.style.display,
     migration: migrationDetail?.style.display
   });
+  renderCommercialScenarioBoard(result);
   updateAdvancedScenarioStatePanels();
 }
 
@@ -5091,7 +5936,7 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
 /**
  * One-click recommendation based on currently saved scenarios for active model
  */
-function recommendBestScenario() {
+async function recommendBestScenario() {
   const objective = document.getElementById('objective-lens-select')?.value || 'revenue-max';
   const activeSaved = savedScenariosByModel[activeModelType] || [];
   const activeResult = currentResultByModel[activeModelType];
@@ -5102,6 +5947,7 @@ function recommendBestScenario() {
     return;
   }
 
+  await Promise.all(candidates.map(candidate => enrichScenarioWithCommercialContext(candidate)));
   const ranked = rankScenarios(candidates, objective, {});
   if (!ranked || ranked.length === 0) {
     updateRecommendationBrief('No valid recommendation under current objective/constraints. Try another objective lens.');
@@ -5142,6 +5988,7 @@ async function rankAndDisplayScenarios() {
   }
 
   try {
+    await Promise.all(savedScenarios.map(scenario => enrichScenarioWithCommercialContext(scenario)));
     // Get selected objective and constraints
     const objective = document.getElementById('objective-lens-select').value;
 
@@ -5188,6 +6035,14 @@ function displayTop3Scenarios(top3) {
     const riskBadge = scenario.risk_level === 'Low' ? 'bg-success' :
                       scenario.risk_level === 'Med' ? 'bg-warning' :
                       'bg-danger';
+    const commercialContext = scenario.commercial_context || null;
+    const outlookMarkup = commercialContext ? `
+            <div class="border rounded-3 p-2 bg-body-tertiary small mb-2">
+              <div><strong>Week-${commercialContext.checkpoint.week} sell-through:</strong> ${formatSignedPercentFromRatio(commercialContext.checkpoint.sellThroughPct, 1).replace('+', '')}</div>
+              <div><strong>Rest-of-season revenue:</strong> ${formatCurrency(commercialContext.projection.scenarioRemainingRevenueSocial)}</div>
+              <div><strong>Social headroom:</strong> ${formatSignedPercentFromRatio(commercialContext.socialPricingPower.headroomPct, 1)}</div>
+            </div>
+          ` : '';
 
     html += `
       <div class="col-md-4">
@@ -5231,6 +6086,8 @@ function displayTop3Scenarios(top3) {
                 </div>
               </div>
             </div>
+
+            ${outlookMarkup}
 
             <!-- Rationale -->
             <div class="alert alert-light mb-0 small">

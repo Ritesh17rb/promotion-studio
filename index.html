@@ -26,6 +26,13 @@
     })();
   </script>
 
+  <script>
+    window.__pendingStepNavigation = null;
+    window.goToStep = function(step) {
+      window.__pendingStepNavigation = step;
+    };
+  </script>
+
   <!-- Pyodide: Python in Browser -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
 </head>
@@ -116,6 +123,10 @@
           <div>
             <h1>Seasonal Promotion Optimization Studio</h1>
             <p>Optimize promotions by SKU and channel using inventory, competitive pricing, and social demand signals to balance sales and profit through the season.</p>
+            <div id="local-server-warning" class="alert alert-warning mt-3 mb-3 text-start" style="display: none;">
+              Open this app through a local server, not by double-clicking the HTML file.
+              Run <code>start-promotion-studio.bat</code> or serve the folder on <code>http://127.0.0.1:8000</code>.
+            </div>
             <button class="btn btn-primary-custom btn-lg" onclick="goToStep(1)">
               Start Exploration <i class="bi bi-arrow-right ms-2"></i>
             </button>
@@ -2252,6 +2263,174 @@
             <!-- Will be populated with KPI cards -->
           </div>
 
+          <div id="commercial-context-section" class="card border-0 bg-body-tertiary mb-4">
+            <div class="card-body p-3 p-lg-4">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                  <h4 class="h6 mb-1">5-Week Checkpoint and Remaining-Season Reforecast</h4>
+                  <div class="small text-muted" id="commercial-context-summary">
+                    Anchoring live scenario output to observed sell-through and current social momentum.
+                  </div>
+                </div>
+                <span class="badge bg-info-subtle text-info-emphasis" id="commercial-context-anchor">
+                  Loading checkpoint...
+                </span>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                  <div class="border rounded-3 p-3 h-100 bg-body">
+                    <div class="small text-muted text-uppercase mb-1">Week-5 Sold</div>
+                    <div class="fs-5 fw-bold" id="commercial-checkpoint-units">--</div>
+                    <div class="small text-muted" id="commercial-checkpoint-revenue">--</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border rounded-3 p-3 h-100 bg-body">
+                    <div class="small text-muted text-uppercase mb-1">Week-5 Sell-Through</div>
+                    <div class="fs-5 fw-bold" id="commercial-checkpoint-sellthrough">--</div>
+                    <div class="small text-muted" id="commercial-checkpoint-inventory">--</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border rounded-3 p-3 h-100 bg-body">
+                    <div class="small text-muted text-uppercase mb-1">Rest-of-Season Units</div>
+                    <div class="fs-5 fw-bold" id="commercial-rest-scenario-units">--</div>
+                    <div class="small text-muted" id="commercial-rest-baseline-units">--</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border rounded-3 p-3 h-100 bg-body">
+                    <div class="small text-muted text-uppercase mb-1">Social Pricing Power</div>
+                    <div class="fs-5 fw-bold" id="commercial-social-headroom">--</div>
+                    <div class="small text-muted" id="commercial-social-posture">--</div>
+                  </div>
+                </div>
+              </div>
+
+              <ul class="nav nav-pills commercial-context-tabs mb-3" id="commercialContextTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="commercial-week5-tab" data-bs-toggle="pill" data-bs-target="#commercial-week5-pane" type="button" role="tab" aria-controls="commercial-week5-pane" aria-selected="true">
+                    After 5 Weeks
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="commercial-social-tab" data-bs-toggle="pill" data-bs-target="#commercial-social-pane" type="button" role="tab" aria-controls="commercial-social-pane" aria-selected="false">
+                    Social Pricing Power
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content" id="commercialContextTabContent">
+                <div class="tab-pane fade show active" id="commercial-week5-pane" role="tabpanel" aria-labelledby="commercial-week5-tab" tabindex="0">
+                  <div class="row g-3">
+                    <div class="col-lg-8">
+                      <div class="border rounded-3 p-3 h-100 bg-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <h5 class="h6 mb-0">Sales Outlook After Week 5</h5>
+                          <span class="small text-muted" id="commercial-chart-note">Actuals locked through week 5; curves show remaining-season projection.</span>
+                        </div>
+                        <div class="chart-container" style="height: 310px;">
+                          <canvas id="commercial-sales-projection-chart"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-4">
+                      <div class="border rounded-3 p-3 h-100 bg-body">
+                        <h5 class="h6 mb-3">Scenario Readout from Week 5</h5>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Projection Case</th>
+                                <th class="text-end">Rest Units</th>
+                                <th class="text-end">Rest Revenue</th>
+                              </tr>
+                            </thead>
+                            <tbody id="commercial-week5-scenario-body">
+                              <tr>
+                                <td colspan="3" class="text-center text-muted">Run a scenario to see week-5 anchored projections.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="alert alert-light border mt-3 mb-0 small" id="commercial-week5-note">
+                          The selected scenario is benchmarked against baseline and momentum states from the same 5-week checkpoint.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane fade" id="commercial-social-pane" role="tabpanel" aria-labelledby="commercial-social-tab" tabindex="0">
+                  <div class="row g-3">
+                    <div class="col-lg-7">
+                      <div class="border rounded-3 p-3 h-100 bg-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <h5 class="h6 mb-0">Social Score vs Elasticity and Price Headroom</h5>
+                          <span class="small text-muted">Trending brands should carry lower elasticity and more pricing room.</span>
+                        </div>
+                        <div class="chart-container" style="height: 300px;">
+                          <canvas id="commercial-social-power-chart"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-5">
+                      <div class="border rounded-3 p-3 h-100 bg-body">
+                        <h5 class="h6 mb-3">Social-to-Elasticity Bridge</h5>
+                        <div class="row g-2 small">
+                          <div class="col-6">
+                            <div class="text-muted">Current social score</div>
+                            <div class="fw-semibold" id="commercial-social-score">--</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="text-muted">Trend vs prior week</div>
+                            <div class="fw-semibold" id="commercial-social-trend">--</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="text-muted">Base elasticity</div>
+                            <div class="fw-semibold" id="commercial-base-elasticity">--</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="text-muted">Trend-adjusted elasticity</div>
+                            <div class="fw-semibold" id="commercial-effective-elasticity">--</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="text-muted">Scenario price move</div>
+                            <div class="fw-semibold" id="commercial-price-move">--</div>
+                          </div>
+                          <div class="col-6">
+                            <div class="text-muted">Demand tailwind</div>
+                            <div class="fw-semibold" id="commercial-demand-tailwind">--</div>
+                          </div>
+                        </div>
+                        <div class="table-responsive mt-3">
+                          <table class="table table-sm align-middle mb-1">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Momentum State</th>
+                                <th class="text-end">Elasticity</th>
+                                <th class="text-end">Headroom</th>
+                              </tr>
+                            </thead>
+                            <tbody id="commercial-social-state-body">
+                              <tr>
+                                <td colspan="3" class="text-center text-muted">Run a scenario to see social sensitivity states.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="alert alert-light border mt-3 mb-0 small" id="commercial-social-note">
+                          Computing how social momentum changes pricing power.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Charts -->
           <div class="row g-3">
             <div class="col-md-6">
@@ -2472,6 +2651,48 @@
                 <div class="card-body">
                   <div id="comparison-radar-chart"></div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <h4 class="h6 mb-0">Week-5 Anchored Scenario Projection</h4>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 290px;">
+                <canvas id="comparison-week5-chart"></canvas>
+              </div>
+              <div class="small text-muted mt-2" id="comparison-week5-note">
+                Save multiple scenarios to see how the remaining season changes from the same week-5 checkpoint.
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header">
+              <h4 class="h6 mb-0">Executive Reforecast by Scenario</h4>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Scenario</th>
+                      <th class="text-end">Price Move</th>
+                      <th class="text-end">Rest-of-Season Units</th>
+                      <th class="text-end">Rest-of-Season Revenue</th>
+                      <th class="text-end">Vs Baseline</th>
+                      <th class="text-end">Social Headroom</th>
+                      <th>Executive Readout</th>
+                    </tr>
+                  </thead>
+                  <tbody id="comparison-outlook-body">
+                    <tr>
+                      <td colspan="7" class="text-center text-muted">Save and compare scenarios to render the reforecast table.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -3677,6 +3898,17 @@
         // Navigate to home page (step 0)
         goToStep(0);
       }
+    }
+  </script>
+
+  <script>
+    if (window.location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const warning = document.getElementById('local-server-warning');
+        if (warning) {
+          warning.style.display = 'block';
+        }
+      });
     }
   </script>
 

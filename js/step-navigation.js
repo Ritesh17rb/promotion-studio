@@ -21,6 +21,34 @@ const stepSectionMap = {
 };
 const stepVisualCharts = {};
 
+function renderStartupIssue({ title, message, actions = '' }) {
+  const loadSection = document.getElementById('load-data-section');
+  const kpiSection = document.getElementById('kpi-section');
+  if (!loadSection) return;
+
+  if (kpiSection) {
+    kpiSection.style.display = 'none';
+  }
+
+  loadSection.style.display = 'block';
+  loadSection.style.visibility = 'visible';
+  loadSection.style.opacity = '1';
+  loadSection.innerHTML = `
+    <div class="glass-card text-start" style="padding: 2rem;">
+      <div class="alert alert-warning mb-0">
+        <div class="d-flex align-items-start gap-3">
+          <i class="bi bi-exclamation-triangle fs-4"></i>
+          <div>
+            <h5 class="alert-heading mb-2">${title}</h5>
+            <p class="mb-2">${message}</p>
+            ${actions}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function getPlanningHorizonWeeks() {
   const fromGlobalGetter = typeof window.getPromoPlanningHorizonWeeks === 'function'
     ? Number(window.getPromoPlanningHorizonWeeks())
@@ -132,6 +160,35 @@ function showStepContent(step) {
       break;
     case 1:
       // Dashboard - load-data-section and kpi-section are now INSIDE section-1
+      if (window.location.protocol === 'file:') {
+        renderStartupIssue({
+          title: 'Open the app through a local server',
+          message: 'This experience cannot boot correctly from a local file because the browser blocks the JavaScript modules and data files. Launch it through localhost instead.',
+          actions: `
+            <p class="mb-2"><strong>Recommended:</strong> run <code>start-promotion-studio.bat</code> from this project folder.</p>
+            <p class="mb-2">Manual fallback from <code>C:\\Users\\admin\\work\\promotion-studio</code>:</p>
+            <pre class="mb-2"><code>py -m http.server 8000</code></pre>
+            <p class="mb-2">Then open <a href="http://127.0.0.1:8000/index.html" target="_blank" rel="noopener noreferrer">http://127.0.0.1:8000/index.html</a>.</p>
+            <button class="btn btn-sm btn-primary" onclick="window.open('http://127.0.0.1:8000/index.html', '_blank', 'noopener')">
+              Open localhost:8000
+            </button>
+          `
+        });
+        break;
+      }
+
+      if (!window.loadAppData || typeof window.loadAppData !== 'function') {
+        renderStartupIssue({
+          title: 'Application bootstrap did not complete',
+          message: 'The main application bundle is not available, so data loading cannot start. Reload the page through the local server and try again.',
+          actions: `
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="location.reload()">Reload</button>
+            <a class="btn btn-sm btn-primary" href="http://127.0.0.1:8000/index.html" target="_blank" rel="noopener noreferrer">Open localhost:8000</a>
+          `
+        });
+        break;
+      }
+
       // Trigger data loading if not already loaded
       if (window.loadAppData && !window.dataLoaded) {
         window.dataLoaded = true; // Set immediately to prevent multiple calls
@@ -3544,9 +3601,19 @@ function initStepNavigation() {
     }
   });
 
+  const pendingStep = Number(window.__pendingStepNavigation);
+  if (Number.isFinite(pendingStep) && pendingStep >= 0 && pendingStep < TOTAL_STEPS) {
+    window.__pendingStepNavigation = null;
+    goToStep(pendingStep);
+    return;
+  }
+
   // Start at step 0 (hero)
   goToStep(0);
 }
+
+// Make goToStep available globally before initialization completes.
+window.goToStep = goToStep;
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
@@ -3554,8 +3621,5 @@ if (document.readyState === 'loading') {
 } else {
   initStepNavigation();
 }
-
-// Make goToStep available globally for onclick handlers
-window.goToStep = goToStep;
 
 
