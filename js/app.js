@@ -84,6 +84,7 @@ let step2SkuImpactChart = null;
 let commercialSalesProjectionChart = null;
 let commercialSocialPowerChart = null;
 let comparisonWeek5Chart = null;
+let activeCommercialContext = null;
 let llmStatusCached = null;
 let llmStatusLastCheckedAt = 0;
 let liveCopilotDebounceTimer = null;
@@ -332,9 +333,143 @@ function getScenarioConfigFromResult(result) {
   return selectedScenarioByModel[modelType]?.config || selectedScenario?.config || {};
 }
 
+function safeBoolean(value, fallback = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
 function safeNumber(value, fallback = 0) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function asFiniteNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function normalizeDateKey(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const isoMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoMatch) return isoMatch[1];
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function findSeasonWeekForDate(rows, dateValue) {
+  const normalizedDate = normalizeDateKey(dateValue);
+  if (!normalizedDate || !Array.isArray(rows)) return null;
+  const exact = rows.find(row => normalizeDateKey(row.week_start || row.date) === normalizedDate);
+  return exact ? asFiniteNumber(exact.week_of_season) : null;
+}
+
+function resolveCommercialScopeFromScenario(result, skuRows, liveSnapshot) {
+  const config = getScenarioConfigFromResult(result);
+  const eligibility = String(config?.promotion?.eligibility || '').trim().toLowerCase();
+  const scope = {
+    selectedGroup: 'all',
+    selectedSku: 'all',
+    applyMass: true,
+    applyPrestige: true,
+    source: eligibility || config?.tier || 'default',
+    description: 'Portfolio-wide'
+  };
+
+  let channelLocked = false;
+
+  switch (eligibility) {
+    case 'mass_channels':
+      scope.applyMass = true;
+      scope.applyPrestige = false;
+      scope.description = 'Mass channels';
+      channelLocked = true;
+      break;
+    case 'moisturizer_prestige':
+      scope.selectedGroup = 'moisturizer';
+      scope.applyMass = false;
+      scope.applyPrestige = true;
+      scope.description = 'Prestige moisturizer';
+      channelLocked = true;
+      break;
+    case 'sunscreen_group':
+      scope.selectedGroup = 'sunscreen';
+      scope.description = 'Sunscreen portfolio';
+      break;
+    case 'sunscreen_sku_1':
+      scope.selectedGroup = 'sunscreen';
+      scope.selectedSku = 'SUN_S1';
+      scope.description = 'Sunscreen SKU-1';
+      break;
+    case 'selected_skus':
+      scope.description = 'Selected SKUs';
+      break;
+    case 'omni':
+      scope.applyMass = true;
+      scope.applyPrestige = true;
+      scope.description = 'Omni-channel portfolio';
+      channelLocked = true;
+      break;
+    default:
+      break;
+  }
+
+  if (!channelLocked) {
+    if (config?.tier === 'ad_supported') {
+      scope.applyMass = true;
+      scope.applyPrestige = false;
+      if (scope.description === 'Portfolio-wide') {
+        scope.description = 'Mass-channel portfolio';
+      }
+    } else if (config?.tier === 'ad_free') {
+      scope.applyMass = false;
+      scope.applyPrestige = true;
+      if (scope.description === 'Portfolio-wide') {
+        scope.description = 'Prestige-channel portfolio';
+      }
+    } else {
+      scope.applyMass = liveSnapshot?.applyMass ?? true;
+      scope.applyPrestige = liveSnapshot?.applyPrestige ?? true;
+    }
+  }
+
+  if (scope.selectedSku === 'all' && liveSnapshot?.selectedSku && liveSnapshot.selectedSku !== 'all' && eligibility === 'selected_skus') {
+    scope.selectedSku = liveSnapshot.selectedSku;
+    scope.description = `Selected SKUs (${liveSnapshot.selectedSku})`;
+  }
+
+  if (scope.selectedGroup === 'all' && liveSnapshot?.selectedGroup && liveSnapshot.selectedGroup !== 'all' && eligibility === 'selected_skus') {
+    scope.selectedGroup = liveSnapshot.selectedGroup;
+  }
+
+  const maxDataWeek = skuRows.reduce((max, row) => Math.max(max, safeNumber(row.week_of_season, 0)), 0) || 17;
+  const scenarioWeek = findSeasonWeekForDate(skuRows, config?.effective_date || config?.promotion?.start_date);
+  const defaultDataWeek = skuRows.find(row => safeBoolean(row.is_current_week, false))?.week_of_season;
+  const resolvedCurrentWeek = asFiniteNumber(scenarioWeek)
+    ?? asFiniteNumber(defaultDataWeek)
+    ?? asFiniteNumber(liveSnapshot?.weekOfSeason)
+    ?? 5;
+  const currentWeek = clamp(
+    resolvedCurrentWeek,
+    1,
+    maxDataWeek
+  );
+
+  return {
+    ...scope,
+    effectiveDate: normalizeDateKey(config?.effective_date || config?.promotion?.start_date),
+    currentWeek,
+    horizonWeek: maxDataWeek,
+    scenarioStartWeek: currentWeek
+  };
 }
 
 function formatSignedPercentFromRatio(ratio, decimals = 1) {
@@ -411,8 +546,8 @@ function updateResultContainerForModel() {
     clearResultsUI();
     return;
   }
-  displayResultsInTabs(currentResult);
   resultContainer.style.display = 'block';
+  displayResultsInTabs(currentResult);
 }
 
 function clearResultsUI() {
@@ -427,6 +562,7 @@ function clearResultsUI() {
   const churnDetail = document.getElementById('churn-results-detail');
   const migrationDetail = document.getElementById('migration-results-detail');
   const commercialSection = document.getElementById('commercial-context-section');
+  activeCommercialContext = null;
   if (acquisitionDetail) acquisitionDetail.style.display = 'none';
   if (churnDetail) churnDetail.style.display = 'none';
   if (migrationDetail) migrationDetail.style.display = 'none';
@@ -499,9 +635,9 @@ function setActiveModelType(modelType) {
   hideScenarioResults();
   // Re-render results for this model if they exist
   if (currentResult) {
-    displayResultsInTabs(currentResult, true); // Pass true to indicate this is a re-display, not a new simulation
     const resultContainer = document.getElementById('result-container-models');
     if (resultContainer) resultContainer.style.display = 'block';
+    displayResultsInTabs(currentResult, true); // Pass true to indicate this is a re-display, not a new simulation
   }
   syncScenarioSelectionUI();
   updateScenarioComparisonUI();
@@ -3928,6 +4064,7 @@ async function init() {
 
   // Initialize popovers (will be initialized again after data loads)
   initializePopovers();
+  initializeCommercialContextTabs();
 
   // Scenario editor event listeners
   document.getElementById('edit-new-price')?.addEventListener('input', updatePriceChangeIndicator);
@@ -4220,10 +4357,9 @@ function populateElasticityModelTabs() {
       await loadingState.done;
       loadingState.stop();
 
+        resultContainer.style.display = 'block';
         // Display results in the new containers
         displayResultsInTabs(result);
-
-        resultContainer.style.display = 'block';
         resultContainer.scrollIntoView({ behavior: 'smooth' });
 
       } catch (error) {
@@ -4481,15 +4617,18 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
     return null;
   }
 
-  const selectedGroup = liveSnapshot?.selectedGroup || 'all';
-  const selectedSku = liveSnapshot?.selectedSku || 'all';
-  const applyMass = liveSnapshot?.applyMass ?? true;
-  const applyPrestige = liveSnapshot?.applyPrestige ?? true;
-  const maxDataWeek = skuRows.reduce((max, row) => Math.max(max, safeNumber(row.week_of_season, 0)), 0);
-  const horizonWeek = Math.min(
-    safeNumber(liveSnapshot?.planningHorizonWeeks, maxDataWeek || 17),
-    maxDataWeek || 17
-  );
+  const scope = resolveCommercialScopeFromScenario(result, skuRows, liveSnapshot);
+  const {
+    selectedGroup,
+    selectedSku,
+    applyMass,
+    applyPrestige,
+    currentWeek: scopedCurrentWeek,
+    horizonWeek,
+    scenarioStartWeek: rawScenarioStartWeek,
+    description: scopeDescription,
+    effectiveDate
+  } = scope;
 
   const filteredRows = skuRows.filter(row => {
     const week = safeNumber(row.week_of_season, 0);
@@ -4511,7 +4650,7 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
     if (!weekly.has(week)) {
       weekly.set(week, {
         week,
-        date: row.date,
+        date: row.week_start || row.date,
         units: 0,
         revenue: 0,
         endInventory: 0,
@@ -4536,13 +4675,18 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
 
   const currentWeek = Math.min(
     safeNumber(
-      liveSnapshot?.weekOfSeason,
-      filteredRows.find(row => row.is_current_week === true)?.week_of_season ||
+      scopedCurrentWeek,
+      safeNumber(
+        filteredRows.find(row => safeBoolean(row.is_current_week, false))?.week_of_season,
         [...weekly.keys()].reduce((max, week) => Math.max(max, week), 1)
+      )
     ),
     horizonWeek
   );
   const checkpointWeek = Math.min(5, horizonWeek);
+  const scenarioStartWeek = horizonWeek > checkpointWeek
+    ? clamp(Math.max(rawScenarioStartWeek || currentWeek, checkpointWeek + 1), checkpointWeek + 1, horizonWeek)
+    : checkpointWeek;
   const seasonStartInventory = safeNumber(weekly.get(1)?.startInventory, 0);
 
   let cumulativeUnits = 0;
@@ -4565,11 +4709,22 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
   const anchorUnits = safeNumber(cumulativeUnitsByWeek.get(checkpointWeek), 0);
   const anchorRevenue = safeNumber(cumulativeRevenueByWeek.get(checkpointWeek), 0);
   const anchorInventory = safeNumber(weekly.get(checkpointWeek)?.endInventory, 0);
-  const baselineRemainingUnits = [...weekly.values()]
+  const remainingEntries = [...weekly.values()]
     .filter(entry => entry.week > checkpointWeek)
+    .sort((a, b) => a.week - b.week);
+  const baselineRemainingUnits = remainingEntries.reduce((sum, entry) => sum + safeNumber(entry.units, 0), 0);
+  const baselineRemainingRevenue = remainingEntries.reduce((sum, entry) => sum + safeNumber(entry.revenue, 0), 0);
+  const baselinePreScenarioUnits = remainingEntries
+    .filter(entry => entry.week < scenarioStartWeek)
     .reduce((sum, entry) => sum + safeNumber(entry.units, 0), 0);
-  const baselineRemainingRevenue = [...weekly.values()]
-    .filter(entry => entry.week > checkpointWeek)
+  const baselinePreScenarioRevenue = remainingEntries
+    .filter(entry => entry.week < scenarioStartWeek)
+    .reduce((sum, entry) => sum + safeNumber(entry.revenue, 0), 0);
+  const baselineScenarioWindowUnits = remainingEntries
+    .filter(entry => entry.week >= scenarioStartWeek)
+    .reduce((sum, entry) => sum + safeNumber(entry.units, 0), 0);
+  const baselineScenarioWindowRevenue = remainingEntries
+    .filter(entry => entry.week >= scenarioStartWeek)
     .reduce((sum, entry) => sum + safeNumber(entry.revenue, 0), 0);
 
   const config = getScenarioConfigFromResult(result);
@@ -4605,14 +4760,8 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
   const neutralSocialScore = checkpointSocialScores.length
     ? checkpointSocialScores.reduce((sum, score) => sum + score, 0) / checkpointSocialScores.length
     : 60;
-  const currentSocialScore = safeNumber(
-    liveSnapshot?.socialScore,
-    getSocialScoreForWeek(currentWeek)
-  );
-  const priorSocialScore = safeNumber(
-    getSocialScoreForWeek(Math.max(1, currentWeek - 1)),
-    neutralSocialScore
-  );
+  const currentSocialScore = asFiniteNumber(getSocialScoreForWeek(currentWeek)) ?? neutralSocialScore;
+  const priorSocialScore = asFiniteNumber(getSocialScoreForWeek(Math.max(1, currentWeek - 1))) ?? neutralSocialScore;
   const socialTrendDelta = currentSocialScore - priorSocialScore;
 
   const neutralElasticity = baseElasticity * socialElasticityModifier(neutralSocialScore);
@@ -4654,8 +4803,8 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
       priceHeadroomPct = clamp(Math.pow(1 / demandRatioVsNeutral, 1 / scenarioElasticity) - 1, -0.15, 0);
     }
 
-    const projectedRemainingUnits = baselineRemainingUnits * unitMultiplier;
-    const projectedRemainingRevenue = baselineRemainingRevenue * revenueMultiplier;
+    const projectedRemainingUnits = baselinePreScenarioUnits + (baselineScenarioWindowUnits * unitMultiplier);
+    const projectedRemainingRevenue = baselinePreScenarioRevenue + (baselineScenarioWindowRevenue * revenueMultiplier);
     const fullSeasonUnits = anchorUnits + projectedRemainingUnits;
     const fullSeasonRevenue = anchorRevenue + projectedRemainingRevenue;
     const posture = getCommercialPosture(priceHeadroomPct, priceMovePct, normalizedScore - priorSocialScore);
@@ -4672,7 +4821,12 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
         continue;
       }
       const weekUnits = safeNumber(weekly.get(week)?.units, 0);
-      const rampFactor = Math.min((week - checkpointWeek) / 2, 1);
+      if (week < scenarioStartWeek) {
+        running += weekUnits;
+        chartSeries.push(Math.round(running));
+        continue;
+      }
+      const rampFactor = Math.min((week - scenarioStartWeek + 1) / 2, 1);
       const weekMultiplier = 1 + ((unitMultiplier - 1) * rampFactor);
       running += weekUnits * weekMultiplier;
       chartSeries.push(Math.round(running));
@@ -4722,14 +4876,19 @@ function buildCommercialScenarioContext(result, skuRows, socialRows, liveSnapsho
     baselineSeries.push(Math.round(baselineProjected));
   }
 
-  const summary = `After 5 weeks, ${formatNumber(checkpointUnits)} units are sold (${formatSignedPercentFromRatio(seasonStartInventory > 0 ? checkpointUnits / seasonStartInventory : 0, 1).replace('+', '')} sell-through). From that week-5 checkpoint to week ${horizonWeek}, the selected scenario changes remaining-season revenue ${formatSignedPercentFromRatio(baselineRemainingRevenue > 0 ? (selectedState.projectedRemainingRevenue / baselineRemainingRevenue) - 1 : 0, 1)} vs baseline, while current social momentum adds ${formatSignedPercentFromRatio(selectedState.demandTailwindPct, 1)} demand support and ${formatSignedPercentFromRatio(selectedState.headroomPct, 1)} pricing headroom.`;
+  const summary = `${scopeDescription} has sold ${formatNumber(checkpointUnits)} units by week ${checkpointWeek} (${formatSignedPercentFromRatio(seasonStartInventory > 0 ? checkpointUnits / seasonStartInventory : 0, 1).replace('+', '')} sell-through). The selected scenario turns on in week ${scenarioStartWeek} and changes remaining-season revenue ${formatSignedPercentFromRatio(baselineRemainingRevenue > 0 ? (selectedState.projectedRemainingRevenue / baselineRemainingRevenue) - 1 : 0, 1)} vs baseline, while current social momentum adds ${formatSignedPercentFromRatio(selectedState.demandTailwindPct, 1)} demand support and ${formatSignedPercentFromRatio(selectedState.headroomPct, 1)} pricing headroom.`;
 
   return {
     filters: {
       selectedGroup,
       selectedSku,
       applyMass,
-      applyPrestige
+      applyPrestige,
+      description: scopeDescription
+    },
+    timing: {
+      effectiveDate,
+      scenarioStartWeek
     },
     checkpoint: {
       week: checkpointWeek,
@@ -4931,6 +5090,73 @@ function renderCommercialSalesProjectionChart(context) {
   });
 }
 
+function initializeCommercialContextTabs() {
+  if (window.__commercialContextTabsInitialized) return;
+
+  document.querySelectorAll('#commercialContextTabs [data-bs-toggle="pill"]').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', (event) => {
+      if (!activeCommercialContext) return;
+
+      const targetPane = event.target?.getAttribute('data-bs-target');
+      if (targetPane === '#commercial-week5-pane') {
+        scheduleCommercialPaneRender('week5', activeCommercialContext);
+      } else if (targetPane === '#commercial-social-pane') {
+        scheduleCommercialPaneRender('social', activeCommercialContext);
+      }
+    });
+  });
+
+  window.__commercialContextTabsInitialized = true;
+}
+
+function scheduleCommercialPaneRender(pane, context, attempt = 0) {
+  if (!context) return;
+
+  const paneId = pane === 'social' ? 'commercial-social-pane' : 'commercial-week5-pane';
+  const canvasId = pane === 'social' ? 'commercial-social-power-chart' : 'commercial-sales-projection-chart';
+  const paneEl = document.getElementById(paneId);
+  const canvasEl = document.getElementById(canvasId);
+  const sectionEl = document.getElementById('commercial-context-section');
+
+  if (!paneEl || !canvasEl || !sectionEl) return;
+
+  const paneVisible = paneEl.classList.contains('active') && paneEl.classList.contains('show');
+  const sectionVisible = sectionEl.style.display !== 'none' && sectionEl.getBoundingClientRect().width > 0;
+  const canvasReady = canvasEl.getBoundingClientRect().width > 0 && canvasEl.getBoundingClientRect().height > 0;
+
+  if (!paneVisible || !sectionVisible || !canvasReady) {
+    if (attempt >= 12) {
+      requestAnimationFrame(() => {
+        if (pane === 'social') {
+          renderCommercialSocialPowerChart(context);
+          commercialSocialPowerChart?.resize();
+          commercialSocialPowerChart?.update('none');
+        } else {
+          renderCommercialSalesProjectionChart(context);
+          commercialSalesProjectionChart?.resize();
+          commercialSalesProjectionChart?.update('none');
+        }
+      });
+      return;
+    }
+
+    setTimeout(() => scheduleCommercialPaneRender(pane, context, attempt + 1), 80);
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    if (pane === 'social') {
+      renderCommercialSocialPowerChart(context);
+      commercialSocialPowerChart?.resize();
+      commercialSocialPowerChart?.update('none');
+    } else {
+      renderCommercialSalesProjectionChart(context);
+      commercialSalesProjectionChart?.resize();
+      commercialSalesProjectionChart?.update('none');
+    }
+  });
+}
+
 function renderCommercialSocialPowerChart(context) {
   const canvas = document.getElementById('commercial-social-power-chart');
   if (!canvas || !window.Chart) return;
@@ -5104,9 +5330,11 @@ function renderCommercialScenarioBoard(result) {
 
   if (!context) {
     section.style.display = 'none';
+    activeCommercialContext = null;
     return;
   }
 
+  activeCommercialContext = context;
   section.style.display = 'block';
 
   const anchorEl = document.getElementById('commercial-context-anchor');
@@ -5132,7 +5360,9 @@ function renderCommercialScenarioBoard(result) {
   const socialNoteEl = document.getElementById('commercial-social-note');
 
   if (anchorEl) {
-    anchorEl.textContent = `Week ${context.checkpoint.week} checkpoint | Live week ${context.currentPosition.week}`;
+    const scopeLabel = context.filters?.description || 'Portfolio-wide';
+    const effectiveDateText = context.timing?.effectiveDate ? ` | Effective ${context.timing.effectiveDate}` : '';
+    anchorEl.textContent = `${scopeLabel} | Week ${context.checkpoint.week} checkpoint | Scenario starts W${context.timing?.scenarioStartWeek || context.currentPosition.week}${effectiveDateText}`;
   }
   if (summaryEl) {
     summaryEl.textContent = context.summary;
@@ -5162,7 +5392,7 @@ function renderCommercialScenarioBoard(result) {
     socialPostureEl.textContent = context.socialPricingPower.posture;
   }
   if (chartNoteEl) {
-    chartNoteEl.textContent = `Weeks 1-${context.checkpoint.week} are actuals. Weeks ${context.checkpoint.week + 1}-${context.projection.horizonWeek} show scenario-sensitive projection.`;
+    chartNoteEl.textContent = `Weeks 1-${context.checkpoint.week} are actuals. The selected scenario starts in week ${context.timing?.scenarioStartWeek || (context.checkpoint.week + 1)}, so only later weeks carry scenario lift vs baseline.`;
   }
   if (socialScoreEl) {
     socialScoreEl.textContent = Number.isFinite(context.socialPricingPower.currentScore)
@@ -5201,7 +5431,7 @@ function renderCommercialScenarioBoard(result) {
     `).join('');
   }
   if (week5NoteEl) {
-    week5NoteEl.textContent = `The selected scenario is shown as "${(context.projection.socialStates || []).find(state => state.variant === 'current')?.label || 'Current Trend'}". Viral and cooling cases show how the same price move behaves if brand buzz changes.`;
+    week5NoteEl.textContent = `The selected scenario is shown as "${(context.projection.socialStates || []).find(state => state.variant === 'current')?.label || 'Current Trend'}" for ${context.filters?.description || 'the scoped portfolio'}. Viral and cooling cases show how the same price move behaves if brand buzz changes from the scenario start week.`;
   }
   if (socialStateBodyEl) {
     const states = context.socialPricingPower.states || [];
@@ -5214,8 +5444,13 @@ function renderCommercialScenarioBoard(result) {
     `).join('');
   }
 
-  renderCommercialSalesProjectionChart(context);
-  renderCommercialSocialPowerChart(context);
+  const week5TabTrigger = document.getElementById('commercial-week5-tab');
+  if (week5TabTrigger && window.bootstrap?.Tab) {
+    window.bootstrap.Tab.getOrCreateInstance(week5TabTrigger).show();
+  }
+
+  scheduleCommercialPaneRender('week5', context);
+  scheduleCommercialPaneRender('social', context);
 }
 
 function renderScenarioComparisonOutlookTable() {
