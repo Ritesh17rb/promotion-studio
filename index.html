@@ -395,6 +395,9 @@
                   <div class="chart-container mt-2" style="height: 120px;">
                     <canvas id="channel-promo-live-pulse-chart"></canvas>
                   </div>
+                  <div class="small text-muted mt-2" id="channel-promo-live-pulse-note">
+                    Red line = competitor average price trend (left axis). Blue line = brand social index trend (right axis).
+                  </div>
                   <div class="small text-muted mt-2">
                     <strong>Live Feed</strong>
                     <ul class="mb-0 mt-1 ps-3" id="channel-promo-live-feed">
@@ -753,6 +756,39 @@
                     <div class="card border-0 bg-body-tertiary">
                       <div class="card-body p-3">
                         <h6 class="small text-uppercase text-muted mb-2" id="channel-promo-frontier-title">Objective Frontier (Revenue vs Profit vs End-of-Horizon Leftover)</h6>
+                        <div class="small text-muted mb-3" id="channel-promo-frontier-explainer">
+                          This chart shows the trade-off between growth and margin. Right is better revenue, up is better profit, and larger bubbles mean stronger clearance with lower leftover inventory.
+                        </div>
+                        <div class="row g-2 mb-3">
+                          <div class="col-md-3">
+                            <div class="border rounded-3 p-2 bg-body h-100">
+                              <div class="small text-muted text-uppercase mb-1">Selected Objective</div>
+                              <div class="fw-semibold" id="channel-promo-frontier-selected">--</div>
+                              <div class="small text-muted" id="channel-promo-frontier-selected-note">--</div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="border rounded-3 p-2 bg-body h-100">
+                              <div class="small text-muted text-uppercase mb-1">Best Revenue</div>
+                              <div class="fw-semibold" id="channel-promo-frontier-best-revenue">--</div>
+                              <div class="small text-muted" id="channel-promo-frontier-best-revenue-note">--</div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="border rounded-3 p-2 bg-body h-100">
+                              <div class="small text-muted text-uppercase mb-1">Best Profit</div>
+                              <div class="fw-semibold" id="channel-promo-frontier-best-profit">--</div>
+                              <div class="small text-muted" id="channel-promo-frontier-best-profit-note">--</div>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="border rounded-3 p-2 bg-body h-100">
+                              <div class="small text-muted text-uppercase mb-1">Best Clearance</div>
+                              <div class="fw-semibold" id="channel-promo-frontier-best-clearance">--</div>
+                              <div class="small text-muted" id="channel-promo-frontier-best-clearance-note">--</div>
+                            </div>
+                          </div>
+                        </div>
                         <div class="chart-container mb-3" style="height: 250px;">
                           <canvas id="channel-promo-frontier-chart"></canvas>
                         </div>
@@ -765,17 +801,18 @@
                                 <th class="text-end">Profit Delta</th>
                                 <th class="text-end" id="channel-promo-frontier-leftover-header">End-of-Horizon Leftover</th>
                                 <th class="text-end">Clearance from Current</th>
+                                <th>Commercial Readout</th>
                               </tr>
                             </thead>
                             <tbody id="channel-promo-frontier-body">
                               <tr>
-                                <td colspan="5" class="text-center text-muted">Computing objective frontier...</td>
+                                <td colspan="6" class="text-center text-muted">Computing objective frontier...</td>
                               </tr>
                             </tbody>
                           </table>
                         </div>
                         <div class="small text-muted mt-2" id="channel-promo-frontier-note">
-                          Bubble size represents lower end-of-horizon leftover inventory.
+                          Use this to explain trade-offs: top-right is strongest overall, right-but-low is volume at margin cost, high-but-left is margin protection with weaker sales, and larger bubbles mean better clearance.
                         </div>
                       </div>
                     </div>

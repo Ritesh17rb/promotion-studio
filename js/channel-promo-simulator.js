@@ -465,12 +465,48 @@ function renderLivePulseChart() {
       maintainAspectRatio: false,
       animation: { duration: 450 },
       plugins: {
-        legend: { display: false }
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            boxWidth: 10,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.parsed.y;
+              if (context.datasetIndex === 0) {
+                return `Competitor average price: ${formatCurrency(value)}`;
+              }
+              return `Brand social index: ${Number(value).toFixed(1)}`;
+            }
+          }
+        }
       },
       scales: {
         x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } },
-        y: { grid: { display: false }, ticks: { maxTicksLimit: 4 } },
-        y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { maxTicksLimit: 4 } }
+        y: {
+          grid: { display: false },
+          ticks: {
+            maxTicksLimit: 4,
+            callback: (value) => formatCurrency(Number(value))
+          },
+          title: {
+            display: true,
+            text: 'Competitor Price'
+          }
+        },
+        y1: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { maxTicksLimit: 4 },
+          title: {
+            display: true,
+            text: 'Social Index'
+          }
+        }
       }
     }
   });
@@ -858,16 +894,87 @@ function renderObjectiveFrontier(frontierRows, currentObjective) {
   const tbody = document.getElementById('channel-promo-frontier-body');
   const noteEl = document.getElementById('channel-promo-frontier-note');
   const canvas = document.getElementById('channel-promo-frontier-chart');
+  const selectedEl = document.getElementById('channel-promo-frontier-selected');
+  const selectedNoteEl = document.getElementById('channel-promo-frontier-selected-note');
+  const bestRevenueEl = document.getElementById('channel-promo-frontier-best-revenue');
+  const bestRevenueNoteEl = document.getElementById('channel-promo-frontier-best-revenue-note');
+  const bestProfitEl = document.getElementById('channel-promo-frontier-best-profit');
+  const bestProfitNoteEl = document.getElementById('channel-promo-frontier-best-profit-note');
+  const bestClearanceEl = document.getElementById('channel-promo-frontier-best-clearance');
+  const bestClearanceNoteEl = document.getElementById('channel-promo-frontier-best-clearance-note');
   if (!tbody || !noteEl || !canvas) return;
+
+  const objectiveMeta = {
+    balance: {
+      color: 'rgba(37, 99, 235, 0.9)',
+      border: 'rgba(29, 78, 216, 1)'
+    },
+    sales: {
+      color: 'rgba(245, 158, 11, 0.9)',
+      border: 'rgba(217, 119, 6, 1)'
+    },
+    profit: {
+      color: 'rgba(16, 185, 129, 0.9)',
+      border: 'rgba(5, 150, 105, 1)'
+    }
+  };
+
+  const buildReadout = (row) => {
+    if (row.revenueDeltaPct >= 0 && row.profitDeltaPct >= 0) {
+      return 'Best balanced outcome: grows sales and profit together.';
+    }
+    if (row.revenueDeltaPct >= 0 && row.profitDeltaPct < 0) {
+      return 'Drives sell-through, but margin is being given up.';
+    }
+    if (row.revenueDeltaPct < 0 && row.profitDeltaPct >= 0) {
+      return 'Protects margin, but weakens top-line momentum.';
+    }
+    return 'Weak on both top line and profit; usually avoid.';
+  };
+
+  const renderSummaryCell = (labelEl, noteElRef, row, valueText) => {
+    if (labelEl) labelEl.textContent = row ? row.label : '--';
+    if (noteElRef) noteElRef.textContent = row ? valueText : '--';
+  };
 
   if (!frontierRows.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="text-center text-muted">No objective frontier data available.</td>
+        <td colspan="6" class="text-center text-muted">No objective frontier data available.</td>
       </tr>
     `;
     return;
   }
+
+  const selectedRow = frontierRows.find(row => row.objectiveKey === currentObjective) || frontierRows[0];
+  const bestRevenueRow = frontierRows.reduce((best, row) => row.revenueDeltaPct > best.revenueDeltaPct ? row : best, frontierRows[0]);
+  const bestProfitRow = frontierRows.reduce((best, row) => row.profitDeltaPct > best.profitDeltaPct ? row : best, frontierRows[0]);
+  const bestClearanceRow = frontierRows.reduce((best, row) => row.clearancePct > best.clearancePct ? row : best, frontierRows[0]);
+
+  renderSummaryCell(
+    selectedEl,
+    selectedNoteEl,
+    selectedRow,
+    `${selectedRow.revenueDeltaPct >= 0 ? '+' : ''}${formatPercent(selectedRow.revenueDeltaPct)} revenue | ${selectedRow.profitDeltaPct >= 0 ? '+' : ''}${formatPercent(selectedRow.profitDeltaPct)} profit`
+  );
+  renderSummaryCell(
+    bestRevenueEl,
+    bestRevenueNoteEl,
+    bestRevenueRow,
+    `${bestRevenueRow.revenueDeltaPct >= 0 ? '+' : ''}${formatPercent(bestRevenueRow.revenueDeltaPct)} revenue uplift`
+  );
+  renderSummaryCell(
+    bestProfitEl,
+    bestProfitNoteEl,
+    bestProfitRow,
+    `${bestProfitRow.profitDeltaPct >= 0 ? '+' : ''}${formatPercent(bestProfitRow.profitDeltaPct)} profit uplift`
+  );
+  renderSummaryCell(
+    bestClearanceEl,
+    bestClearanceNoteEl,
+    bestClearanceRow,
+    `${bestClearanceRow.clearancePct >= 0 ? '+' : ''}${formatPercent(bestClearanceRow.clearancePct)} clearance`
+  );
 
   tbody.innerHTML = frontierRows.map(row => `
     <tr class="${row.objectiveKey === currentObjective ? 'table-primary' : ''}">
@@ -876,68 +983,104 @@ function renderObjectiveFrontier(frontierRows, currentObjective) {
       <td class="text-end ${row.profitDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${row.profitDeltaPct >= 0 ? '+' : ''}${formatPercent(row.profitDeltaPct)}</td>
       <td class="text-end">${formatNumber(row.scenarioEnd, 0)}</td>
       <td class="text-end ${row.clearancePct >= 0 ? 'text-success' : 'text-danger'}">${row.clearancePct >= 0 ? '+' : ''}${formatPercent(row.clearancePct)}</td>
+      <td>${buildReadout(row)}</td>
     </tr>
   `).join('');
 
-  const points = frontierRows.map(row => {
+  const datasets = frontierRows.map(row => {
     const clearanceForBubble = Math.max(0, row.clearancePct * 100);
     const radius = clamp(6 + clearanceForBubble * 0.18, 6, 22);
+    const meta = objectiveMeta[row.objectiveKey] || objectiveMeta.balance;
     return {
-      x: Number((row.revenueDeltaPct * 100).toFixed(2)),
-      y: Number((row.profitDeltaPct * 100).toFixed(2)),
-      r: radius,
-      objective: row.objectiveKey
+      label: row.label,
+      data: [{
+        x: Number((row.revenueDeltaPct * 100).toFixed(2)),
+        y: Number((row.profitDeltaPct * 100).toFixed(2)),
+        r: radius,
+        objective: row.objectiveKey
+      }],
+      backgroundColor: meta.color,
+      borderColor: meta.border,
+      borderWidth: row.objectiveKey === currentObjective ? 3 : 1.5,
+      hoverBorderWidth: 3
     };
   });
-  const labels = frontierRows.map(row => row.label);
-  const colors = frontierRows.map(row =>
-    row.objectiveKey === currentObjective
-      ? 'rgba(37, 99, 235, 0.9)'
-      : 'rgba(148, 163, 184, 0.75)'
-  );
+
+  const valueRange = frontierRows.reduce((acc, row) => {
+    acc.minX = Math.min(acc.minX, row.revenueDeltaPct * 100);
+    acc.maxX = Math.max(acc.maxX, row.revenueDeltaPct * 100);
+    acc.minY = Math.min(acc.minY, row.profitDeltaPct * 100);
+    acc.maxY = Math.max(acc.maxY, row.profitDeltaPct * 100);
+    return acc;
+  }, { minX: 0, maxX: 0, minY: 0, maxY: 0 });
+
+  const xPadding = Math.max(2, (valueRange.maxX - valueRange.minX) * 0.25);
+  const yPadding = Math.max(2, (valueRange.maxY - valueRange.minY) * 0.25);
+  const xMin = Math.min(-2, valueRange.minX - xPadding);
+  const xMax = Math.max(2, valueRange.maxX + xPadding);
+  const yMin = Math.min(-2, valueRange.minY - yPadding);
+  const yMax = Math.max(2, valueRange.maxY + yPadding);
 
   if (channelPromoFrontierChart) {
-    channelPromoFrontierChart.data.datasets[0].data = points;
-    channelPromoFrontierChart.data.datasets[0].backgroundColor = colors;
-    channelPromoFrontierChart.data.labels = labels;
+    channelPromoFrontierChart.data.datasets = datasets;
+    channelPromoFrontierChart.options.scales.x.min = xMin;
+    channelPromoFrontierChart.options.scales.x.max = xMax;
+    channelPromoFrontierChart.options.scales.y.min = yMin;
+    channelPromoFrontierChart.options.scales.y.max = yMax;
     channelPromoFrontierChart.update();
   } else if (window.Chart) {
     channelPromoFrontierChart = new Chart(canvas, {
       type: 'bubble',
       data: {
-        labels,
-        datasets: [
-          {
-            label: 'Objective Scenarios',
-            data: points,
-            backgroundColor: colors
-          }
-        ]
+        datasets
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              usePointStyle: true
+            }
+          },
           tooltip: {
             callbacks: {
               label: (ctx) => {
-                const idx = ctx.dataIndex;
-                const row = frontierRows[idx];
-                return `${row.label}: Revenue ${formatPercent(row.revenueDeltaPct)}, Profit ${formatPercent(row.profitDeltaPct)}, W${getSeasonWeeks()} Left ${formatNumber(row.scenarioEnd, 0)}`;
+                const row = frontierRows.find(item => item.label === ctx.dataset.label);
+                if (!row) return ctx.dataset.label;
+                return `${row.label}: Revenue ${formatPercent(row.revenueDeltaPct)}, Profit ${formatPercent(row.profitDeltaPct)}, W${getSeasonWeeks()} Left ${formatNumber(row.scenarioEnd, 0)}, Clearance ${formatPercent(row.clearancePct)}`;
               }
             }
           }
         },
         scales: {
-          x: { title: { display: true, text: 'Revenue Delta (%)' } },
-          y: { title: { display: true, text: 'Profit Delta (%)' } }
+          x: {
+            min: xMin,
+            max: xMax,
+            title: { display: true, text: 'Revenue Delta vs Baseline (%)' },
+            grid: {
+              color: (context) => context.tick.value === 0 ? 'rgba(15, 23, 42, 0.35)' : 'rgba(148, 163, 184, 0.18)',
+              lineWidth: (context) => context.tick.value === 0 ? 1.5 : 1
+            }
+          },
+          y: {
+            min: yMin,
+            max: yMax,
+            title: { display: true, text: 'Profit Delta vs Baseline (%)' },
+            grid: {
+              color: (context) => context.tick.value === 0 ? 'rgba(15, 23, 42, 0.35)' : 'rgba(148, 163, 184, 0.18)',
+              lineWidth: (context) => context.tick.value === 0 ? 1.5 : 1
+            }
+          }
         }
       }
     });
   }
 
-  noteEl.textContent = `Each bubble is an objective mode. Larger bubble indicates stronger week-${getSeasonWeeks()} clearance from current inventory.`;
+  noteEl.textContent = `Each point is one objective mode. Right means stronger revenue, up means stronger profit, and larger bubbles mean better week-${getSeasonWeeks()} clearance with less leftover inventory. Selected objective: ${selectedRow.label}.`;
 }
 
 function renderSkuResponseView(scenarios, noActionScenarios, transfers, competitorShockPct, socialShockPts) {

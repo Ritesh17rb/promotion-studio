@@ -133,6 +133,45 @@ function formatPercent(num, decimals = 1) {
   return `${num.toFixed(decimals)}%`;
 }
 
+function formatRatePercent(rate, options = {}) {
+  if (rate === null || rate === undefined || !Number.isFinite(rate)) {
+    return 'N/A';
+  }
+
+  const {
+    standardDecimals = 1,
+    smallDecimals = 2,
+    tinyThresholdPct = 0.01
+  } = options;
+
+  const pct = Number(rate) * 100;
+  const absPct = Math.abs(pct);
+
+  if (absPct > 0 && absPct < tinyThresholdPct) {
+    return `<${tinyThresholdPct.toFixed(2)}%`;
+  }
+
+  const decimals = absPct < 0.1 ? smallDecimals : standardDecimals;
+  return `${pct.toFixed(decimals)}%`;
+}
+
+function formatPercentagePointDelta(rateDelta, options = {}) {
+  if (rateDelta === null || rateDelta === undefined || !Number.isFinite(rateDelta)) {
+    return 'N/A';
+  }
+
+  const {
+    standardDecimals = 2,
+    smallDecimals = 3
+  } = options;
+
+  const pp = Number(rateDelta) * 100;
+  const absPp = Math.abs(pp);
+  const decimals = absPp < 0.01 && absPp > 0 ? smallDecimals : standardDecimals;
+
+  return `${pp >= 0 ? '+' : ''}${pp.toFixed(decimals)} pp`;
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -569,13 +608,13 @@ async function loadKPIs() {
     document.getElementById('kpi-customers').textContent = formatNumber(totalSubs);
     document.getElementById('kpi-revenue').textContent = formatCurrency(totalRevenue);
     document.getElementById('kpi-aov').textContent = formatCurrency(avgAOV);
-    // avgChurn is already a decimal (0.05 = 5%), formatPercent will multiply by 100
-    document.getElementById('kpi-churn').textContent = formatPercent(avgChurn);
+    // repeat_loss_rate is stored as a decimal (0.05 = 5%), so convert to a display percent here.
+    document.getElementById('kpi-churn').textContent = formatRatePercent(avgChurn);
 
     document.getElementById('kpi-customers-change').textContent = `${subsDelta >= 0 ? '+' : ''}${(subsDelta * 100).toFixed(1)}% vs prior week`;
     document.getElementById('kpi-revenue-change').textContent = `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior week`;
     document.getElementById('kpi-aov-change').textContent = `${aovDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(aovDelta))} vs prior week`;
-    document.getElementById('kpi-churn-change').textContent = `${churnDelta >= 0 ? '+' : ''}${(churnDelta * 100).toFixed(2)} pp vs prior week`;
+    document.getElementById('kpi-churn-change').textContent = `${formatPercentagePointDelta(churnDelta)} vs prior week`;
 
   } catch (error) {
     console.error('Error loading KPIs:', error);

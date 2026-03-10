@@ -930,6 +930,18 @@ function renderPromoStoryVisuals(promos) {
     `Portfolio average: ${avgUplift >= 0 ? '+' : ''}${avgUplift.toFixed(1)}%.`;
 }
 
+function updatePromoDrilldownButtonState(activePromoId) {
+  document.querySelectorAll('.promo-drilldown-btn').forEach(btn => {
+    const isActive = String(btn.dataset.promoId) === String(activePromoId);
+    btn.classList.toggle('btn-primary', isActive);
+    btn.classList.toggle('btn-outline-primary', !isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    btn.innerHTML = isActive
+      ? '<i class="bi bi-check-circle me-1"></i>Showing SKU + Channel Outcomes'
+      : 'View SKU + Channel Outcomes';
+  });
+}
+
 function renderPromoOutcomeMatrix(promos) {
   const summaryEl = document.getElementById('promo-outcome-summary');
   const tbody = document.getElementById('promo-outcome-matrix-body');
@@ -1116,6 +1128,7 @@ function renderPromoDrilldown(promoId) {
   if (!promoId) {
     panel.style.display = 'none';
     panel.innerHTML = '';
+    updatePromoDrilldownButtonState(null);
     return;
   }
 
@@ -1123,10 +1136,12 @@ function renderPromoDrilldown(promoId) {
   if (!promo) {
     panel.style.display = 'none';
     panel.innerHTML = '';
+    updatePromoDrilldownButtonState(null);
     return;
   }
 
   selectedPromoId = promoId;
+  updatePromoDrilldownButtonState(promoId);
   window.dispatchEvent(new CustomEvent('promo:drilldown-selected', {
     detail: {
       promoId,
@@ -1238,6 +1253,10 @@ function renderPromoDrilldown(promoId) {
       </div>
     </div>
   `;
+
+  requestAnimationFrame(() => {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 /**

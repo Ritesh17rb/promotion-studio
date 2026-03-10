@@ -163,7 +163,7 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
     });
 
     // Set up dimensions
-    const margin = { top: 80, right: 260, bottom: 100, left: 150 };
+    const margin = { top: 110, right: 260, bottom: 130, left: 205 };
     const cellSize = 60;
 
     // Determine axes based on selected analysis axis
