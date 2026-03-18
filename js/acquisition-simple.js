@@ -14,6 +14,9 @@ let acquisitionParams = null;
 // Cohort data for dynamic elasticity
 let cohortData = null;
 
+// SKU-level elasticity data
+let skuElasticityData = null;
+
 // Configuration
 const CONFIDENCE_INTERVAL = 0.95; // 95% CI
 const STD_ERROR = 0.15; // 15% standard error (industry benchmark)
@@ -84,6 +87,12 @@ async function loadAcquisitionParams() {
         }
       };
     });
+
+    // Store SKU-level elasticity data if available
+    skuElasticityData = elasticityData.sku_elasticity || null;
+    if (skuElasticityData) {
+      console.log('✓ Loaded SKU elasticity data:', Object.keys(skuElasticityData));
+    }
 
     console.log('Acquisition parameters loaded from actual data:', acquisitionParams);
     return acquisitionParams;
@@ -380,6 +389,15 @@ function setupAcquisitionInteractivity() {
     });
   }
 
+  // Product selection change
+  const productSelect = document.getElementById('acq-product-select');
+  if (productSelect) {
+    productSelect.addEventListener('change', () => {
+      console.log('🔄 Switching to product:', productSelect.value);
+      updateAcquisitionModel();
+    });
+  }
+
   // Cohort selection change
   if (cohortSelect && cohortData) {
     cohortSelect.addEventListener('change', () => {
@@ -432,7 +450,22 @@ function updateAcquisitionModel() {
   const currentPrice = params.price;
   const newPrice = parseFloat(priceSlider.value);
   const priceChangePct = ((newPrice - currentPrice) / currentPrice) * 100;
-  const elasticity = params.base_elasticity;
+
+  // Determine elasticity: use SKU-specific if a product is selected, otherwise tier-level
+  let elasticity = params.base_elasticity;
+  const productSelect = document.getElementById('acq-product-select');
+  if (productSelect && productSelect.value !== 'all' && skuElasticityData) {
+    const skuId = productSelect.value;
+    const skuData = skuElasticityData[skuId];
+    if (skuData) {
+      // Map tier to SKU channel key: ad_supported -> mass, ad_free -> prestige
+      const channelKey = tier === 'ad_free' ? 'prestige' : 'mass';
+      if (skuData[channelKey]) {
+        elasticity = skuData[channelKey].base_elasticity;
+        console.log(`📦 Using SKU "${skuId}" (${skuData.name}) elasticity for ${channelKey}: ${elasticity}`);
+      }
+    }
+  }
 
   console.log('📊 Acquisition Model Update:', {
     tier,

@@ -177,6 +177,11 @@ function showStepContent(step) {
         break;
       }
 
+      const loadSection = document.getElementById('load-data-section');
+      const loadingProgress = document.getElementById('loading-progress');
+      const kpiSection = document.getElementById('kpi-section');
+      const appDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
+
       if (!window.loadAppData || typeof window.loadAppData !== 'function') {
         renderStartupIssue({
           title: 'Application bootstrap did not complete',
@@ -189,15 +194,32 @@ function showStepContent(step) {
         break;
       }
 
+      if (appDataState === 'loaded') {
+        if (loadSection) loadSection.style.display = 'none';
+        if (kpiSection) kpiSection.style.display = 'block';
+        break;
+      }
+
+      if (appDataState === 'loading') {
+        if (loadSection) {
+          loadSection.style.display = 'block';
+          loadSection.style.visibility = 'visible';
+          loadSection.style.opacity = '1';
+        }
+        if (loadingProgress) {
+          loadingProgress.style.display = 'block';
+          loadingProgress.style.visibility = 'visible';
+        }
+        break;
+      }
+
       // Trigger data loading if not already loaded
       if (window.loadAppData && !window.dataLoaded) {
-        window.dataLoaded = true; // Set immediately to prevent multiple calls
+        window.appDataLoadState = 'loading';
 
         // IMPORTANT: Wait for section animation to complete and ensure loading UI is visible
         setTimeout(() => {
           // Make sure loading section is visible
-          const loadSection = document.getElementById('load-data-section');
-          const loadingProgress = document.getElementById('loading-progress');
           if (loadSection) {
             loadSection.style.display = 'block';
             loadSection.style.visibility = 'visible';
@@ -212,6 +234,7 @@ function showStepContent(step) {
           window.loadAppData().catch(error => {
             console.error('Failed to load data:', error);
             window.dataLoaded = false; // Reset on error
+            window.appDataLoadState = 'idle';
             // Show error message to user
             if (loadSection) {
               loadSection.innerHTML = `
@@ -1530,8 +1553,8 @@ function renderRoadmapFutureModule(type, contentAreaId) {
                     <th class="text-end">Inventory Left</th>
                     <th class="text-end">Elasticity</th>
                     <th class="text-end">Gap vs Competitor</th>
-                    <th class="text-end">Mass Promo</th>
-                    <th class="text-end">Prestige Promo</th>
+                    <th class="text-end">Target & Amazon</th>
+                    <th class="text-end">Sephora & Ulta</th>
                     <th class="text-end">Expected Unit Lift</th>
                     <th>Reasoning</th>
                   </tr>
@@ -1575,11 +1598,11 @@ function renderRoadmapFutureModule(type, contentAreaId) {
                 <input type="range" id="step6-sim-cannibal" class="form-range" min="50" max="160" step="10" value="100">
               </div>
               <div class="col-lg-3">
-                <label class="form-label small fw-semibold mb-1">Mass Promo Adj <span id="step6-sim-mass-value">0%</span></label>
+                <label class="form-label small fw-semibold mb-1">Target & Amazon Adj <span id="step6-sim-mass-value">0%</span></label>
                 <input type="range" id="step6-sim-mass" class="form-range" min="-10" max="10" step="1" value="0">
               </div>
               <div class="col-lg-3">
-                <label class="form-label small fw-semibold mb-1">Prestige Promo Adj <span id="step6-sim-prestige-value">0%</span></label>
+                <label class="form-label small fw-semibold mb-1">Sephora & Ulta Adj <span id="step6-sim-prestige-value">0%</span></label>
                 <input type="range" id="step6-sim-prestige" class="form-range" min="-10" max="10" step="1" value="0">
               </div>
               <div class="col-lg-3">
@@ -2824,11 +2847,11 @@ function renderRoadmapFutureModule(type, contentAreaId) {
                 <input type="range" id="step8-sim-media" class="form-range" min="0" max="20" step="1" value="0">
               </div>
               <div class="col-lg-3">
-                <label class="form-label small fw-semibold mb-1">Mass Promo Depth <span id="step8-sim-mass-value">12%</span></label>
+                <label class="form-label small fw-semibold mb-1">Target & Amazon Depth <span id="step8-sim-mass-value">12%</span></label>
                 <input type="range" id="step8-sim-mass" class="form-range" min="0" max="30" step="1" value="${Math.round(safeNumber(snapshot.massPromoDepthPct, 12))}">
               </div>
               <div class="col-lg-3">
-                <label class="form-label small fw-semibold mb-1">Prestige Promo Depth <span id="step8-sim-prestige-value">8%</span></label>
+                <label class="form-label small fw-semibold mb-1">Sephora & Ulta Depth <span id="step8-sim-prestige-value">8%</span></label>
                 <input type="range" id="step8-sim-prestige" class="form-range" min="0" max="30" step="1" value="${Math.round(safeNumber(snapshot.prestigePromoDepthPct, 8))}">
               </div>
               <div class="col-lg-3">
@@ -3608,8 +3631,8 @@ function initStepNavigation() {
     return;
   }
 
-  // Start at step 0 (hero)
-  goToStep(0);
+  // Auto-load into Step 1 (skip hero splash)
+  goToStep(1);
 }
 
 // Make goToStep available globally before initialization completes.

@@ -28,6 +28,9 @@ let socialSignalRows = [];
 let promoMetadata = {};
 let skuCatalog = { productGroups: [], skus: [] };
 
+// SKU-level elasticity data
+let skuElasticityData = null;
+
 /**
  * Load cohort data for migration asymmetry
  */
@@ -108,6 +111,12 @@ async function loadMigrationParams() {
       adFreeSubs,
       crossElasticity: crossElasticity.ad_supported_to_ad_free || 0.28
     };
+
+    // Store SKU-level elasticity data if available
+    skuElasticityData = elasticityData.sku_elasticity || null;
+    if (skuElasticityData) {
+      console.log('✓ Loaded SKU elasticity data for migration:', Object.keys(skuElasticityData));
+    }
 
     console.log('Migration parameters loaded from actual data:', migrationParams);
     return migrationParams;
@@ -708,6 +717,15 @@ function setupMigrationInteractivity() {
     });
   }
 
+  // Product (SKU) selection change
+  const migrationProductSelect = document.getElementById('migration-product-select');
+  if (migrationProductSelect) {
+    migrationProductSelect.addEventListener('change', () => {
+      console.log('🔄 Switching migration product:', migrationProductSelect.value);
+      updateMigrationModel();
+    });
+  }
+
   if (groupSelect) {
     groupSelect.addEventListener('change', () => {
       populateSkuSelectors();
@@ -804,7 +822,25 @@ function updateMigrationModel() {
     ? currentRowsForSelection.filter(r => r.sku_id === selectedSku)
     : currentRowsForSelection;
 
-  const baseElasticity = average(selectedRows, 'effective_elasticity') || -1.7;
+  let baseElasticity = average(selectedRows, 'effective_elasticity') || -1.7;
+
+  // Override elasticity with SKU-specific values when a product is selected
+  const migrationProductSelect = document.getElementById('migration-product-select');
+  if (migrationProductSelect && migrationProductSelect.value !== 'all' && skuElasticityData) {
+    const skuId = migrationProductSelect.value;
+    const skuData = skuElasticityData[skuId];
+    if (skuData) {
+      // Map tier: ad_supported -> mass, ad_free -> prestige
+      // Use average of mass and prestige elasticities for migration (cross-channel model)
+      const massElasticity = skuData.mass?.base_elasticity;
+      const prestigeElasticity = skuData.prestige?.base_elasticity;
+      if (massElasticity != null && prestigeElasticity != null) {
+        baseElasticity = (massElasticity + prestigeElasticity) / 2;
+        console.log(`📦 Using SKU "${skuId}" (${skuData.name}) migration elasticity: mass=${massElasticity}, prestige=${prestigeElasticity}, avg=${baseElasticity.toFixed(2)}`);
+      }
+    }
+  }
+
   const ownPrice = average(selectedRows, 'effective_price') || adlitePrice;
   const competitorPrice = average(selectedRows, 'competitor_price') || ownPrice * 0.95;
   const socialScoreBase = average(selectedRows, 'social_engagement_score')

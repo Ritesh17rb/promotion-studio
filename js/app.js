@@ -24,7 +24,7 @@ import {
   isPyodideAvailable,
   compareScenarios as compareScenariosEngine
 } from './scenario-engine.js';
-import { renderDemandCurve, renderElasticityHeatmap, renderTierMixShift, renderTradeoffsScatter, renderComparisonBarChart, renderRadarChart } from './charts.js';
+import { renderDemandCurve, renderElasticityHeatmap, renderComparisonBarChart, renderRadarChart } from './charts.js';
 import {
   initializeChat,
   configureLLM,
@@ -78,8 +78,6 @@ let allSimulationResultsByModel = {
 let selectedScenario = selectedScenarioByModel[activeModelType];
 let savedScenarios = savedScenariosByModel[activeModelType];
 let currentResult = currentResultByModel[activeModelType];
-let step2CompetitiveChart = null;
-let step2SocialChart = null;
 let step2SkuImpactChart = null;
 let commercialSalesProjectionChart = null;
 let commercialSocialPowerChart = null;
@@ -95,6 +93,26 @@ let llmBusinessContext = {};
 const CHANNEL_PRICE = {
   ad_supported: 24.0,
   ad_free: 36.0
+};
+
+const KPI_CHANNEL_LABELS = {
+  target: 'Target',
+  amazon: 'Amazon',
+  sephora: 'Sephora',
+  ulta: 'Ulta'
+};
+
+const KPI_TIER_META = {
+  ad_supported: {
+    group: 'mass',
+    label: 'Mass',
+    channels: ['target', 'amazon']
+  },
+  ad_free: {
+    group: 'prestige',
+    label: 'Prestige',
+    channels: ['sephora', 'ulta']
+  }
 };
 
 const segmentSkuProfiles = {
@@ -171,6 +189,321 @@ function formatPercentagePointDelta(rateDelta, options = {}) {
   const decimals = absPp < 0.01 && absPp > 0 ? smallDecimals : standardDecimals;
 
   return `${pp >= 0 ? '+' : ''}${pp.toFixed(decimals)} pp`;
+}
+
+function formatCompactNumber(num, decimals = 1) {
+  if (num === null || num === undefined || !Number.isFinite(num)) {
+    return 'N/A';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: decimals
+  }).format(num);
+}
+
+function formatCompactCurrency(num, decimals = 1) {
+  if (num === null || num === undefined || !Number.isFinite(num)) {
+    return 'N/A';
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals
+  }).format(num);
+}
+
+function renderKpiBreakdown(containerId, rows = []) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = rows.map(row => `
+    <div class="kpi-breakdown-row">
+      <span class="kpi-breakdown-label">${row.label}</span>
+      <span class="kpi-breakdown-value">${row.value}</span>
+    </div>
+  `).join('');
+}
+
+function updateStep1ChannelGroupPrices(skuWeekly = []) {
+  const massPriceEl = document.getElementById('step1-mass-channel-price');
+  const prestigePriceEl = document.getElementById('step1-prestige-channel-price');
+
+  if (!massPriceEl || !prestigePriceEl || !Array.isArray(skuWeekly) || !skuWeekly.length) {
+    return;
+  }
+
+  const toNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const flaggedCurrentRows = skuWeekly.filter(row => row.is_current_week === true);
+  const maxWeek = Math.max(...skuWeekly.map(row => Number(row.week_of_season || 0)), 0);
+  const currentRows = flaggedCurrentRows.length
+    ? flaggedCurrentRows
+    : skuWeekly.filter(row => Number(row.week_of_season || 0) === maxWeek);
+
+  const averagePriceForGroup = (group) => {
+    const prices = currentRows
+      .filter(row => row.channel_group === group)
+      .map(row => toNumber(row.list_price))
+      .filter(value => Number.isFinite(value));
+    if (!prices.length) return null;
+    return prices.reduce((sum, value) => sum + value, 0) / prices.length;
+  };
+
+  const massAvg = averagePriceForGroup('mass');
+  const prestigeAvg = averagePriceForGroup('prestige');
+
+  if (Number.isFinite(massAvg)) {
+    massPriceEl.innerHTML = `${formatCurrency(massAvg)}<span>/unit avg</span>`;
+  }
+  if (Number.isFinite(prestigeAvg)) {
+    prestigePriceEl.innerHTML = `${formatCurrency(prestigeAvg)}<span>/unit avg</span>`;
+  }
+}
+
+function buildCurrentKpiSnapshot(weeklyData = [], skuWeekly = [], elasticityParams = null) {
+  const toNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const flaggedCurrentRows = skuWeekly.filter(row => row.is_current_week === true);
+  const maxWeek = skuWeekly.length
+    ? Math.max(...skuWeekly.map(row => toNumber(row.week_of_season)))
+    : 0;
+  const currentRows = flaggedCurrentRows.length
+    ? flaggedCurrentRows
+    : skuWeekly.filter(row => toNumber(row.week_of_season) === maxWeek);
+  const currentWeekStart = currentRows[0]?.week_start || null;
+  const currentSeasonWeek = currentRows[0]?.week_of_season || maxWeek || null;
+
+  const latestWeekByTier = {};
+  const previousWeekByTier = {};
+
+  Object.keys(KPI_TIER_META).forEach(tier => {
+    const tierRows = weeklyData
+      .filter(row => row.tier === tier)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+    if (!tierRows.length) return;
+
+    let currentIndex = currentWeekStart
+      ? tierRows.findIndex(row => row.date === currentWeekStart)
+      : -1;
+
+    if (currentIndex < 0) {
+      currentIndex = tierRows.length - 1;
+    }
+
+    latestWeekByTier[tier] = tierRows[currentIndex];
+    previousWeekByTier[tier] = tierRows[Math.max(currentIndex - 1, 0)];
+  });
+
+  const totalCustomers = Object.values(latestWeekByTier)
+    .reduce((sum, row) => sum + toNumber(row?.active_customers), 0);
+  const totalRevenue = Object.values(latestWeekByTier)
+    .reduce((sum, row) => sum + toNumber(row?.revenue), 0) * 4;
+  const avgAOV = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+  const avgChurn = Object.values(latestWeekByTier).length
+    ? Object.values(latestWeekByTier).reduce((sum, row) => sum + toNumber(row?.repeat_loss_rate), 0) / Object.values(latestWeekByTier).length
+    : 0;
+
+  const prevCustomers = Object.values(previousWeekByTier)
+    .reduce((sum, row) => sum + toNumber(row?.active_customers), 0);
+  const prevRevenue = Object.values(previousWeekByTier)
+    .reduce((sum, row) => sum + toNumber(row?.revenue), 0) * 4;
+  const prevAOV = prevCustomers > 0 ? prevRevenue / prevCustomers : 0;
+  const prevChurn = Object.values(previousWeekByTier).length
+    ? Object.values(previousWeekByTier).reduce((sum, row) => sum + toNumber(row?.repeat_loss_rate), 0) / Object.values(previousWeekByTier).length
+    : 0;
+
+  const channelRollups = {};
+  currentRows.forEach(row => {
+    const channel = String(row.sales_channel || '').toLowerCase();
+    if (!channel) return;
+
+    if (!channelRollups[channel]) {
+      channelRollups[channel] = {
+        channel,
+        group: row.channel_group,
+        weeklyRevenue: 0,
+        units: 0
+      };
+    }
+
+    channelRollups[channel].weeklyRevenue += toNumber(row.revenue);
+    channelRollups[channel].units += toNumber(row.net_units_sold);
+  });
+
+  const tierMetrics = {};
+  const channelMetrics = {};
+
+  Object.entries(KPI_TIER_META).forEach(([tier, meta]) => {
+    const tierRow = latestWeekByTier[tier];
+    if (!tierRow) return;
+
+    const customers = toNumber(tierRow.active_customers);
+    const monthlyRevenue = toNumber(tierRow.revenue) * 4;
+    const repeatLossRate = toNumber(tierRow.repeat_loss_rate);
+    const repeatLossCustomers = toNumber(tierRow.repeat_loss_customers);
+    const aov = customers > 0 ? monthlyRevenue / customers : 0;
+    const groupChannels = meta.channels.filter(channel => channelRollups[channel]);
+    const totalUnits = groupChannels.reduce((sum, channel) => sum + toNumber(channelRollups[channel]?.units), 0);
+    const totalChannelRevenue = groupChannels.reduce((sum, channel) => sum + toNumber(channelRollups[channel]?.weeklyRevenue), 0);
+    const elasticityByChannel = elasticityParams?.tiers?.[tier]?.cohort_elasticity?.by_channel || {};
+
+    const weightedElasticityBase = groupChannels.reduce((sum, channel) => {
+      const unitsShare = totalUnits > 0
+        ? toNumber(channelRollups[channel]?.units) / totalUnits
+        : (groupChannels.length ? 1 / groupChannels.length : 0);
+      return sum + (Math.abs(toNumber(elasticityByChannel[channel])) || 1) * unitsShare;
+    }, 0) || 1;
+
+    tierMetrics[tier] = {
+      label: meta.label,
+      customers,
+      monthlyRevenue,
+      aov,
+      repeatLossRate,
+      repeatLossCustomers
+    };
+
+    groupChannels.forEach(channel => {
+      const unitsShare = totalUnits > 0
+        ? toNumber(channelRollups[channel]?.units) / totalUnits
+        : 1 / groupChannels.length;
+      const revenueShare = totalChannelRevenue > 0
+        ? toNumber(channelRollups[channel]?.weeklyRevenue) / totalChannelRevenue
+        : unitsShare;
+      const estimatedCustomers = customers * unitsShare;
+      const elasticityFactor = Math.abs(toNumber(elasticityByChannel[channel])) || 1;
+      const normalizedFactor = elasticityFactor / weightedElasticityBase;
+      const channelRepeatLossRate = clamp(repeatLossRate * normalizedFactor, 0, 0.95);
+      const channelMonthlyRevenue = monthlyRevenue * revenueShare;
+
+      channelMetrics[channel] = {
+        label: KPI_CHANNEL_LABELS[channel] || channel,
+        tier,
+        group: meta.group,
+        customers: estimatedCustomers,
+        monthlyRevenue: channelMonthlyRevenue,
+        aov: estimatedCustomers > 0 ? channelMonthlyRevenue / estimatedCustomers : 0,
+        repeatLossRate: channelRepeatLossRate,
+        repeatLossCustomers: estimatedCustomers * channelRepeatLossRate
+      };
+    });
+  });
+
+  const customerBreakdownRows = [
+    {
+      label: 'Mass active',
+      value: formatCompactNumber(tierMetrics.ad_supported?.customers || 0)
+    },
+    {
+      label: 'Prestige active',
+      value: formatCompactNumber(tierMetrics.ad_free?.customers || 0)
+    },
+    {
+      label: 'Est. Target / Amazon',
+      value: `${formatCompactNumber(channelMetrics.target?.customers || 0)} | ${formatCompactNumber(channelMetrics.amazon?.customers || 0)}`
+    },
+    {
+      label: 'Est. Sephora / Ulta',
+      value: `${formatCompactNumber(channelMetrics.sephora?.customers || 0)} | ${formatCompactNumber(channelMetrics.ulta?.customers || 0)}`
+    }
+  ];
+
+  const revenueBreakdownRows = [
+    {
+      label: 'Mass monthly',
+      value: formatCompactCurrency(tierMetrics.ad_supported?.monthlyRevenue || 0)
+    },
+    {
+      label: 'Prestige monthly',
+      value: formatCompactCurrency(tierMetrics.ad_free?.monthlyRevenue || 0)
+    },
+    {
+      label: 'Est. Target / Amazon',
+      value: `${formatCompactCurrency(channelMetrics.target?.monthlyRevenue || 0)} | ${formatCompactCurrency(channelMetrics.amazon?.monthlyRevenue || 0)}`
+    },
+    {
+      label: 'Est. Sephora / Ulta',
+      value: `${formatCompactCurrency(channelMetrics.sephora?.monthlyRevenue || 0)} | ${formatCompactCurrency(channelMetrics.ulta?.monthlyRevenue || 0)}`
+    }
+  ];
+
+  const aovBreakdownRows = [
+    {
+      label: 'Mass run-rate',
+      value: formatCurrency(tierMetrics.ad_supported?.aov || 0)
+    },
+    {
+      label: 'Prestige run-rate',
+      value: formatCurrency(tierMetrics.ad_free?.aov || 0)
+    },
+    {
+      label: 'Est. Target / Amazon',
+      value: `${formatCurrency(channelMetrics.target?.aov || 0)} | ${formatCurrency(channelMetrics.amazon?.aov || 0)}`
+    },
+    {
+      label: 'Est. Sephora / Ulta',
+      value: `${formatCurrency(channelMetrics.sephora?.aov || 0)} | ${formatCurrency(channelMetrics.ulta?.aov || 0)}`
+    }
+  ];
+
+  const churnBreakdownRows = [
+    {
+      label: 'Mass repeat loss',
+      value: `${formatRatePercent(tierMetrics.ad_supported?.repeatLossRate || 0)} (${formatCompactNumber(tierMetrics.ad_supported?.repeatLossCustomers || 0)})`
+    },
+    {
+      label: 'Prestige repeat loss',
+      value: `${formatRatePercent(tierMetrics.ad_free?.repeatLossRate || 0)} (${formatCompactNumber(tierMetrics.ad_free?.repeatLossCustomers || 0)})`
+    },
+    {
+      label: 'Est. Target / Amazon',
+      value: `${formatRatePercent(channelMetrics.target?.repeatLossRate || 0)} | ${formatRatePercent(channelMetrics.amazon?.repeatLossRate || 0)}`
+    },
+    {
+      label: 'Est. Sephora / Ulta',
+      value: `${formatRatePercent(channelMetrics.sephora?.repeatLossRate || 0)} | ${formatRatePercent(channelMetrics.ulta?.repeatLossRate || 0)}`
+    }
+  ];
+
+  return {
+    currentWeekStart,
+    currentSeasonWeek,
+    totals: {
+      customers: totalCustomers,
+      revenue: totalRevenue,
+      aov: avgAOV,
+      churn: avgChurn,
+      customersDelta: prevCustomers > 0 ? (totalCustomers - prevCustomers) / prevCustomers : 0,
+      revenueDelta: prevRevenue > 0 ? (totalRevenue - prevRevenue) / prevRevenue : 0,
+      aovDelta: avgAOV - prevAOV,
+      churnDelta: avgChurn - prevChurn
+    },
+    tierMetrics,
+    channelMetrics,
+    breakdownRows: {
+      customers: customerBreakdownRows,
+      revenue: revenueBreakdownRows,
+      aov: aovBreakdownRows,
+      churn: churnBreakdownRows
+    },
+    breakdownText: {
+      customers: `Mass ${formatCompactNumber(tierMetrics.ad_supported?.customers || 0)}; Prestige ${formatCompactNumber(tierMetrics.ad_free?.customers || 0)}; est. Target ${formatCompactNumber(channelMetrics.target?.customers || 0)}, Amazon ${formatCompactNumber(channelMetrics.amazon?.customers || 0)}, Sephora ${formatCompactNumber(channelMetrics.sephora?.customers || 0)}, Ulta ${formatCompactNumber(channelMetrics.ulta?.customers || 0)}`,
+      revenue: `Mass ${formatCompactCurrency(tierMetrics.ad_supported?.monthlyRevenue || 0)}/mo; Prestige ${formatCompactCurrency(tierMetrics.ad_free?.monthlyRevenue || 0)}/mo; est. Target ${formatCompactCurrency(channelMetrics.target?.monthlyRevenue || 0)}, Amazon ${formatCompactCurrency(channelMetrics.amazon?.monthlyRevenue || 0)}, Sephora ${formatCompactCurrency(channelMetrics.sephora?.monthlyRevenue || 0)}, Ulta ${formatCompactCurrency(channelMetrics.ulta?.monthlyRevenue || 0)}`,
+      aov: `Mass ${formatCurrency(tierMetrics.ad_supported?.aov || 0)}; Prestige ${formatCurrency(tierMetrics.ad_free?.aov || 0)}; est. Target ${formatCurrency(channelMetrics.target?.aov || 0)}, Amazon ${formatCurrency(channelMetrics.amazon?.aov || 0)}, Sephora ${formatCurrency(channelMetrics.sephora?.aov || 0)}, Ulta ${formatCurrency(channelMetrics.ulta?.aov || 0)}`,
+      churn: `Mass ${formatRatePercent(tierMetrics.ad_supported?.repeatLossRate || 0)} (${formatCompactNumber(tierMetrics.ad_supported?.repeatLossCustomers || 0)} lost); Prestige ${formatRatePercent(tierMetrics.ad_free?.repeatLossRate || 0)} (${formatCompactNumber(tierMetrics.ad_free?.repeatLossCustomers || 0)} lost); est. Target ${formatRatePercent(channelMetrics.target?.repeatLossRate || 0)}, Amazon ${formatRatePercent(channelMetrics.amazon?.repeatLossRate || 0)}, Sephora ${formatRatePercent(channelMetrics.sephora?.repeatLossRate || 0)}, Ulta ${formatRatePercent(channelMetrics.ulta?.repeatLossRate || 0)}`
+    }
+  };
 }
 
 function clamp(value, min, max) {
@@ -713,44 +1046,40 @@ function startSimulateLoading() {
 // Load KPI data
 async function loadKPIs() {
   try {
-    const weeklyData = await getWeeklyData('all');
-    const latestWeek = {};
-    const previousWeek = {};
-
-    // Get latest week for each tier
-    ['ad_supported', 'ad_free'].forEach(tier => {
-      const tierData = weeklyData.filter(d => d.tier === tier);
-      latestWeek[tier] = tierData[tierData.length - 1];
-      previousWeek[tier] = tierData.length > 1 ? tierData[tierData.length - 2] : tierData[tierData.length - 1];
-    });
-
-    // Calculate totals
-    const totalSubs = Object.values(latestWeek).reduce((sum, d) => sum + d.active_customers, 0);
-    const totalRevenue = Object.values(latestWeek).reduce((sum, d) => sum + d.revenue, 0) * 4; // Weekly to monthly
-    const avgAOV = totalRevenue / totalSubs;
-    const avgChurn = Object.values(latestWeek).reduce((sum, d) => sum + d.repeat_loss_rate, 0) / 2;
-
-    const prevSubs = Object.values(previousWeek).reduce((sum, d) => sum + d.active_customers, 0);
-    const prevRevenue = Object.values(previousWeek).reduce((sum, d) => sum + d.revenue, 0) * 4;
-    const prevAOV = prevSubs > 0 ? prevRevenue / prevSubs : 0;
-    const prevChurn = Object.values(previousWeek).reduce((sum, d) => sum + d.repeat_loss_rate, 0) / 2;
-
-    const subsDelta = prevSubs > 0 ? (totalSubs - prevSubs) / prevSubs : 0;
-    const revenueDelta = prevRevenue > 0 ? (totalRevenue - prevRevenue) / prevRevenue : 0;
-    const aovDelta = avgAOV - prevAOV;
-    const churnDelta = avgChurn - prevChurn;
+    const [weeklyData, skuWeekly, elasticityParams] = await Promise.all([
+      getWeeklyData('all'),
+      loadSkuWeeklyData(),
+      loadElasticityParams()
+    ]);
+    const snapshot = buildCurrentKpiSnapshot(weeklyData, skuWeekly, elasticityParams);
+    const {
+      customers,
+      revenue,
+      aov,
+      churn,
+      customersDelta,
+      revenueDelta,
+      aovDelta,
+      churnDelta
+    } = snapshot.totals;
 
     // Update KPI cards
-    document.getElementById('kpi-customers').textContent = formatNumber(totalSubs);
-    document.getElementById('kpi-revenue').textContent = formatCurrency(totalRevenue);
-    document.getElementById('kpi-aov').textContent = formatCurrency(avgAOV);
+    document.getElementById('kpi-customers').textContent = formatNumber(customers);
+    document.getElementById('kpi-revenue').textContent = formatCurrency(revenue);
+    document.getElementById('kpi-aov').textContent = formatCurrency(aov);
     // repeat_loss_rate is stored as a decimal (0.05 = 5%), so convert to a display percent here.
-    document.getElementById('kpi-churn').textContent = formatRatePercent(avgChurn);
+    document.getElementById('kpi-churn').textContent = formatRatePercent(churn);
 
-    document.getElementById('kpi-customers-change').textContent = `${subsDelta >= 0 ? '+' : ''}${(subsDelta * 100).toFixed(1)}% vs prior week`;
+    document.getElementById('kpi-customers-change').textContent = `${customersDelta >= 0 ? '+' : ''}${(customersDelta * 100).toFixed(1)}% vs prior week`;
     document.getElementById('kpi-revenue-change').textContent = `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior week`;
     document.getElementById('kpi-aov-change').textContent = `${aovDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(aovDelta))} vs prior week`;
     document.getElementById('kpi-churn-change').textContent = `${formatPercentagePointDelta(churnDelta)} vs prior week`;
+
+    renderKpiBreakdown('kpi-customers-breakdown', snapshot.breakdownRows.customers);
+    renderKpiBreakdown('kpi-revenue-breakdown', snapshot.breakdownRows.revenue);
+    renderKpiBreakdown('kpi-aov-breakdown', snapshot.breakdownRows.aov);
+    renderKpiBreakdown('kpi-churn-breakdown', snapshot.breakdownRows.churn);
+    updateStep1ChannelGroupPrices(skuWeekly);
 
   } catch (error) {
     console.error('Error loading KPIs:', error);
@@ -762,18 +1091,14 @@ async function initializeStep2SignalsLab() {
   const prestigeEl = document.getElementById('step2-signal-comp-prestige');
   const socialScoreEl = document.getElementById('step2-signal-social-score');
   const socialTrendEl = document.getElementById('step2-signal-social-trend');
-  const changeLogEl = document.getElementById('step2-signal-change-log');
   const methodNoteEl = document.getElementById('step2-signal-method-note');
   const skuImpactBodyEl = document.getElementById('step2-signal-sku-impact-body');
   const skuImpactNoteEl = document.getElementById('step2-signal-sku-impact-note');
-  const compCanvas = document.getElementById('step2-signal-comp-chart');
-  const socialCanvas = document.getElementById('step2-signal-social-chart');
   const skuCanvas = document.getElementById('step2-signal-sku-chart');
 
   if (
-    !massEl || !prestigeEl || !socialScoreEl || !socialTrendEl || !changeLogEl ||
-    !methodNoteEl || !skuImpactBodyEl || !skuImpactNoteEl ||
-    !compCanvas || !socialCanvas || !skuCanvas
+    !massEl || !prestigeEl || !socialScoreEl || !socialTrendEl ||
+    !methodNoteEl || !skuImpactBodyEl || !skuImpactNoteEl || !skuCanvas
   ) {
     return;
   }
@@ -806,124 +1131,8 @@ async function initializeStep2SignalsLab() {
       if (!skuWeekByDate.has(row.date)) skuWeekByDate.set(row.date, Number(row.week_of_season));
     });
 
-    const ownByDate = new Map();
-    skuWeekly.forEach(row => {
-      const key = row.date;
-      if (!ownByDate.has(key)) {
-        ownByDate.set(key, {
-          massSum: 0,
-          massCount: 0,
-          prestigeSum: 0,
-          prestigeCount: 0
-        });
-      }
-      const bucket = ownByDate.get(key);
-      const price = toNum(row.effective_price);
-      if (!Number.isFinite(price)) return;
-      if (row.channel_group === 'mass') {
-        bucket.massSum += price;
-        bucket.massCount += 1;
-      } else if (row.channel_group === 'prestige') {
-        bucket.prestigeSum += price;
-        bucket.prestigeCount += 1;
-      }
-    });
-
     const externalSorted = [...externalFactors].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-    const compLabels = [];
-    const ownMassSeries = [];
-    const compMassSeries = [];
-    const ownPrestigeSeries = [];
-    const compPrestigeSeries = [];
-
-    externalSorted.forEach(row => {
-      const own = ownByDate.get(row.date);
-      if (!own) return;
-      const ownMass = own.massCount ? own.massSum / own.massCount : null;
-      const ownPrestige = own.prestigeCount ? own.prestigeSum / own.prestigeCount : null;
-      const compMass = toNum(row.competitor_mass_price);
-      const compPrestige = toNum(row.competitor_prestige_price);
-      if (!Number.isFinite(ownMass) || !Number.isFinite(ownPrestige) || !Number.isFinite(compMass) || !Number.isFinite(compPrestige)) return;
-
-      const wk = skuWeekByDate.get(row.date);
-      compLabels.push(Number.isFinite(wk) ? `W${wk}` : String(row.date).slice(5));
-      ownMassSeries.push(Number(ownMass.toFixed(2)));
-      compMassSeries.push(Number(compMass.toFixed(2)));
-      ownPrestigeSeries.push(Number(ownPrestige.toFixed(2)));
-      compPrestigeSeries.push(Number(compPrestige.toFixed(2)));
-    });
-
-    if (compLabels.length) {
-      if (step2CompetitiveChart) {
-        step2CompetitiveChart.data.labels = compLabels;
-        step2CompetitiveChart.data.datasets[0].data = ownMassSeries;
-        step2CompetitiveChart.data.datasets[1].data = compMassSeries;
-        step2CompetitiveChart.data.datasets[2].data = ownPrestigeSeries;
-        step2CompetitiveChart.data.datasets[3].data = compPrestigeSeries;
-        step2CompetitiveChart.update();
-      } else if (window.Chart) {
-        step2CompetitiveChart = new Chart(compCanvas, {
-          type: 'line',
-          data: {
-            labels: compLabels,
-            datasets: [
-              { label: 'Our Mass Avg Price', data: ownMassSeries, borderColor: 'rgba(2, 132, 199, 0.95)', fill: false, tension: 0.25 },
-              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: 'rgba(239, 68, 68, 0.95)', fill: false, tension: 0.25 },
-              { label: 'Our Prestige Avg Price', data: ownPrestigeSeries, borderColor: 'rgba(16, 185, 129, 0.95)', borderDash: [4, 3], fill: false, tension: 0.25 },
-              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: 'rgba(217, 119, 6, 0.95)', borderDash: [4, 3], fill: false, tension: 0.25 }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
-          }
-        });
-      }
-    }
-
     const socialSorted = [...socialSignals].sort((a, b) => String(a.week_start || a.date).localeCompare(String(b.week_start || b.date)));
-    const socialLabels = [];
-    const socialScoreSeries = [];
-    const socialModifierSeries = [];
-
-    socialSorted.forEach(row => {
-      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment);
-      if (!Number.isFinite(score)) return;
-      const wk = skuWeekByDate.get(row.week_start || row.date);
-      socialLabels.push(Number.isFinite(wk) ? `W${wk}` : String(row.week_start || row.date).slice(5));
-      socialScoreSeries.push(Number(score.toFixed(2)));
-      socialModifierSeries.push(Number(socialElasticityModifier(score).toFixed(3)));
-    });
-
-    if (socialLabels.length) {
-      if (step2SocialChart) {
-        step2SocialChart.data.labels = socialLabels;
-        step2SocialChart.data.datasets[0].data = socialScoreSeries;
-        step2SocialChart.data.datasets[1].data = socialModifierSeries;
-        step2SocialChart.update();
-      } else if (window.Chart) {
-        step2SocialChart = new Chart(socialCanvas, {
-          type: 'line',
-          data: {
-            labels: socialLabels,
-            datasets: [
-              { label: 'Brand Social Score', data: socialScoreSeries, borderColor: 'rgba(14, 165, 233, 0.95)', fill: false, tension: 0.25, yAxisID: 'y' },
-              { label: 'Elasticity Modifier', data: socialModifierSeries, borderColor: 'rgba(99, 102, 241, 0.95)', fill: false, tension: 0.25, yAxisID: 'y1' }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } },
-            scales: {
-              y: { title: { display: true, text: 'Social score' } },
-              y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Elasticity modifier' } }
-            }
-          }
-        });
-      }
-    }
 
     const latestExternal = externalSorted[externalSorted.length - 1];
     const prevExternal = externalSorted[externalSorted.length - 2] || latestExternal;
@@ -942,9 +1151,6 @@ async function initializeStep2SignalsLab() {
     const socialDeltaPts = (Number.isFinite(socialScore) && Number.isFinite(prevSocialScore))
       ? (socialScore - prevSocialScore)
       : 0;
-    const modifierNow = socialElasticityModifier(socialScore);
-    const modifierPrev = socialElasticityModifier(prevSocialScore);
-    const modifierDeltaPct = modifierPrev > 0 ? (modifierNow - modifierPrev) / modifierPrev : 0;
 
     massEl.textContent = formatCurrency(latestMassComp);
     prestigeEl.textContent = formatCurrency(latestPrestigeComp);
@@ -1030,8 +1236,8 @@ async function initializeStep2SignalsLab() {
           data: {
             labels: skuLabels,
             datasets: [
-              { label: 'Baseline Units', data: skuBaseline, backgroundColor: 'rgba(148, 163, 184, 0.85)' },
-              { label: 'Shock-Only Units', data: skuShock, backgroundColor: 'rgba(245, 158, 11, 0.85)' }
+              { label: 'Current weekly units', data: skuBaseline, backgroundColor: 'rgba(148, 163, 184, 0.85)' },
+              { label: 'Signal-adjusted units', data: skuShock, backgroundColor: 'rgba(245, 158, 11, 0.85)' }
             ]
           },
           options: {
@@ -1046,24 +1252,47 @@ async function initializeStep2SignalsLab() {
     const totalBaseline = skuRows.reduce((sum, row) => sum + row.baselineUnits, 0);
     const totalShock = skuRows.reduce((sum, row) => sum + row.shockUnits, 0);
     const totalShockDeltaPct = totalBaseline > 0 ? (totalShock - totalBaseline) / totalBaseline : 0;
+    const biggestUpside = skuRows
+      .filter(row => row.deltaUnits > 0)
+      .sort((a, b) => b.deltaUnits - a.deltaUnits)[0];
+    const biggestDownside = skuRows
+      .filter(row => row.deltaUnits < 0)
+      .sort((a, b) => a.deltaUnits - b.deltaUnits)[0];
+    const highestGap = skuRows
+      .filter(row => Number.isFinite(row.avgGap))
+      .sort((a, b) => b.avgGap - a.avgGap)[0];
+    const socialDirection = socialDeltaPts >= 1
+      ? 'supporting demand'
+      : socialDeltaPts <= -1
+        ? 'softening demand'
+        : 'largely stable';
+    const massSignalText = Number.isFinite(massCompDeltaPct)
+      ? `${massCompDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(massCompDeltaPct * 100).toFixed(1)}% vs last week`
+      : 'stable vs last week';
+    const prestigeSignalText = Number.isFinite(prestigeCompDeltaPct)
+      ? `${prestigeCompDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(prestigeCompDeltaPct * 100).toFixed(1)}% vs last week`
+      : 'stable vs last week';
+    const summaryParts = [
+      `Mass competitor pricing is ${massSignalText}; prestige is ${prestigeSignalText}.`,
+      `Brand social momentum is ${socialDirection} at ${Number.isFinite(socialScore) ? socialScore.toFixed(1) : 'N/A'} (${socialDeltaPts >= 0 ? '+' : ''}${socialDeltaPts.toFixed(1)} pts WoW).`,
+      highestGap
+        ? `${highestGap.sku_name} is the most exposed on price position at ${highestGap.avgGap >= 0 ? '+' : ''}${(highestGap.avgGap * 100).toFixed(1)}% vs competitors.`
+        : null,
+      biggestUpside
+        ? `${biggestUpside.sku_name} shows the strongest upside from external signals at +${formatNumber(biggestUpside.deltaUnits)} units.`
+        : null,
+      biggestDownside
+        ? `${biggestDownside.sku_name} faces the biggest downside at ${formatNumber(biggestDownside.deltaUnits)} units.`
+        : null
+    ].filter(Boolean);
 
-    changeLogEl.textContent =
-      `Week ${currentWeek} vs Week ${previousWeek}: competitor mass ${massCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(massCompDeltaPct))}, ` +
-      `competitor prestige ${prestigeCompDeltaPct >= 0 ? 'up' : 'down'} ${toPct(Math.abs(prestigeCompDeltaPct))}, ` +
-      `social score ${socialDeltaPts >= 0 ? 'up' : 'down'} ${Math.abs(socialDeltaPts).toFixed(1)} pts.`;
-
-    methodNoteEl.innerHTML =
-      `<strong>Method:</strong> ` +
-      `<code>gap_pct = (our_price - competitor_price) / competitor_price</code>; ` +
-      `<code>competitor_multiplier = clamp(1 - gap_pct * sensitivity, 0.55, 1.38)</code>; ` +
-      `<code>social_modifier = f(social_score)</code> from simulator. ` +
-      `Data sources: <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, <code>social_signals.csv</code>.`;
+    methodNoteEl.textContent = summaryParts.join(' ');
 
     skuImpactNoteEl.textContent =
-      `Shock-only total vs baseline: ${totalShockDeltaPct >= 0 ? '+' : ''}${toPct(totalShockDeltaPct)} with own promo depth held at 0%.`;
+      `External signals alone imply ${totalShockDeltaPct >= 0 ? '+' : ''}${toPct(totalShockDeltaPct)} unit movement versus current run-rate, with own promo depth held flat.`;
   } catch (error) {
     console.error('Error initializing Step 2 Signal Lab:', error);
-    changeLogEl.textContent = 'Signal lab failed to load. Check data files.';
+    console.warn('Signal lab failed to load. Check data files.');
   }
 }
 
@@ -1099,7 +1328,7 @@ async function updateElasticityAnalysis(result) {
     const demandCurveData = {
       tiers: [
         {
-          name: 'Mass Channel',
+          name: 'Target & Amazon',
           elasticity: params.tiers.ad_supported.base_elasticity,
           currentPrice: CHANNEL_PRICE.ad_supported,
           currentSubs: latestWeek.ad_supported.active_customers,
@@ -1108,7 +1337,7 @@ async function updateElasticityAnalysis(result) {
           color: '#dc3545'
         },
         {
-          name: 'Prestige Channel',
+          name: 'Sephora & Ulta',
           elasticity: params.tiers.ad_free.base_elasticity,
           currentPrice: CHANNEL_PRICE.ad_free,
           currentSubs: latestWeek.ad_free.active_customers,
@@ -1142,14 +1371,14 @@ async function loadElasticityAnalytics() {
     const demandCurveData = {
       tiers: [
         {
-          name: 'Mass Channel',
+          name: 'Target & Amazon',
           elasticity: params.tiers.ad_supported.base_elasticity,
           currentPrice: CHANNEL_PRICE.ad_supported,
           currentSubs: latestWeek.ad_supported.active_customers,
           color: '#dc3545'
         },
         {
-          name: 'Prestige Channel',
+          name: 'Sephora & Ulta',
           elasticity: params.tiers.ad_free.base_elasticity,
           currentPrice: CHANNEL_PRICE.ad_free,
           currentSubs: latestWeek.ad_free.active_customers,
@@ -1175,7 +1404,7 @@ async function loadElasticityAnalytics() {
 
     const heatmapData = {
       segments: ['New (0-3mo)', 'Tenured (3-12mo)', 'Tenured (12+mo)'],
-      tiers: ['Mass Channel', 'Prestige Channel'],
+      tiers: ['Target & Amazon', 'Sephora & Ulta'],
       values: values
     };
 
@@ -1211,7 +1440,9 @@ async function initializeChatContext() {
       loadPromoMetadata()
     ]);
 
-    const currentWeek = skuWeekly.find(r => r.is_current_week === true)?.week_of_season
+    const kpiSnapshot = buildCurrentKpiSnapshot(weeklyData, skuWeekly, elasticityParams);
+    const currentWeek = kpiSnapshot.currentSeasonWeek
+      || skuWeekly.find(r => r.is_current_week === true)?.week_of_season
       || Math.max(...skuWeekly.map(r => Number(r.week_of_season || 0)));
     const seasonWeeks = Math.max(...skuWeekly.map(r => Number(r.week_of_season || 0)), 17);
 
@@ -1220,15 +1451,10 @@ async function initializeChatContext() {
     const latestSocial = socialSignals[socialSignals.length - 1] || {};
     const prevSocial = socialSignals[socialSignals.length - 2] || latestSocial;
 
-    const latestWeek = {};
-    ['ad_supported', 'ad_free'].forEach(tier => {
-      const tierData = weeklyData.filter(d => d.tier === tier);
-      latestWeek[tier] = tierData[tierData.length - 1];
-    });
-
-    const totalSubs = Object.values(latestWeek).reduce((sum, d) => sum + d.active_customers, 0);
-    const totalRevenue = Object.values(latestWeek).reduce((sum, d) => sum + d.revenue, 0) * 4;
-    const avgChurn = Object.values(latestWeek).reduce((sum, d) => sum + d.repeat_loss_rate, 0) / 2;
+    const totalSubs = kpiSnapshot.totals.customers;
+    const totalRevenue = kpiSnapshot.totals.revenue;
+    const avgAOV = kpiSnapshot.totals.aov;
+    const avgChurn = kpiSnapshot.totals.churn;
 
     const socialScore = Number(latestSocial.brand_social_index ?? latestSocial.social_sentiment ?? 0);
     const previousSocialScore = Number(prevSocial.brand_social_index ?? prevSocial.social_sentiment ?? socialScore);
@@ -1429,7 +1655,12 @@ async function initializeChatContext() {
       businessContext: {
         currentCustomers: totalSubs,
         currentRevenue: totalRevenue,
+        currentAov: avgAOV,
         currentChurn: avgChurn,
+        currentCustomersBreakdown: kpiSnapshot.breakdownText.customers,
+        currentRevenueBreakdown: kpiSnapshot.breakdownText.revenue,
+        currentAovBreakdown: kpiSnapshot.breakdownText.aov,
+        currentChurnBreakdown: kpiSnapshot.breakdownText.churn,
         currentSeasonWeek: currentWeek,
         seasonWeeks,
         elasticityByTier: {
@@ -1627,8 +1858,8 @@ async function initializeChatContext() {
             name: 'Demand Curve by Channel Group',
             description: 'Channel-group elasticity context for promo depth decisions.',
             interpretation: [
-              `Mass Channel baseline elasticity: ${elasticityParams.tiers.ad_supported.base_elasticity}`,
-              `Prestige Channel baseline elasticity: ${elasticityParams.tiers.ad_free.base_elasticity}`
+              `Target & Amazon baseline elasticity: ${elasticityParams.tiers.ad_supported.base_elasticity}`,
+              `Sephora & Ulta baseline elasticity: ${elasticityParams.tiers.ad_free.base_elasticity}`
             ]
           },
           tier_mix: currentResult ? {
@@ -1822,6 +2053,8 @@ async function loadData() {
   const progressText = document.getElementById('loading-percentage');
   const stageText = document.getElementById('loading-stage');
 
+  window.appDataLoadState = 'loading';
+
   // Hide button, show progress
   btn.style.display = 'none';
   progressContainer.style.display = 'block';
@@ -1958,6 +2191,7 @@ async function loadData() {
 
     dataLoaded = true;
     window.dataLoaded = true;
+    window.appDataLoadState = 'loaded';
 
     // Initialize Pyodide models in background (non-blocking)
     initializePyodideModels().then(success => {
@@ -1972,6 +2206,7 @@ async function loadData() {
     console.error('Error loading data:', error);
     dataLoaded = false;
     window.dataLoaded = false;
+    window.appDataLoadState = 'idle';
 
     // Show error state
     progressBar.classList.remove('bg-success');
@@ -2315,13 +2550,72 @@ function applyScenarioPlanToControls(plan) {
   }
 }
 
+function updateAiRecommendationFromLlm(result) {
+  const aiSummaryEl = document.getElementById('channel-promo-ai-summary');
+  const aiIncludeEl = document.getElementById('channel-promo-ai-include');
+  const aiExcludeEl = document.getElementById('channel-promo-ai-exclude');
+  const aiRisksEl = document.getElementById('channel-promo-ai-risks');
+  const aiBriefEl = document.getElementById('channel-promo-ai-brief');
+  const applyBtn = document.getElementById('channel-promo-apply-recommendation');
+
+  const confidenceText = Number.isFinite(Number(result.confidence))
+    ? ` (confidence ${Math.round(Number(result.confidence))}%)`
+    : '';
+  if (aiSummaryEl) aiSummaryEl.textContent = `${result.summary || 'Analysis complete.'}${confidenceText}`;
+  if (aiIncludeEl) aiIncludeEl.textContent = result.include_in_promo || 'No strong promo candidates.';
+  if (aiExcludeEl) aiExcludeEl.textContent = result.exclude_hold || 'No SKU exclusions suggested.';
+  if (aiRisksEl) aiRisksEl.textContent = result.risk_watch || 'No immediate risk flags.';
+  if (aiBriefEl) aiBriefEl.innerHTML = result.decision_brief
+    ? `<strong>Decision Brief</strong><br>${result.decision_brief}`
+    : 'No brief available.';
+
+  // Update latestRecommendation for the "Apply" button
+  const massPromo = Number(result.recommended_mass_promo) || 0;
+  const prestigePromo = Number(result.recommended_prestige_promo) || 0;
+  const focusSku = result.focus_sku || null;
+  const skuBoost = Number(result.sku_boost) || 0;
+
+  if (window.setChannelPromoRecommendation) {
+    window.setChannelPromoRecommendation({
+      massPromo,
+      prestigePromo,
+      focusSku,
+      skuBoost
+    });
+  }
+
+  if (applyBtn) {
+    applyBtn.disabled = false;
+    applyBtn.title = `Set Target & Amazon ${massPromo}%, Sephora & Ulta ${prestigePromo}%${focusSku ? `, focus ${focusSku}` : ''}`;
+  }
+}
+
+function showAiRecommendationNotConfigured() {
+  const aiSummaryEl = document.getElementById('channel-promo-ai-summary');
+  const aiIncludeEl = document.getElementById('channel-promo-ai-include');
+  const aiExcludeEl = document.getElementById('channel-promo-ai-exclude');
+  const aiRisksEl = document.getElementById('channel-promo-ai-risks');
+  const aiBriefEl = document.getElementById('channel-promo-ai-brief');
+  const applyBtn = document.getElementById('channel-promo-apply-recommendation');
+
+  if (aiSummaryEl) aiSummaryEl.textContent = 'LLM not configured. Click the key icon in the top bar to connect your API key.';
+  if (aiIncludeEl) aiIncludeEl.textContent = '--';
+  if (aiExcludeEl) aiExcludeEl.textContent = '--';
+  if (aiRisksEl) aiRisksEl.textContent = '--';
+  if (aiBriefEl) aiBriefEl.textContent = 'Configure an LLM provider to get AI-powered recommendations.';
+  if (applyBtn) applyBtn.disabled = true;
+}
+
+function showAiRecommendationError(errorMsg) {
+  const aiSummaryEl = document.getElementById('channel-promo-ai-summary');
+  if (aiSummaryEl) aiSummaryEl.textContent = `LLM analysis failed: ${errorMsg}`;
+}
+
 async function runLiveCopilotAnalysis({ force = false, source = 'auto' } = {}) {
-  const summaryEl = document.getElementById('channel-promo-llm-summary');
-  const actionsEl = document.getElementById('channel-promo-llm-actions');
-  const risksEl = document.getElementById('channel-promo-llm-risks');
+  const summaryEl = document.getElementById('channel-promo-ai-summary');
   const autoEl = document.getElementById('channel-promo-llm-auto');
-  if (!summaryEl || !actionsEl || !risksEl) return;
-  if (!force && autoEl && !autoEl.checked) return;
+  if (!summaryEl) return;
+  const copilotAutoEnabled = force || (autoEl && autoEl.checked);
   if (liveCopilotInFlight) {
     if (source === 'manual') {
       summaryEl.textContent = 'Analysis already running. Please wait...';
@@ -2335,8 +2629,7 @@ async function runLiveCopilotAnalysis({ force = false, source = 'auto' } = {}) {
   const snapshot = getLivePromoSnapshotSafe();
   if (!snapshot) {
     summaryEl.textContent = 'Run simulator controls first to generate a live scenario snapshot.';
-    renderList(actionsEl, [], 'No actions available yet.');
-    renderList(risksEl, [], 'No risks available yet.');
+    showAiRecommendationNotConfigured();
     stopAnalyzeLoading();
     return;
   }
@@ -2344,6 +2637,7 @@ async function runLiveCopilotAnalysis({ force = false, source = 'auto' } = {}) {
   const ready = await refreshLlmStatuses();
   if (!ready) {
     summaryEl.textContent = 'LLM not configured. Use settings key icon to connect and enable co-pilot.';
+    showAiRecommendationNotConfigured();
     stopAnalyzeLoading();
     return;
   }
@@ -2356,16 +2650,10 @@ async function runLiveCopilotAnalysis({ force = false, source = 'auto' } = {}) {
       liveSnapshot: snapshot,
       businessContext: llmBusinessContext
     });
-    const confidenceText = Number.isFinite(Number(result.confidence))
-      ? ` (confidence ${Math.round(Number(result.confidence))}%)`
-      : '';
-    summaryEl.textContent = `${result.summary || 'Analysis ready.'}${confidenceText}`;
-    renderList(actionsEl, result.actions, 'No immediate action required.');
-    renderList(risksEl, result.risks, 'No material risks flagged.');
+
+    updateAiRecommendationFromLlm(result);
   } catch (error) {
-    summaryEl.textContent = `LLM analysis failed: ${error.message}`;
-    renderList(actionsEl, [], 'Could not generate actions.');
-    renderList(risksEl, [], 'Could not generate risks.');
+    showAiRecommendationError(error.message);
   } finally {
     liveCopilotInFlight = false;
     stopAnalyzeLoading();
@@ -4073,6 +4361,7 @@ async function init() {
   // Make loadData available globally so it can be called when navigating to step 1
   window.loadAppData = loadData;
   window.dataLoaded = false;
+  window.appDataLoadState = 'idle';
 }
 
 // Start app
@@ -6048,33 +6337,33 @@ function render2TierMigrationMatrix(tableHeader, tableBody, migration) {
   tableHeader.innerHTML = `
     <tr>
       <th>Current Channel</th>
-      <th>→ Prestige Channel</th>
-      <th>→ Mass Channel</th>
+      <th>→ Sephora & Ulta</th>
+      <th>→ Target & Amazon</th>
       <th>Repeat Loss</th>
       <th>Net Change</th>
     </tr>
   `;
 
-  // Mass Channel row
+  // Target & Amazon row
   const adSuppUpgrade = (migration.from_ad_supported?.to_ad_free || 0) * 100;
   const adSuppCancel = (migration.from_ad_supported?.cancel || 0) * 100;
   const adSuppNetMix = adSuppUpgrade - adSuppCancel;
 
-  // Prestige Channel row
+  // Sephora & Ulta row
   const adFreeDowngrade = (migration.from_ad_free?.to_ad_supported || 0) * 100;
   const adFreeCancel = (migration.from_ad_free?.cancel || 0) * 100;
   const adFreeNetMix = -adFreeDowngrade - adFreeCancel;
 
   tableBody.innerHTML = `
     <tr>
-      <td><strong>Mass Channel</strong></td>
+      <td><strong>Target & Amazon</strong></td>
       <td class="text-success">${adSuppUpgrade > 0 ? '+' : ''}${adSuppUpgrade.toFixed(1)}%</td>
       <td class="text-muted">—</td>
       <td class="text-danger">${adSuppCancel > 0 ? '+' : ''}${adSuppCancel.toFixed(1)}%</td>
       <td class="${adSuppNetMix >= 0 ? 'text-success' : 'text-danger'}"><strong>${adSuppNetMix > 0 ? '+' : ''}${adSuppNetMix.toFixed(1)}%</strong></td>
     </tr>
     <tr>
-      <td><strong>Prestige Channel</strong></td>
+      <td><strong>Sephora & Ulta</strong></td>
       <td class="text-muted">—</td>
       <td class="text-warning">${adFreeDowngrade > 0 ? '+' : ''}${adFreeDowngrade.toFixed(1)}%</td>
       <td class="text-danger">${adFreeCancel > 0 ? '+' : ''}${adFreeCancel.toFixed(1)}%</td>
@@ -6091,21 +6380,21 @@ function renderBundleMigrationMatrix(tableHeader, tableBody, migration) {
   tableHeader.innerHTML = `
     <tr>
       <th>Current Channel</th>
-      <th>→ Prestige Channel</th>
+      <th>→ Sephora & Ulta</th>
       <th>→ Value Set</th>
-      <th>→ Mass Channel</th>
+      <th>→ Target & Amazon</th>
       <th>Repeat Loss</th>
       <th>Net Change</th>
     </tr>
   `;
 
-  // FROM Mass Channel
+  // FROM Target & Amazon
   const as_to_af = (migration.from_ad_supported?.to_ad_free || 0) * 100;
   const as_to_bundle = (migration.from_ad_supported?.to_bundle || 0) * 100;
   const as_cancel = (migration.from_ad_supported?.cancel || 0) * 100;
   const as_net = as_to_af + as_to_bundle - as_cancel;
 
-  // FROM Prestige Channel
+  // FROM Sephora & Ulta
   const af_to_bundle = (migration.from_ad_free?.to_bundle || 0) * 100;
   const af_to_as = (migration.from_ad_free?.to_ad_supported || 0) * 100;
   const af_cancel = (migration.from_ad_free?.cancel || 0) * 100;
@@ -6119,7 +6408,7 @@ function renderBundleMigrationMatrix(tableHeader, tableBody, migration) {
 
   tableBody.innerHTML = `
     <tr>
-      <td><strong>Mass Channel</strong></td>
+      <td><strong>Target & Amazon</strong></td>
       <td class="text-success">${as_to_af > 0 ? '+' : ''}${as_to_af.toFixed(1)}%</td>
       <td class="text-primary">${as_to_bundle > 0 ? '+' : ''}${as_to_bundle.toFixed(1)}%</td>
       <td class="text-muted">—</td>
@@ -6127,7 +6416,7 @@ function renderBundleMigrationMatrix(tableHeader, tableBody, migration) {
       <td class="${as_net >= 0 ? 'text-success' : 'text-danger'}"><strong>${as_net > 0 ? '+' : ''}${as_net.toFixed(1)}%</strong></td>
     </tr>
     <tr>
-      <td><strong>Prestige Channel</strong></td>
+      <td><strong>Sephora & Ulta</strong></td>
       <td class="text-muted">—</td>
       <td class="text-primary">${af_to_bundle > 0 ? '+' : ''}${af_to_bundle.toFixed(1)}%</td>
       <td class="text-warning">${af_to_as > 0 ? '+' : ''}${af_to_as.toFixed(1)}%</td>
@@ -6153,8 +6442,8 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
   tableHeader.innerHTML = `
     <tr>
       <th>Current Channel</th>
-      <th>→ Mass Channel</th>
-      <th>→ Prestige Channel</th>
+      <th>→ Target & Amazon</th>
+      <th>→ Sephora & Ulta</th>
       <th>→ Entry Pack</th>
       <th>Repeat Loss</th>
       <th>Net Change</th>
@@ -6167,7 +6456,7 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
   const basic_cancel = (migration.from_basic?.cancel || 0) * 100;
   const basic_net = basic_to_as + basic_to_af - basic_cancel;
 
-  // FROM Mass Channel
+  // FROM Target & Amazon
   const as_to_af = (migration.from_ad_supported?.to_ad_free || 0) * 100;
   const as_to_basic = (migration.from_ad_supported?.to_basic || 0) * 100;
   const as_cancel = (migration.from_ad_supported?.cancel || 0) * 100;
@@ -6189,7 +6478,7 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
       <td class="${basic_net >= 0 ? 'text-success' : 'text-danger'}"><strong>${basic_net > 0 ? '+' : ''}${basic_net.toFixed(1)}%</strong></td>
     </tr>
     <tr>
-      <td><strong>Mass Channel</strong></td>
+      <td><strong>Target & Amazon</strong></td>
       <td class="text-muted">—</td>
       <td class="text-success">${as_to_af > 0 ? '+' : ''}${as_to_af.toFixed(1)}%</td>
       <td class="text-warning">${as_to_basic > 0 ? '+' : ''}${as_to_basic.toFixed(1)}%</td>
@@ -6197,7 +6486,7 @@ function renderBasicMigrationMatrix(tableHeader, tableBody, migration) {
       <td class="${as_net >= 0 ? 'text-success' : 'text-danger'}"><strong>${as_net > 0 ? '+' : ''}${as_net.toFixed(1)}%</strong></td>
     </tr>
     <tr>
-      <td><strong>Prestige Channel</strong></td>
+      <td><strong>Sephora & Ulta</strong></td>
       <td class="text-warning">${af_to_as > 0 ? '+' : ''}${af_to_as.toFixed(1)}%</td>
       <td class="text-muted">—</td>
       <td class="text-warning">${af_to_basic > 0 ? '+' : ''}${af_to_basic.toFixed(1)}%</td>

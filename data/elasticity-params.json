@@ -172,11 +172,11 @@
   "repeat_loss_elasticity": {
     "ad_supported": {
       "repeat_loss_elasticity": 0.88,
-      "baseline_repeat_loss": 0.041
+      "baseline_repeat_loss": 0.280
     },
     "ad_free": {
       "repeat_loss_elasticity": 0.62,
-      "baseline_repeat_loss": 0.032
+      "baseline_repeat_loss": 0.245
     }
   },
   "acquisition_elasticity": {
@@ -185,6 +185,44 @@
     },
     "ad_free": {
       "acquisition_elasticity": -1.35
+    }
+  },
+  "sku_elasticity": {
+    "SUN_S1": {
+      "name": "Daily Shield SPF 40",
+      "product_group": "sunscreen",
+      "mass": { "base_elasticity": -2.35, "confidence_interval": 0.24 },
+      "prestige": { "base_elasticity": -1.55, "confidence_interval": 0.18 }
+    },
+    "SUN_S2": {
+      "name": "Invisible Mist SPF 50",
+      "product_group": "sunscreen",
+      "mass": { "base_elasticity": -2.15, "confidence_interval": 0.22 },
+      "prestige": { "base_elasticity": -1.42, "confidence_interval": 0.17 }
+    },
+    "SUN_S3": {
+      "name": "Sport Gel SPF 60",
+      "product_group": "sunscreen",
+      "mass": { "base_elasticity": -1.95, "confidence_interval": 0.20 },
+      "prestige": { "base_elasticity": -1.25, "confidence_interval": 0.15 }
+    },
+    "MOI_M1": {
+      "name": "Hydra Daily Lotion",
+      "product_group": "moisturizer",
+      "mass": { "base_elasticity": -2.10, "confidence_interval": 0.22 },
+      "prestige": { "base_elasticity": -1.40, "confidence_interval": 0.17 }
+    },
+    "MOI_M2": {
+      "name": "Barrier Repair Cream",
+      "product_group": "moisturizer",
+      "mass": { "base_elasticity": -1.92, "confidence_interval": 0.20 },
+      "prestige": { "base_elasticity": -1.30, "confidence_interval": 0.16 }
+    },
+    "MOI_M3": {
+      "name": "Night Recovery Balm",
+      "product_group": "moisturizer",
+      "mass": { "base_elasticity": -1.75, "confidence_interval": 0.19 },
+      "prestige": { "base_elasticity": -1.18, "confidence_interval": 0.14 }
     }
   },
   "notes": {

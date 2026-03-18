@@ -31,6 +31,7 @@ let activePromoFilters = {
   season: 'all',
   channel: 'all'
 };
+let activeProductFilter = 'all';
 let selectedPromoId = null;
 let eventCompetitiveSignalsChart = null;
 let eventSocialSignalsChart = null;
@@ -88,6 +89,185 @@ function formatSeasonLabel(season) {
 }
 
 /**
+ * Get product/SKU info associated with an event.
+ * Returns { skus: [{sku_id, sku_name, product_group}], productGroup: string, label: string }
+ */
+function getEventProductInfo(event) {
+  const result = { skus: [], productGroup: '', label: '' };
+  if (!event) return result;
+
+  const promoId = event.promo_id;
+  const promo = promoId && promoMetadata ? promoMetadata[promoId] : null;
+
+  if (promo && Array.isArray(promo.promoted_skus) && promo.promoted_skus.length > 0) {
+    result.skus = promo.promoted_skus.map(skuId => {
+      const normalized = normalizeSkuId(skuId);
+      const catalogEntry = skuCatalog.get(normalized);
+      const skuResult = (promo.sku_results || []).find(r => normalizeSkuId(r.sku_id) === normalized);
+      return {
+        sku_id: normalized,
+        sku_name: skuResult?.sku_name || catalogEntry?.sku_name || normalized,
+        product_group: catalogEntry?.product_group || (normalized.startsWith('SUN') ? 'Sunscreen' : normalized.startsWith('MOI') ? 'Moisturizer' : '')
+      };
+    });
+  }
+
+  // Derive product group from SKUs or event context
+  if (result.skus.length > 0) {
+    const groups = [...new Set(result.skus.map(s => s.product_group).filter(Boolean))];
+    result.productGroup = groups.length === 1 ? groups[0] : groups.length > 1 ? 'Multiple' : '';
+  }
+
+  // For competitor price changes, resolve specific SKUs from competitor feed
+  if (!result.skus.length && event.event_type === 'Competitor Price Change') {
+    const eventDate = event.date || '';
+    const eventWeek = eventDate.substring(0, 10);
+    const affectedChannels = (event.affected_channel || event.affected_cohort || '')
+      .split('|').map(c => c.trim().toLowerCase()).filter(Boolean);
+
+    // Find competitor feed entries for this week+channel with promo_flag=true
+    const feedMatches = (competitorFeed || []).filter(f => {
+      const feedDate = (f.captured_at || '').substring(0, 10);
+      const feedChannel = String(f.channel || '').toLowerCase();
+      const isPromo = f.promo_flag === true || f.promo_flag === 'True' || f.promo_flag === 'true';
+      return feedDate === eventWeek && (affectedChannels.length === 0 || affectedChannels.includes(feedChannel)) && isPromo;
+    });
+
+    if (feedMatches.length > 0) {
+      const seenSkus = new Set();
+      feedMatches.forEach(f => {
+        const skuId = normalizeSkuId(f.matched_sku_id);
+        if (!skuId || seenSkus.has(skuId)) return;
+        seenSkus.add(skuId);
+        const catalogEntry = skuCatalog.get(skuId);
+        result.skus.push({
+          sku_id: skuId,
+          sku_name: catalogEntry?.sku_name || skuId,
+          product_group: catalogEntry?.product_group || (skuId.startsWith('SUN') ? 'Sunscreen' : skuId.startsWith('MOI') ? 'Moisturizer' : '')
+        });
+      });
+    }
+
+    // Fallback: infer from notes if no feed matches
+    if (!result.skus.length) {
+      const notes = (event.notes || '').toLowerCase();
+      // Extract SKU IDs mentioned in notes (e.g. SUN_S3, MOI_M2)
+      const skuPattern = /\b(SUN_S[1-3]|MOI_M[1-3])\b/gi;
+      const noteMatches = (event.notes || '').match(skuPattern) || [];
+      if (noteMatches.length > 0) {
+        const seenSkus = new Set();
+        noteMatches.forEach(m => {
+          const skuId = normalizeSkuId(m);
+          if (seenSkus.has(skuId)) return;
+          seenSkus.add(skuId);
+          const catalogEntry = skuCatalog.get(skuId);
+          result.skus.push({
+            sku_id: skuId,
+            sku_name: catalogEntry?.sku_name || skuId,
+            product_group: catalogEntry?.product_group || (skuId.startsWith('SUN') ? 'Sunscreen' : skuId.startsWith('MOI') ? 'Moisturizer' : '')
+          });
+        });
+      } else if (notes.includes('spf') || notes.includes('sun')) {
+        result.productGroup = 'Sunscreen';
+      } else if (notes.includes('moistur') || notes.includes('hydra')) {
+        result.productGroup = 'Moisturizer';
+      } else if (event.tier === 'ad_supported' || notes.includes('mass')) {
+        result.productGroup = 'Sunscreen';
+      }
+    }
+  }
+
+  // For non-competitor events without promo link, try extracting SKU IDs from notes
+  if (!result.skus.length && event.event_type !== 'Competitor Price Change') {
+    const skuPattern = /\b(SUN_S[1-3]|MOI_M[1-3])\b/gi;
+    const noteMatches = (event.notes || '').match(skuPattern) || [];
+    if (noteMatches.length > 0) {
+      const seenSkus = new Set();
+      noteMatches.forEach(m => {
+        const skuId = normalizeSkuId(m);
+        if (seenSkus.has(skuId)) return;
+        seenSkus.add(skuId);
+        const catalogEntry = skuCatalog.get(skuId);
+        result.skus.push({
+          sku_id: skuId,
+          sku_name: catalogEntry?.sku_name || skuId,
+          product_group: catalogEntry?.product_group || (skuId.startsWith('SUN') ? 'Sunscreen' : skuId.startsWith('MOI') ? 'Moisturizer' : '')
+        });
+      });
+    }
+  }
+
+  // Build display label
+  if (result.skus.length > 0) {
+    result.label = result.skus.map(s => s.sku_name).join(', ');
+  } else if (result.productGroup) {
+    result.label = result.productGroup;
+  }
+
+  return result;
+}
+
+/**
+ * Check if an event matches the active product filter.
+ */
+function eventMatchesProductFilter(event) {
+  if (activeProductFilter === 'all') return true;
+  const info = getEventProductInfo(event);
+
+  // Filter by product group name
+  if (activeProductFilter === 'Sunscreen' || activeProductFilter === 'Moisturizer') {
+    if (info.productGroup === activeProductFilter) return true;
+    return info.skus.some(s => s.product_group === activeProductFilter);
+  }
+
+  // Filter by specific SKU id (e.g. "SUN_S1")
+  if (info.skus.some(s => s.sku_id === normalizeSkuId(activeProductFilter))) return true;
+
+  return false;
+}
+
+/**
+ * Build all unique product filter options from promo metadata and events.
+ */
+function buildProductFilterOptions() {
+  const options = [];
+  const seenGroups = new Set();
+  const seenSkus = new Set();
+
+  // Gather from promo metadata
+  if (promoMetadata) {
+    Object.values(promoMetadata).forEach(promo => {
+      (promo.sku_results || []).forEach(skuResult => {
+        const skuId = normalizeSkuId(skuResult.sku_id);
+        const group = skuId.startsWith('SUN') ? 'Sunscreen' : skuId.startsWith('MOI') ? 'Moisturizer' : '';
+        if (group && !seenGroups.has(group)) {
+          seenGroups.add(group);
+        }
+        if (skuId && !seenSkus.has(skuId)) {
+          seenSkus.add(skuId);
+          options.push({
+            value: skuId,
+            label: `${skuId} - ${skuResult.sku_name || skuId}`,
+            group: group
+          });
+        }
+      });
+    });
+  }
+
+  // Sort: groups first, then SKUs alphabetically
+  const result = [];
+  ['Sunscreen', 'Moisturizer'].forEach(g => {
+    if (seenGroups.has(g)) {
+      result.push({ value: g, label: g, isGroup: true });
+    }
+  });
+  options.sort((a, b) => a.value.localeCompare(b.value));
+  result.push(...options);
+  return result;
+}
+
+/**
  * Initialize event calendar section
  */
 export async function initializeEventCalendar() {
@@ -120,6 +300,7 @@ export async function initializeEventCalendar() {
 
     // Setup event listeners
     setupEventFilters();
+    initializeProductFilter();
 
     console.log('Event Calendar initialized successfully');
   } catch (error) {
@@ -491,6 +672,10 @@ function renderEventTimeline() {
         <span class="ms-2 small">Promos</span>
       </div>
       <div class="d-flex align-items-center">
+        <div style="width: 16px; height: 16px; border-radius: 50%; background: #8b5cf6; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);"></div>
+        <span class="ms-2 small">Social Spikes</span>
+      </div>
+      <div class="d-flex align-items-center">
         <div style="width: 16px; height: 16px; border-radius: 50%; background: var(--dplus-orange); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);"></div>
         <span class="ms-2 small">Seasonal Tentpoles</span>
       </div>
@@ -513,8 +698,9 @@ function renderEventTimeline() {
   // Timeline track
   html += '<div class="timeline-track">';
 
-  // Add event markers
-  filteredEvents.forEach(event => {
+  const sortedEvents = [...filteredEvents].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  sortedEvents.forEach(event => {
     const eventDate = new Date(event.date);
     const daysSinceStart = Math.floor((eventDate - startDate) / (1000 * 60 * 60 * 24));
     const positionPercent = (daysSinceStart / totalDays) * 100;
@@ -525,17 +711,22 @@ function renderEventTimeline() {
       eventClass += ' event-price';
     } else if (event.event_type === 'Competitor Price Change') {
       eventClass += ' event-competitor';
-    } else if (event.event_type.includes('Promo') || event.event_type === 'Social Spike') {
+    } else if (event.event_type === 'Social Spike') {
+      eventClass += ' event-social';
+    } else if (event.event_type.includes('Promo')) {
       eventClass += ' event-promo';
     } else if (event.event_type === 'Tentpole') {
       eventClass += ' event-content';
     }
 
+    const productInfo = getEventProductInfo(event);
+    const productTooltip = productInfo.label ? ` | Products: ${productInfo.label}` : '';
+
     html += `
       <div class="${eventClass}"
            style="left: ${positionPercent}%;"
            data-event-id="${event.event_id}"
-           title="${event.event_type} - ${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}">
+           title="${event.event_type} - ${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${productTooltip}">
       </div>
     `;
   });
@@ -590,7 +781,7 @@ function buildEventPromoContext(event) {
  * Show detailed information for a selected event
  * @param {object} event - Event object
  */
-function showEventDetails(event) {
+async function showEventDetails(event) {
   const detailsPanel = document.getElementById('timeline-details');
   if (!detailsPanel) return;
 
@@ -599,6 +790,291 @@ function showEventDetails(event) {
   const badge = getEventBadge(event.event_type);
   const priceInfo = getEventPriceInfo(event);
   const promoContext = buildEventPromoContext(event);
+  const productInfo = getEventProductInfo(event);
+
+  // Build per-product impact section from promo metadata sku_results
+  let perProductImpactHtml = '';
+  const promoId = event.promo_id;
+  const promo = promoId && promoMetadata ? promoMetadata[promoId] : null;
+  if (promo && Array.isArray(promo.sku_results) && promo.sku_results.length > 0) {
+    const skuRows = promo.sku_results
+      .sort((a, b) => Number(b.sales_uplift_pct || 0) - Number(a.sales_uplift_pct || 0))
+      .map(row => {
+        const uplift = Number(row.sales_uplift_pct || 0);
+        const upliftClass = uplift >= 0 ? 'text-success' : 'text-danger';
+        const outcomeBadge = uplift >= 0
+          ? '<span class="badge bg-success-subtle text-success">Up</span>'
+          : '<span class="badge bg-danger-subtle text-danger">Down</span>';
+        const channel = CHANNEL_LABELS[String(row.channel || '').toLowerCase()] || row.channel || '-';
+        return `<tr>
+          <td class="fw-semibold">${row.sku_name || row.sku_id}</td>
+          <td><code class="small">${normalizeSkuId(row.sku_id)}</code></td>
+          <td>${channel}</td>
+          <td class="${upliftClass}">${uplift >= 0 ? '+' : ''}${uplift.toFixed(1)}%</td>
+          <td>${outcomeBadge}</td>
+        </tr>`;
+      }).join('');
+
+    perProductImpactHtml = `
+      <div class="mt-3">
+        <h6 class="small text-uppercase text-muted mb-2"><i class="bi bi-box-seam me-1"></i>Per-Product Impact</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Product</th><th>SKU</th><th>Channel</th><th>Sales Uplift</th><th>Outcome</th></tr>
+            </thead>
+            <tbody>${skuRows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // Build per-SKU competitor price breakdown for Competitor Price Change events
+  let competitorBreakdownHtml = '';
+  if (event.event_type === 'Competitor Price Change') {
+    const eventWeek = (event.date || '').substring(0, 10);
+    const affectedChannels = (event.affected_channel || event.affected_cohort || '')
+      .split('|').map(c => c.trim().toLowerCase()).filter(Boolean);
+
+    // Get competitor prices for this week
+    const weekFeed = (competitorFeed || []).filter(f => {
+      const feedDate = (f.captured_at || '').substring(0, 10);
+      return feedDate === eventWeek;
+    });
+
+    // Get previous week for comparison
+    const eventDateObj = new Date(eventWeek);
+    const prevWeekDate = new Date(eventDateObj.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const prevWeek = prevWeekDate.toISOString().substring(0, 10);
+    const prevWeekFeed = (competitorFeed || []).filter(f => {
+      const feedDate = (f.captured_at || '').substring(0, 10);
+      return feedDate === prevWeek;
+    });
+
+    if (weekFeed.length > 0) {
+      // Group by SKU then channel
+      const skuChannelMap = new Map();
+      weekFeed.forEach(f => {
+        const skuId = normalizeSkuId(f.matched_sku_id);
+        const ch = String(f.channel || '').toLowerCase();
+        const key = `${skuId}__${ch}`;
+        skuChannelMap.set(key, f);
+      });
+
+      const prevMap = new Map();
+      prevWeekFeed.forEach(f => {
+        const skuId = normalizeSkuId(f.matched_sku_id);
+        const ch = String(f.channel || '').toLowerCase();
+        prevMap.set(`${skuId}__${ch}`, f);
+      });
+
+      // Filter to affected channels or show all
+      const channelsToShow = affectedChannels.length > 0
+        ? affectedChannels
+        : ['target', 'amazon', 'sephora', 'ulta'];
+
+      let compRows = '';
+      const skuIds = [...new Set(weekFeed.map(f => normalizeSkuId(f.matched_sku_id)))].sort();
+      skuIds.forEach(skuId => {
+        const skuName = skuCatalog.has(skuId) ? skuCatalog.get(skuId).sku_name : skuId;
+        channelsToShow.forEach(ch => {
+          const key = `${skuId}__${ch}`;
+          const curr = skuChannelMap.get(key);
+          const prev = prevMap.get(key);
+          if (!curr) return;
+          const currPrice = Number(curr.observed_price || 0);
+          const prevPrice = prev ? Number(prev.observed_price || 0) : currPrice;
+          const pctChange = prevPrice > 0 ? ((currPrice - prevPrice) / prevPrice * 100) : 0;
+          const isPromo = curr.promo_flag === true || curr.promo_flag === 'True' || curr.promo_flag === 'true';
+          const changeClass = pctChange < -3 ? 'text-danger fw-bold' : pctChange < 0 ? 'text-warning' : 'text-muted';
+          const promoIcon = isPromo ? ' <i class="bi bi-exclamation-triangle-fill text-warning" title="Competitor promo active"></i>' : '';
+          const channelLabel = CHANNEL_LABELS[ch] || ch;
+          compRows += `<tr>
+            <td class="fw-semibold">${skuName}</td>
+            <td><code class="small">${skuId}</code></td>
+            <td>${channelLabel}${promoIcon}</td>
+            <td>$${prevPrice.toFixed(2)}</td>
+            <td>$${currPrice.toFixed(2)}</td>
+            <td class="${changeClass}">${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%</td>
+          </tr>`;
+        });
+      });
+
+      if (compRows) {
+        competitorBreakdownHtml = `
+          <div class="mt-3">
+            <h6 class="small text-uppercase text-muted mb-2"><i class="bi bi-graph-down-arrow me-1"></i>Competitor Price Breakdown by Product & Retailer</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Product</th><th>SKU</th><th>Retailer</th><th>Prior Week</th><th>This Week</th><th>Change</th></tr>
+                </thead>
+                <tbody>${compRows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Build social spike enrichment section
+  let socialSpikeHtml = '';
+  if (event.event_type === 'Social Spike') {
+    try {
+      const socialSignals = await loadSocialSignals();
+      const eventWeek = (event.date || '').substring(0, 10);
+
+      // Find this week's social data
+      const thisWeekData = (socialSignals || []).find(r => (r.week_start || r.date) === eventWeek);
+
+      // Find previous week for comparison
+      const eventDateObj = new Date(eventWeek);
+      const prevWeekDate = new Date(eventDateObj.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const prevWeek = prevWeekDate.toISOString().substring(0, 10);
+      const prevWeekData = (socialSignals || []).find(r => (r.week_start || r.date) === prevWeek);
+
+      if (thisWeekData) {
+        const toNum = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+        const totalMentions = toNum(thisWeekData.total_social_mentions);
+        const tiktokMentions = toNum(thisWeekData.tiktok_mentions);
+        const instaMentions = toNum(thisWeekData.instagram_mentions);
+        const sentiment = toNum(thisWeekData.social_sentiment);
+        const influencerScore = toNum(thisWeekData.influencer_score);
+        const paidSpend = toNum(thisWeekData.paid_social_spend);
+        const earnedValue = toNum(thisWeekData.earned_social_value);
+        const brandIndex = toNum(thisWeekData.brand_social_index);
+
+        // Compute elasticity modifier (same formula as promotion simulator)
+        const normalizedScore = brandIndex <= 1.5 && brandIndex >= -1.5 ? brandIndex * 100 : brandIndex;
+        const clippedScore = clamp(normalizedScore, 35, 95);
+        const elasticityMod = clamp(1.18 - ((clippedScore - 35) * 0.0075), 0.72, 1.26);
+        const demandMult = clamp(0.78 + ((clippedScore - 35) * 0.008), 0.72, 1.26);
+
+        // Week-over-week changes
+        let mentionWoW = '';
+        let sentimentWoW = '';
+        if (prevWeekData) {
+          const prevMentions = toNum(prevWeekData.total_social_mentions);
+          const prevSentiment = toNum(prevWeekData.social_sentiment);
+          if (prevMentions > 0) {
+            const mentionPct = ((totalMentions - prevMentions) / prevMentions * 100);
+            mentionWoW = ` <span class="${mentionPct >= 0 ? 'text-success' : 'text-danger'}">(${mentionPct >= 0 ? '+' : ''}${mentionPct.toFixed(1)}% WoW)</span>`;
+          }
+          if (prevSentiment > 0) {
+            const sentDelta = sentiment - prevSentiment;
+            sentimentWoW = ` <span class="${sentDelta >= 0 ? 'text-success' : 'text-danger'}">(${sentDelta >= 0 ? '+' : ''}${sentDelta.toFixed(3)} WoW)</span>`;
+          }
+        }
+
+        // Determine buzz level
+        const buzzLevel = brandIndex >= 75 ? 'Very High' : brandIndex >= 60 ? 'High' : brandIndex >= 45 ? 'Moderate' : 'Low';
+        const buzzClass = brandIndex >= 75 ? 'text-success' : brandIndex >= 60 ? 'text-primary' : brandIndex >= 45 ? 'text-warning' : 'text-muted';
+        const buzzIcon = brandIndex >= 75 ? 'bi-fire' : brandIndex >= 60 ? 'bi-graph-up-arrow' : 'bi-dash';
+
+        // Business interpretation
+        let bizInsight = '';
+        if (elasticityMod < 0.9) {
+          bizInsight = 'Consumers are much less price-sensitive right now. Hold or raise prices — discounting would leave money on the table.';
+        } else if (elasticityMod < 1.0) {
+          bizInsight = 'Social buzz is reducing price sensitivity. You can hold price and let organic demand drive volume.';
+        } else if (elasticityMod > 1.1) {
+          bizInsight = 'Low social engagement means consumers are more price-sensitive. Targeted discounts would help drive volume.';
+        } else {
+          bizInsight = 'Social sentiment is near neutral. Standard pricing strategy applies.';
+        }
+
+        socialSpikeHtml = `
+          <div class="mt-3">
+            <h6 class="small text-uppercase text-muted mb-2"><i class="bi bi-megaphone me-1"></i>Social Media Impact Analysis</h6>
+            <div class="row g-2 mb-3">
+              <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-muted">Total Mentions</div>
+                  <div class="fw-bold fs-5">${formatNumber(totalMentions)}</div>
+                  <div class="small">${mentionWoW}</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-muted">TikTok</div>
+                  <div class="fw-bold fs-5">${formatNumber(tiktokMentions)}</div>
+                  <div class="small text-muted">${totalMentions > 0 ? ((tiktokMentions / totalMentions) * 100).toFixed(0) : 0}% of total</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-muted">Instagram</div>
+                  <div class="fw-bold fs-5">${formatNumber(instaMentions)}</div>
+                  <div class="small text-muted">${totalMentions > 0 ? ((instaMentions / totalMentions) * 100).toFixed(0) : 0}% of total</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="border rounded p-2 text-center">
+                  <div class="small text-muted">Buzz Level</div>
+                  <div class="fw-bold fs-5 ${buzzClass}"><i class="bi ${buzzIcon} me-1"></i>${buzzLevel}</div>
+                  <div class="small text-muted">Index: ${brandIndex.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive mb-3">
+              <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Metric</th><th>Value</th><th>What It Means</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="fw-semibold">Sentiment Score</td>
+                    <td>${sentiment.toFixed(3)}${sentimentWoW}</td>
+                    <td class="small">${sentiment >= 0.7 ? 'Very positive — brand is loved' : sentiment >= 0.5 ? 'Positive — healthy brand perception' : 'Neutral or mixed — watch for issues'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-semibold">Influencer Score</td>
+                    <td>${influencerScore.toFixed(3)}</td>
+                    <td class="small">${influencerScore >= 0.6 ? 'Strong creator engagement amplifying reach' : influencerScore >= 0.4 ? 'Moderate creator involvement' : 'Limited influencer amplification'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-semibold">Earned Media Value</td>
+                    <td>${formatCurrency(earnedValue)}</td>
+                    <td class="small">Organic exposure value (vs. ${formatCurrency(paidSpend)} paid spend)</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-semibold">Elasticity Modifier</td>
+                    <td class="${elasticityMod < 1 ? 'text-success fw-bold' : elasticityMod > 1.05 ? 'text-danger fw-bold' : ''}">${elasticityMod.toFixed(3)}</td>
+                    <td class="small">${elasticityMod < 1 ? 'Below 1.0 = consumers less price-sensitive (hold price)' : 'At/above 1.0 = normal or elevated price sensitivity'}</td>
+                  </tr>
+                  <tr>
+                    <td class="fw-semibold">Demand Multiplier</td>
+                    <td class="${demandMult > 1 ? 'text-success fw-bold' : ''}">${demandMult.toFixed(3)}</td>
+                    <td class="small">${demandMult > 1 ? 'Above 1.0 = social buzz is pulling additional demand' : 'Demand impact is neutral'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="alert alert-light border mb-0 small">
+              <i class="bi bi-lightbulb me-1 text-warning"></i><strong>Pricing Recommendation:</strong> ${bizInsight}
+            </div>
+          </div>
+        `;
+      }
+    } catch (err) {
+      console.warn('Could not load social data for event details:', err);
+    }
+  }
+
+  // Product badge line
+  let productBadgeLine = '';
+  if (productInfo.skus.length > 0) {
+    const badges = productInfo.skus.map(s =>
+      `<span class="badge bg-light text-dark border me-1">${s.sku_name} (${s.sku_id})</span>`
+    ).join('');
+    productBadgeLine = `<div class="mb-2"><i class="bi bi-box-seam me-1 text-muted"></i><strong>Products:</strong> ${badges}</div>`;
+  } else if (productInfo.productGroup) {
+    productBadgeLine = `<div class="mb-2"><i class="bi bi-box-seam me-1 text-muted"></i><strong>Product Category:</strong> <span class="badge bg-light text-dark border">${productInfo.productGroup}</span></div>`;
+  }
 
   let html = `
     <div class="glass-card p-4">
@@ -614,14 +1090,63 @@ function showEventDetails(event) {
         </div>
         <button type="button" class="btn-close" onclick="document.getElementById('timeline-details').style.display='none'"></button>
       </div>
+      ${event.event_type === 'Competitor Price Change' || event.event_type === 'Social Spike' ? `
+      <div class="mb-3">
+        <button class="btn btn-primary btn-sm" id="event-simulate-btn">
+          <i class="bi bi-play-circle me-1"></i>Simulate Response
+        </button>
+      </div>
+      ` : ''}
+      ${productBadgeLine}
       <p class="mb-2">${event.notes || 'No description available'}</p>
-      ${priceInfo ? `<div class="alert alert-info mb-0"><i class="bi bi-info-circle me-2"></i>${priceInfo}</div>` : ''}
+      ${priceInfo ? `<div class="alert alert-info mb-2"><i class="bi bi-info-circle me-2"></i>${priceInfo}</div>` : ''}
       ${promoContext}
+      ${competitorBreakdownHtml}
+      ${socialSpikeHtml}
+      ${perProductImpactHtml}
     </div>
   `;
 
   detailsPanel.innerHTML = html;
   detailsPanel.style.display = 'block';
+
+  // Attach Simulate Response button handler for supported event types
+  const simulateBtn = document.getElementById('event-simulate-btn');
+  if (simulateBtn) {
+    simulateBtn.addEventListener('click', () => {
+      if (typeof window.goToStep === 'function') {
+        window.goToStep(1);
+      }
+      if (event.event_type === 'Competitor Price Change') {
+        // Click the pivot preset to set up a defensive scenario
+        setTimeout(() => {
+          const pivotBtn = document.getElementById('channel-promo-preset-pivot');
+          if (pivotBtn) pivotBtn.click();
+          // Set the competitor shock product dropdown to the affected product group
+          const pg = productInfo.productGroup;
+          if (pg) {
+            setTimeout(() => {
+              const compShockProductSelect = document.getElementById('channel-promo-comp-shock-product');
+              if (compShockProductSelect) {
+                const targetValue = pg.toLowerCase();
+                const optionExists = [...compShockProductSelect.options].some(o => o.value === targetValue);
+                if (optionExists) {
+                  compShockProductSelect.value = targetValue;
+                  compShockProductSelect.dispatchEvent(new Event('change'));
+                }
+              }
+            }, 100);
+          }
+        }, 100);
+      } else if (event.event_type === 'Social Spike') {
+        // Select baseline preset — hold pricing since social buzz is high
+        setTimeout(() => {
+          const baselineBtn = document.getElementById('channel-promo-preset-baseline');
+          if (baselineBtn) baselineBtn.click();
+        }, 100);
+      }
+    });
+  }
 
   if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
     window.onEventCalendarEventSelected(event);
@@ -638,7 +1163,7 @@ function renderEventTable() {
   const filteredEvents = filterEvents();
 
   if (!filteredEvents || filteredEvents.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No events match the current filters</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No events match the current filters</td></tr>';
     return;
   }
 
@@ -654,10 +1179,22 @@ function renderEventTable() {
       ? `${event.promo_discount_pct}% off`
       : '-';
 
+    // Product info column
+    const productInfo = getEventProductInfo(event);
+    let productCell = '-';
+    if (productInfo.skus.length > 0) {
+      productCell = productInfo.skus
+        .map(s => `<span class="badge bg-light text-dark border me-1 mb-1">${s.sku_name}</span>`)
+        .join('');
+    } else if (productInfo.productGroup) {
+      productCell = `<span class="badge bg-light text-dark border">${productInfo.productGroup}</span>`;
+    }
+
     html += `
       <tr>
         <td class="text-nowrap">${dateStr}</td>
         <td><span class="badge ${badge.class}">${badge.text}</span></td>
+        <td>${productCell}</td>
         <td>${formatTier(event.tier)}</td>
         <td class="text-nowrap">${priceChange}</td>
         <td>${promo}</td>
@@ -1355,6 +1892,34 @@ function setupEventFilters() {
 }
 
 /**
+ * Initialize the product filter dropdown and wire its change handler.
+ */
+function initializeProductFilter() {
+  const select = document.getElementById('event-calendar-product-filter');
+  if (!select) return;
+
+  const options = buildProductFilterOptions();
+  select.innerHTML = '<option value="all" selected>All Products</option>';
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    if (opt.isGroup) {
+      el.style.fontWeight = 'bold';
+    }
+    select.appendChild(el);
+  });
+
+  select.value = activeProductFilter;
+
+  select.addEventListener('change', () => {
+    activeProductFilter = select.value || 'all';
+    renderEventTimeline();
+    renderEventTable();
+  });
+}
+
+/**
  * Filter events based on active filters
  */
 function filterEvents() {
@@ -1365,6 +1930,7 @@ function filterEvents() {
     if (eventType === 'Competitor Price Change' && !activeFilters.competitorPriceChange) return false;
     if ((eventType.includes('Promo') || eventType === 'Social Spike') && !activeFilters.promo) return false;
     if (eventType === 'Tentpole' && !activeFilters.tentpole) return false;
+    if (!eventMatchesProductFilter(event)) return false;
     return true;
   });
 }

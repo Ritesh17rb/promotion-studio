@@ -189,24 +189,66 @@
 
     <!-- KPI Summary Cards -->
     <div id="kpi-section" style="display: none;">
+      <!-- Competitor Alert Banner -->
+      <div id="competitor-alert-banner" class="alert alert-danger border-danger d-none mb-4" role="alert">
+        <div class="d-flex align-items-start">
+          <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-danger flex-shrink-0 mt-1"></i>
+          <div class="flex-grow-1">
+            <strong id="competitor-alert-title">Competitor Price Alert</strong>
+            <div id="competitor-alert-body" class="small mt-1"></div>
+          </div>
+          <div class="ms-3 flex-shrink-0">
+            <button class="btn btn-outline-danger btn-sm me-2" id="competitor-alert-impact-btn">See Impact</button>
+            <button class="btn btn-danger btn-sm" id="competitor-alert-adjust-btn">Adjust Pricing</button>
+          </div>
+        </div>
+      </div>
       <!-- Channel Groups -->
       <h5 class="mb-3">Current Channel Groups</h5>
       <div class="row g-4 mb-5">
         <div class="col-md-6">
         <div class="glass-card tier-card ad-lite">
-          <div class="tier-name">Mass Channel</div>
-          <div class="tier-price">$24.00<span>/unit</span></div>
-          <div class="mt-2">
+          <div class="tier-name">Target &amp; Amazon</div>
+          <div class="tier-price" id="step1-mass-channel-price">$24.00<span>/unit avg</span></div>
+          <div class="mt-2 mb-3">
             Target, Amazon &bull; High-volume, promo-responsive demand
+          </div>
+          <div class="small">
+            <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Products in Channel</div>
+            <table class="table table-sm table-borderless mb-0" style="font-size: 0.8rem;">
+              <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Target</th><th>Amazon</th></tr></thead>
+              <tbody>
+                <tr><td>Daily Shield SPF 40</td><td><code>SUN_S1</code></td><td>$18.74</td><td>$18.49</td></tr>
+                <tr><td>Invisible Mist SPF 50</td><td><code>SUN_S2</code></td><td>$21.25</td><td>$21.00</td></tr>
+                <tr><td>Sport Gel SPF 60</td><td><code>SUN_S3</code></td><td>$23.75</td><td>$23.50</td></tr>
+                <tr><td>Hydra Daily Lotion</td><td><code>MOI_M1</code></td><td>$16.50</td><td>$16.25</td></tr>
+                <tr><td>Barrier Repair Cream</td><td><code>MOI_M2</code></td><td>$19.25</td><td>$19.00</td></tr>
+                <tr><td>Night Recovery Balm</td><td><code>MOI_M3</code></td><td>$21.75</td><td>$21.50</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
       <div class="col-md-6">
         <div class="glass-card tier-card ad-free">
-          <div class="tier-name">Prestige Channel</div>
-          <div class="tier-price">$36.00<span>/unit</span></div>
-          <div class="mt-2">
+          <div class="tier-name">Sephora &amp; Ulta</div>
+          <div class="tier-price" id="step1-prestige-channel-price">$36.00<span>/unit avg</span></div>
+          <div class="mt-2 mb-3">
             Sephora, Ulta &bull; Premium retail with margin-protected pricing
+          </div>
+          <div class="small">
+            <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Products in Channel</div>
+            <table class="table table-sm table-borderless mb-0" style="font-size: 0.8rem;">
+              <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Sephora</th><th>Ulta</th></tr></thead>
+              <tbody>
+                <tr><td>Daily Shield SPF 40</td><td><code>SUN_S1</code></td><td>$29.75</td><td>$29.25</td></tr>
+                <tr><td>Invisible Mist SPF 50</td><td><code>SUN_S2</code></td><td>$33.75</td><td>$33.25</td></tr>
+                <tr><td>Sport Gel SPF 60</td><td><code>SUN_S3</code></td><td>$36.75</td><td>$36.25</td></tr>
+                <tr><td>Hydra Daily Lotion</td><td><code>MOI_M1</code></td><td>$27.75</td><td>$27.25</td></tr>
+                <tr><td>Barrier Repair Cream</td><td><code>MOI_M2</code></td><td>$31.75</td><td>$31.25</td></tr>
+                <tr><td>Night Recovery Balm</td><td><code>MOI_M3</code></td><td>$35.75</td><td>$35.25</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -223,6 +265,7 @@
               <div class="small text-success" id="kpi-customers-change">
                 <i class="bi bi-arrow-up"></i> --
               </div>
+              <div class="kpi-breakdown" id="kpi-customers-breakdown"></div>
             </div>
           </div>
         </div>
@@ -234,6 +277,7 @@
               <div class="small text-success" id="kpi-revenue-change">
                 <i class="bi bi-arrow-up"></i> --
               </div>
+              <div class="kpi-breakdown" id="kpi-revenue-breakdown"></div>
             </div>
           </div>
         </div>
@@ -243,6 +287,7 @@
             <div class="text-muted mb-2 small text-uppercase">Avg Order Value</div>
               <div class="fs-2 fw-bold" id="kpi-aov">--</div>
               <div class="small" id="kpi-aov-change">--</div>
+              <div class="kpi-breakdown" id="kpi-aov-breakdown"></div>
             </div>
           </div>
         </div>
@@ -254,6 +299,7 @@
               <div class="small text-danger" id="kpi-churn-change">
                 <i class="bi bi-arrow-down"></i> --
               </div>
+              <div class="kpi-breakdown" id="kpi-churn-breakdown"></div>
             </div>
           </div>
         </div>
@@ -301,17 +347,6 @@
                 </div>
                 <div class="small text-muted mt-2" id="channel-promo-narrative-note">
                   Use presets to tell the story: baseline, in-season pivot, and optimized finish.
-                </div>
-                <div class="d-grid gap-2 mt-3">
-                  <button type="button" class="btn btn-sm btn-primary" id="channel-promo-run-pitch">
-                    Run 3-Act Pitch Mode
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" id="channel-promo-stop-pitch" disabled>
-                    Stop Pitch Mode
-                  </button>
-                </div>
-                <div class="small text-muted mt-2 channel-promo-pitch-caption" id="channel-promo-pitch-caption">
-                  Pitch mode will auto-run: Start of Season -> In-Season Pivot -> Future Vision.
                 </div>
                 <p class="small text-muted mb-0 mt-3">
                   Elasticity is modulated by social trend and competitor price delta from <code>sku_channel_weekly.csv</code>, <code>market_signals.csv</code>, and <code>social_signals.csv</code>.
@@ -435,7 +470,7 @@
 
                 <div class="mb-4">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label for="mass-promo-slider" class="form-label mb-0">Mass Channel (Target, Amazon)</label>
+                    <label for="mass-promo-slider" class="form-label mb-0">Target &amp; Amazon</label>
                     <span class="fw-semibold" id="mass-promo-value">0%</span>
                   </div>
                   <input type="range" class="form-range" id="mass-promo-slider" min="0" max="40" step="5" value="0">
@@ -448,7 +483,7 @@
 
                 <div class="mb-4">
                   <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label for="prestige-promo-slider" class="form-label mb-0">Prestige (Sephora, Ulta)</label>
+                    <label for="prestige-promo-slider" class="form-label mb-0">Sephora &amp; Ulta</label>
                     <span class="fw-semibold" id="prestige-promo-value">0%</span>
                   </div>
                   <input type="range" class="form-range" id="prestige-promo-slider" min="0" max="30" step="5" value="0">
@@ -469,12 +504,24 @@
                 </div>
 
                 <div class="mb-3">
+                  <label for="channel-promo-comp-shock-product" class="form-label small mb-1">Apply competitor shock to</label>
+                  <select class="form-select form-select-sm mb-2" id="channel-promo-comp-shock-product">
+                    <option value="all" selected>All Products</option>
+                    <option value="sunscreen">Sunscreen (All)</option>
+                    <option value="moisturizer">Moisturizer (All)</option>
+                    <option value="SUN_S1">SUN_S1 - Daily Shield SPF 40</option>
+                    <option value="SUN_S2">SUN_S2 - Invisible Mist SPF 50</option>
+                    <option value="SUN_S3">SUN_S3 - Sport Gel SPF 60</option>
+                    <option value="MOI_M1">MOI_M1 - Hydra Daily Lotion</option>
+                    <option value="MOI_M2">MOI_M2 - Barrier Repair Cream</option>
+                    <option value="MOI_M3">MOI_M3 - Night Recovery Balm</option>
+                  </select>
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label for="channel-promo-comp-shock" class="form-label mb-0">Competitor Price Shock</label>
                     <span class="fw-semibold" id="channel-promo-comp-shock-value">0%</span>
                   </div>
                   <input type="range" class="form-range" id="channel-promo-comp-shock" min="-20" max="20" step="5" value="0">
-                  <div class="small text-muted">Negative means competitor prices drop. Positive means competitor prices rise.</div>
+                  <div class="small text-muted">Negative means competitor prices drop for selected product(s). Positive means competitor prices rise.</div>
                 </div>
 
                 <div class="mb-3">
@@ -490,13 +537,13 @@
                   <div class="form-check">
                     <input class="form-check-input" type="checkbox" value="" id="channel-promo-apply-mass" checked>
                     <label class="form-check-label small" for="channel-promo-apply-mass">
-                      Apply to Mass Channel
+                      Apply to Target &amp; Amazon
                     </label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="checkbox" value="" id="channel-promo-apply-prestige" checked>
                     <label class="form-check-label small" for="channel-promo-apply-prestige">
-                      Apply to Prestige Channel
+                      Apply to Sephora &amp; Ulta
                     </label>
                   </div>
                 </div>
@@ -512,19 +559,19 @@
                 <div class="row g-3 mb-3">
                   <div class="col-md-4">
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
-                      <div class="small text-muted text-uppercase mb-1">Total Revenue vs Baseline</div>
-                      <div class="d-flex align-items-baseline gap-2">
-                        <div class="fs-4 fw-bold" id="channel-promo-revenue-delta">--</div>
-                        <div class="small text-muted" id="channel-promo-revenue-note">Baseline = 0%</div>
+                      <div class="small text-muted text-uppercase mb-1">Revenue vs Baseline</div>
+                      <div class="fs-4 fw-bold" id="channel-promo-revenue-delta">--</div>
+                      <div class="d-flex justify-content-between small text-muted mt-1" id="channel-promo-revenue-note">
+                        <span>Baseline --</span><span>Scenario --</span>
                       </div>
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
-                      <div class="small text-muted text-uppercase mb-1">Total Profit vs Baseline</div>
-                      <div class="d-flex align-items-baseline gap-2">
-                        <div class="fs-4 fw-bold" id="channel-promo-profit-delta">--</div>
-                        <div class="small text-muted" id="channel-promo-profit-note">Baseline = 0%</div>
+                      <div class="small text-muted text-uppercase mb-1">Profit vs Baseline</div>
+                      <div class="fs-4 fw-bold" id="channel-promo-profit-delta">--</div>
+                      <div class="d-flex justify-content-between small text-muted mt-1" id="channel-promo-profit-note">
+                        <span>Baseline --</span><span>Scenario --</span>
                       </div>
                     </div>
                   </div>
@@ -535,7 +582,7 @@
                         <span id="channel-promo-posture-pill" class="badge rounded-pill bg-secondary-subtle text-body-secondary">--</span>
                       </div>
                       <div class="small" id="channel-promo-posture-line1">Adjust sliders to see impact.</div>
-                      <div class="small text-muted" id="channel-promo-posture-line2"></div>
+                      <div class="small text-muted mt-1" id="channel-promo-posture-line2"></div>
                     </div>
                   </div>
                 </div>
@@ -543,21 +590,90 @@
                 <div class="row g-3 mb-3">
                   <div class="col-md-4">
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
-                      <div class="small text-muted text-uppercase mb-1">Avg Competitor Price (Mass)</div>
-                      <div class="fs-5 fw-bold" id="channel-promo-comp-mass">--</div>
+                      <div class="small text-muted text-uppercase mb-1">Estimated Promo Spend</div>
+                      <div class="fs-5 fw-bold" id="channel-promo-spend">--</div>
+                      <div class="small text-muted" id="channel-promo-spend-note">Revenue given up via discounting</div>
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
-                      <div class="small text-muted text-uppercase mb-1">Avg Competitor Price (Prestige)</div>
-                      <div class="fs-5 fw-bold" id="channel-promo-comp-prestige">--</div>
+                      <div class="small text-muted text-uppercase mb-1">Incremental Revenue</div>
+                      <div class="fs-5 fw-bold" id="channel-promo-incremental-rev">--</div>
+                      <div class="small text-muted" id="channel-promo-incremental-note">Additional revenue from promo-driven volume</div>
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
-                      <div class="small text-muted text-uppercase mb-1">Brand Social Engagement Trend</div>
-                      <div class="fs-5 fw-bold" id="channel-promo-social-score">--</div>
-                      <div class="small text-muted" id="channel-promo-social-trend">--</div>
+                      <div class="small text-muted text-uppercase mb-1">Promo ROI</div>
+                      <div class="fs-4 fw-bold" id="channel-promo-roi">--</div>
+                      <div class="small text-muted" id="channel-promo-roi-note">Return per $1 of promo spend</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-md-8">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="small text-muted text-uppercase mb-2">Competitor Price Comparison</div>
+                      <table class="table table-sm table-hover mb-0" id="channel-promo-sku-price-table">
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>Channel</th>
+                            <th class="text-end">Our Price</th>
+                            <th class="text-end">Competitor Price</th>
+                            <th class="text-end">Gap (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody id="channel-promo-sku-price-body">
+                          <tr><td colspan="5" class="text-muted text-center">--</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="border rounded-3 p-3 h-100 bg-body-tertiary">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="small text-muted text-uppercase">Social Engagement</div>
+                        <div class="d-flex align-items-center gap-1">
+                          <span class="fs-5 fw-bold" id="channel-promo-social-score">--</span>
+                          <span class="small" id="channel-promo-social-trend-badge"></span>
+                        </div>
+                      </div>
+                      <div class="small" id="channel-promo-social-channels">
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                          <span><i class="bi bi-tiktok me-1"></i>TikTok</span>
+                          <span class="d-flex align-items-center gap-2">
+                            <span class="text-muted" id="social-tiktok-mentions">--</span>
+                            <span class="fw-semibold" id="social-tiktok-rate">--%</span>
+                          </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                          <span><i class="bi bi-instagram me-1"></i>Instagram</span>
+                          <span class="d-flex align-items-center gap-2">
+                            <span class="text-muted" id="social-instagram-mentions">--</span>
+                            <span class="fw-semibold" id="social-instagram-rate">--%</span>
+                          </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                          <span><i class="bi bi-youtube me-1"></i>YouTube</span>
+                          <span class="d-flex align-items-center gap-2">
+                            <span class="text-muted" id="social-youtube-mentions">--</span>
+                            <span class="fw-semibold" id="social-youtube-rate">--%</span>
+                          </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                          <span><i class="bi bi-twitter-x me-1"></i>X / Twitter</span>
+                          <span class="d-flex align-items-center gap-2">
+                            <span class="text-muted" id="social-twitter-mentions">--</span>
+                            <span class="fw-semibold" id="social-twitter-rate">--%</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="d-flex justify-content-between small text-muted mt-2 pt-1 border-top">
+                        <span>Sentiment: <span id="social-sentiment-value">--</span></span>
+                        <span>Earned: <span id="social-earned-value">--</span></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -847,15 +963,56 @@
                     </div>
                   </div>
                   <div class="col-12">
-                    <div class="card border-primary-subtle mt-2">
-                      <div class="card-header bg-primary-subtle">
+                    <div class="card border-success-subtle mt-2 mb-2">
+                      <div class="card-header bg-success-subtle d-flex justify-content-between align-items-center">
                         <h6 class="mb-0">
-                          <i class="bi bi-stars me-2"></i>AI Recommendation Snapshot
+                          <i class="bi bi-calendar-week me-2"></i>Weekly Action Plan
                         </h6>
+                        <span class="badge bg-success-subtle text-success" id="channel-promo-plan-range">--</span>
+                      </div>
+                      <div class="card-body p-2">
+                        <div class="table-responsive">
+                          <table class="table table-sm table-hover mb-0 small">
+                            <thead class="table-light">
+                              <tr>
+                                <th>Week</th>
+                                <th>Phase</th>
+                                <th>Target &amp; Amazon</th>
+                                <th>Sephora &amp; Ulta</th>
+                                <th>Focus SKU</th>
+                                <th>Expected Impact</th>
+                              </tr>
+                            </thead>
+                            <tbody id="channel-promo-weekly-plan-body">
+                              <tr><td colspan="6" class="text-center text-muted">Set promo sliders to generate weekly plan.</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="card border-primary-subtle mt-2">
+                      <div class="card-header bg-primary-subtle d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                          <i class="bi bi-stars me-2"></i>AI Co-Pilot
+                        </h6>
+                        <span class="badge text-bg-secondary" id="channel-promo-llm-status">Not Connected</span>
                       </div>
                       <div class="card-body">
-                        <div class="small mb-2" id="channel-promo-ai-summary">
-                          Waiting for simulator inputs to generate SKU recommendations.
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                          <button type="button" class="btn btn-sm btn-primary" id="channel-promo-llm-analyze">
+                            <i class="bi bi-lightning-charge me-1"></i>Analyze Current Scenario
+                          </button>
+                          <div class="form-check mt-1">
+                            <input class="form-check-input" type="checkbox" id="channel-promo-llm-auto">
+                            <label class="form-check-label small" for="channel-promo-llm-auto">
+                              Auto-analyze after slider changes
+                            </label>
+                          </div>
+                        </div>
+                        <div class="small mb-3" id="channel-promo-ai-summary">
+                          Connect LLM and run analysis to get AI-powered recommendations.
                         </div>
                         <div class="row g-2 small">
                           <div class="col-md-4">
@@ -877,55 +1034,17 @@
                             </div>
                           </div>
                         </div>
-                        <div class="alert alert-light border mt-3 mb-0 small" id="channel-promo-ai-brief">
-                          Building decision brief from current scenario...
+                        <div class="alert alert-light border mt-3 mb-2 small" id="channel-promo-ai-brief">
+                          Run analysis to generate decision brief.
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="card border-info-subtle">
-                      <div class="card-header bg-info-subtle d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0">
-                          <i class="bi bi-robot me-2"></i>LLM Live Co-Pilot
-                        </h6>
-                        <span class="badge text-bg-secondary" id="channel-promo-llm-status">Not Connected</span>
-                      </div>
-                      <div class="card-body">
-                        <div class="d-flex flex-wrap gap-2 mb-2">
-                          <button type="button" class="btn btn-sm btn-primary" id="channel-promo-llm-analyze">
-                            Analyze Current Scenario
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                          <button class="btn btn-sm btn-success" id="channel-promo-apply-recommendation">
+                            <i class="bi bi-check2-circle me-1"></i>Apply This Recommendation
                           </button>
-                          <div class="form-check mt-1">
-                            <input class="form-check-input" type="checkbox" id="channel-promo-llm-auto">
-                            <label class="form-check-label small" for="channel-promo-llm-auto">
-                              Auto-analyze after slider changes
-                            </label>
-                          </div>
+                          <span class="small text-muted" id="channel-promo-apply-status"></span>
                         </div>
-                        <div class="small mb-2" id="channel-promo-llm-summary">
-                          Connect LLM settings to get action-oriented analysis from the live scenario.
-                        </div>
-                        <div class="row g-2 small mb-3">
-                          <div class="col-md-6">
-                            <div class="border rounded p-2 h-100 bg-body-tertiary">
-                              <div class="text-muted text-uppercase mb-1">Recommended Actions</div>
-                              <ul class="mb-0 ps-3" id="channel-promo-llm-actions">
-                                <li>Run analysis to populate actions.</li>
-                              </ul>
-                            </div>
-                          </div>
-                          <div class="col-md-6">
-                            <div class="border rounded p-2 h-100 bg-body-tertiary">
-                              <div class="text-muted text-uppercase mb-1">Risks to Watch</div>
-                              <ul class="mb-0 ps-3" id="channel-promo-llm-risks">
-                                <li>Run analysis to populate risks.</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="border rounded p-3 bg-body-tertiary">
-                          <div class="small text-muted text-uppercase mb-1">Natural Language Plan -> Apply Controls</div>
+                        <div class="border-top pt-3">
+                          <div class="small text-muted text-uppercase mb-1">Natural Language Plan</div>
                           <div class="input-group input-group-sm mb-2">
                             <input type="text" class="form-control" id="channel-promo-llm-plan-input" placeholder="Example: Defend mass this week, hold prestige margin, focus sunscreen leaders.">
                             <button class="btn btn-outline-primary" type="button" id="channel-promo-llm-plan-apply">Apply Plan</button>
@@ -964,20 +1083,20 @@
     <div class="card mb-4 border-info-subtle">
       <div class="card-header bg-info-subtle">
         <h6 class="mb-0">
-          <i class="bi bi-broadcast-pin me-2"></i>In-Season Pivot Signal Lab (Competitive + Social)
+          <i class="bi bi-broadcast-pin me-2"></i>This Week's Market Signal Snapshot
         </h6>
       </div>
       <div class="card-body">
         <div class="row g-3 mb-3">
           <div class="col-md-3">
             <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Avg competitor price (Mass)</div>
+              <div class="small text-muted text-uppercase mb-1">Mass competitor benchmark</div>
               <div class="fw-semibold fs-5" id="step2-signal-comp-mass">--</div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Avg competitor price (Prestige)</div>
+              <div class="small text-muted text-uppercase mb-1">Prestige competitor benchmark</div>
               <div class="fw-semibold fs-5" id="step2-signal-comp-prestige">--</div>
             </div>
           </div>
@@ -994,32 +1113,11 @@
             </div>
           </div>
         </div>
-        <div class="row g-3 mb-3">
-          <div class="col-lg-6">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-2">Competitive Price Delta Trend</div>
-              <div class="chart-container" style="height: 220px;">
-                <canvas id="step2-signal-comp-chart"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-2">Social Score and Elasticity Modifier</div>
-              <div class="chart-container" style="height: 220px;">
-                <canvas id="step2-signal-social-chart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="small text-muted mt-2" id="step2-signal-change-log">
-          Detecting week-over-week signal changes...
-        </div>
         <div class="small text-muted mt-1" id="step2-signal-method-note">
-          Computing signal impact formulas...
+          Building a business summary of this week's competitor and social shifts...
         </div>
         <div class="border rounded p-3 mt-3 bg-body-tertiary">
-          <div class="small text-muted text-uppercase mb-2">SKU Shock-Only Projection (No Own Promo Change)</div>
+          <div class="small text-muted text-uppercase mb-2">Products Most Exposed to External Signals</div>
           <div class="chart-container mb-3" style="height: 240px;">
             <canvas id="step2-signal-sku-chart"></canvas>
           </div>
@@ -1029,10 +1127,10 @@
                 <tr>
                   <th>Product</th>
                   <th>Group</th>
-                  <th class="text-end">Baseline Units</th>
-                  <th class="text-end">Shock-Only Units</th>
-                  <th class="text-end">Delta</th>
-                  <th class="text-end">Avg Price Gap vs Competitor</th>
+                  <th class="text-end">Current Weekly Units</th>
+                  <th class="text-end">Signal-Adjusted Units</th>
+                  <th class="text-end">Expected Impact</th>
+                  <th class="text-end">Price Position vs Competitor</th>
                 </tr>
               </thead>
               <tbody id="step2-signal-sku-impact-body">
@@ -1043,7 +1141,7 @@
             </table>
           </div>
           <div class="small text-muted mt-2" id="step2-signal-sku-impact-note">
-            Applying competitor and social shifts only; own promo depth fixed at 0%.
+            Isolating external market pressure only; your own promo depth stays unchanged in this view.
           </div>
         </div>
       </div>
@@ -1461,12 +1559,27 @@
                   <small class="text-muted">Switch cohorts to see dramatic elasticity differences!</small>
                 </div>
 
+                  <!-- Product Selection -->
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Product</label>
+                    <select class="form-select" id="acq-product-select">
+                      <option value="all">All Products (Average)</option>
+                      <option value="SUN_S1">Daily Shield SPF 40</option>
+                      <option value="SUN_S2">Invisible Mist SPF 50</option>
+                      <option value="SUN_S3">Sport Gel SPF 60</option>
+                      <option value="MOI_M1">Hydra Daily Lotion</option>
+                      <option value="MOI_M2">Barrier Repair Cream</option>
+                      <option value="MOI_M3">Night Recovery Balm</option>
+                    </select>
+                    <small class="text-muted">Different products have different price elasticities.</small>
+                  </div>
+
                                     <!-- Tier Selection -->
                   <div class="mb-4">
                     <label class="form-label fw-semibold">Select Channel Group</label>
                     <select class="form-select" id="acq-tier-select">
-                      <option value="ad_supported">Mass Channel ($24.00)</option>
-                      <option value="ad_free">Prestige Channel ($36.00)</option>
+                      <option value="ad_supported">Target &amp; Amazon ($24.00)</option>
+                      <option value="ad_free">Sephora &amp; Ulta ($36.00)</option>
                     </select>
                   </div>
 
@@ -1649,6 +1762,21 @@
                       <option value="at_risk">At Risk - Accelerating</option>
                     </select>
                     <small class="text-muted">Watch curves change shape and cross as you switch cohorts!</small>
+                  </div>
+
+                  <!-- Product Selection -->
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Product</label>
+                    <select class="form-select" id="churn-product-select">
+                      <option value="all">All Products (Average)</option>
+                      <option value="SUN_S1">Daily Shield SPF 40</option>
+                      <option value="SUN_S2">Invisible Mist SPF 50</option>
+                      <option value="SUN_S3">Sport Gel SPF 60</option>
+                      <option value="MOI_M1">Hydra Daily Lotion</option>
+                      <option value="MOI_M2">Barrier Repair Cream</option>
+                      <option value="MOI_M3">Night Recovery Balm</option>
+                    </select>
+                    <small class="text-muted">Different products have different price elasticities.</small>
                   </div>
 
                                     <!-- Price Increase Slider -->
@@ -1856,6 +1984,21 @@
                 <div class="glass-card">
                   <h5 class="mb-4"><i class="bi bi-sliders me-2"></i>Adjust Channel Group Prices</h5>
 
+                  <!-- Product Selection -->
+                  <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Product</label>
+                    <select class="form-select" id="migration-product-select">
+                      <option value="all">All Products (Average)</option>
+                      <option value="SUN_S1">Daily Shield SPF 40</option>
+                      <option value="SUN_S2">Invisible Mist SPF 50</option>
+                      <option value="SUN_S3">Sport Gel SPF 60</option>
+                      <option value="MOI_M1">Hydra Daily Lotion</option>
+                      <option value="MOI_M2">Barrier Repair Cream</option>
+                      <option value="MOI_M3">Night Recovery Balm</option>
+                    </select>
+                    <small class="text-muted">Different products have different price elasticities.</small>
+                  </div>
+
                   <!-- Cohort Selection -->
                   <div class="mb-4">
                     <label class="form-label fw-semibold">Select Cohort</label>
@@ -1892,8 +2035,8 @@
                     <label class="form-label fw-semibold">Promotion Channel Scope</label>
                     <select class="form-select" id="mig-channel-scope-select">
                       <option value="all">Promote in Both Channel Groups</option>
-                      <option value="mass">Promote in Mass Channels Only</option>
-                      <option value="prestige">Promote in Prestige Channels Only</option>
+                      <option value="mass">Promote at Target &amp; Amazon Only</option>
+                      <option value="prestige">Promote at Sephora &amp; Ulta Only</option>
                     </select>
                   </div>
 
@@ -1923,7 +2066,7 @@
 
                   <!-- Mass Channel Price Slider -->
                   <div class="mb-4">
-                    <label class="form-label fw-semibold">Mass Channel Price: <strong class="text-primary" id="mig-adlite-display">$24.00</strong></label>
+                    <label class="form-label fw-semibold">Target &amp; Amazon Price: <strong class="text-primary" id="mig-adlite-display">$24.00</strong></label>
                     <input type="range" class="price-slider" id="mig-adlite-slider" min="18" max="30" step="0.50" value="24">
                     <div class="d-flex justify-content-between mt-1 small text-muted">
                       <span>$18</span>
@@ -1933,7 +2076,7 @@
 
                   <!-- Prestige Channel Price Slider -->
                   <div class="mb-4">
-                    <label class="form-label fw-semibold">Prestige Channel Price: <strong class="text-primary" id="mig-adfree-display">$36.00</strong></label>
+                    <label class="form-label fw-semibold">Sephora &amp; Ulta Price: <strong class="text-primary" id="mig-adfree-display">$36.00</strong></label>
                     <input type="range" class="price-slider" id="mig-adfree-slider" min="28" max="45" step="0.50" value="36">
                     <div class="d-flex justify-content-between mt-1 small text-muted">
                       <span>$28</span>
@@ -1958,7 +2101,7 @@
                 <div class="insight-box">
                   <div class="icon"><i class="bi bi-arrow-left-right"></i></div>
                   <h5>Migration Dynamics</h5>
-                  <p class="mb-0">When the price gap narrows, more Mass Channel customers upgrade. When it widens, Prestige demand can split into downgrade and repeat-risk, while some volume shifts between your own SKUs.</p>
+                  <p class="mb-0">When the price gap narrows, more Target &amp; Amazon customers upgrade. When it widens, Sephora &amp; Ulta demand can split into downgrade and repeat-risk, while some volume shifts between your own SKUs.</p>
                 </div>
               </div>
 
@@ -2013,12 +2156,12 @@
                   <div class="migration-flow mb-4">
                     <div class="flow-box">
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adlite-pct">62%</div>
-                      <div class="flow-box-label">Mass Channel</div>
+                      <div class="flow-box-label">Target &amp; Amazon</div>
                     </div>
                     <div class="flow-arrow" id="mig-arrow">&rarr;</div>
                     <div class="flow-box">
                       <div style="font-size: 2rem; font-weight: 700;" id="mig-adfree-pct">38%</div>
-                      <div class="flow-box-label">Prestige Channel</div>
+                      <div class="flow-box-label">Sephora &amp; Ulta</div>
                     </div>
                   </div>
 
@@ -2034,25 +2177,25 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Mass Channel &rarr; Prestige Channel (Upgrade)</td>
+                          <td>Target &amp; Amazon &rarr; Sephora &amp; Ulta (Upgrade)</td>
                           <td><strong id="mig-upgrade-pct">8.2%</strong></td>
                           <td id="mig-upgrade-subs">~850</td>
                           <td class="text-success" id="mig-upgrade-rev">+$2,550</td>
                         </tr>
                         <tr>
-                          <td>Prestige Channel &rarr; Mass Channel (Downgrade)</td>
+                          <td>Sephora &amp; Ulta &rarr; Target &amp; Amazon (Downgrade)</td>
                           <td><strong id="mig-downgrade-pct">3.5%</strong></td>
                           <td id="mig-downgrade-subs">~420</td>
                           <td class="text-danger" id="mig-downgrade-rev">-$1,260</td>
                         </tr>
                         <tr>
-                          <td>Mass Channel &rarr; Cancel</td>
+                          <td>Target &amp; Amazon &rarr; Cancel</td>
                           <td><strong id="mig-cancel-lite-pct">4.2%</strong></td>
                           <td id="mig-cancel-lite-subs">~430</td>
                           <td class="text-danger" id="mig-cancel-lite-rev">-$2,574</td>
                         </tr>
                         <tr>
-                          <td>Prestige Channel &rarr; Cancel</td>
+                          <td>Sephora &amp; Ulta &rarr; Cancel</td>
                           <td><strong id="mig-cancel-free-pct">3.8%</strong></td>
                           <td id="mig-cancel-free-subs">~460</td>
                           <td class="text-danger" id="mig-cancel-free-rev">-$4,134</td>
@@ -2762,8 +2905,8 @@
           <div class="col-md-4">
             <label class="form-label fw-bold">Channel Group</label>
             <select id="segment-tier-select" class="form-select">
-              <option value="ad_supported">Mass Channel</option>
-              <option value="ad_free" selected>Prestige Channel</option>
+              <option value="ad_supported">Target &amp; Amazon</option>
+              <option value="ad_free" selected>Sephora &amp; Ulta</option>
             </select>
           </div>
           <div class="col-md-4">
@@ -2981,8 +3124,8 @@
           <div class="col-md-3">
             <label class="form-label fw-bold">Channel Group</label>
             <select id="compare-tier-select" class="form-select">
-              <option value="ad_supported">Mass Channel</option>
-              <option value="ad_free" selected>Prestige Channel</option>
+              <option value="ad_supported">Target &amp; Amazon</option>
+              <option value="ad_free" selected>Sephora &amp; Ulta</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -3101,9 +3244,9 @@
           </div>
 
           <!-- Event Type Filters -->
-          <div class="row mb-4">
-            <div class="col-md-12">
-              <div class="btn-group" role="group" aria-label="Event type filters">
+          <div class="row mb-4 align-items-end">
+            <div class="col-md-8">
+              <div class="btn-group flex-wrap" role="group" aria-label="Event type filters">
                 <input type="checkbox" class="btn-check" id="filter-all" checked autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="filter-all">
                   <i class="bi bi-check-all me-1"></i>All Events
@@ -3129,6 +3272,14 @@
                   <i class="bi bi-star me-1"></i>Seasonal Tentpoles
                 </label>
               </div>
+            </div>
+            <div class="col-md-4 col-lg-3 ms-auto">
+              <label class="form-label small text-muted mb-1" for="event-calendar-product-filter">
+                <i class="bi bi-box-seam me-1"></i>Product Filter
+              </label>
+              <select id="event-calendar-product-filter" class="form-select form-select-sm">
+                <option value="all" selected>All Products</option>
+              </select>
             </div>
           </div>
 
@@ -3159,6 +3310,7 @@
                     <tr>
                       <th>Date</th>
                       <th>Event Type</th>
+                      <th>Products</th>
                       <th>Channel Group</th>
                       <th>Price Change</th>
                       <th>Promo</th>
@@ -3643,7 +3795,7 @@
             <div class="card-body">
               <code>Segment Elasticity = Base Tier Elasticity x Axis1 Modifier x Axis2 Modifier x Axis3 Modifier</code>
               <p class="small text-muted mt-3 mb-0">
-                <strong>Example:</strong> Mass Channel promo-triggered, deal hunter, value bundle buyer:<br>
+                <strong>Example:</strong> Target &amp; Amazon promo-triggered, deal hunter, value bundle buyer:<br>
                 -2.1 (base) x 1.3 (promo) x 1.2 (deal hunter) x 1.1 (bundle) = <strong>-3.60</strong> (highly elastic)
               </p>
             </div>
@@ -3928,13 +4080,7 @@
   <!-- Brand Click Handler -->
   <script>
     function handleBrandClick() {
-      // Show warning alert
-      const confirmNavigation = confirm('Warning: Navigating to the home page will reset your current progress. Do you want to continue?');
-
-      if (confirmNavigation) {
-        // Navigate to home page (step 0)
-        goToStep(0);
-      }
+      goToStep(1);
     }
   </script>
 

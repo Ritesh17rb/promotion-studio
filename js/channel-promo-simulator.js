@@ -10,7 +10,8 @@ import {
   loadExternalFactors,
   loadSocialSignals,
   loadPromoMetadata,
-  loadEventCalendar
+  loadEventCalendar,
+  loadCompetitorPriceFeed
 } from './data-loader.js';
 import { formatCurrency, formatPercent, formatNumber } from './utils.js';
 
@@ -30,9 +31,8 @@ let retailEvents = [];
 let promoMetadata = {};
 let currentSeasonWeek = 7;
 let latestPromoSnapshot = null;
+let latestRecommendation = null;
 let livePlaybackTimer = null;
-let pitchModeTimer = null;
-let pitchModeActive = false;
 const DEFAULT_SEASON_WEEKS = 17;
 const PLANNING_HORIZON_PRESETS = [8, 12, 17, 24];
 let planningHorizonWeeks = DEFAULT_SEASON_WEEKS;
@@ -259,7 +259,8 @@ function computeScenarioForRow(
   objectiveKey,
   socialScore,
   competitorShockPct = 0,
-  socialReferenceScore = null
+  socialReferenceScore = null,
+  compShockProductFilter = 'all'
 ) {
   const objective = OBJECTIVE_CONFIG[objectiveKey] || OBJECTIVE_CONFIG.balance;
   const promoFrac = promoDepthPct / 100;
@@ -280,7 +281,11 @@ function computeScenarioForRow(
     : 1;
 
   const rawCompetitorPrice = Number(row.competitor_price) || newPrice;
-  const competitorPrice = rawCompetitorPrice * (1 + competitorShockPct / 100);
+  const shockApplies = compShockProductFilter === 'all'
+    || row.product_group === compShockProductFilter
+    || row.sku_id === compShockProductFilter;
+  const effectiveShock = shockApplies ? competitorShockPct : 0;
+  const competitorPrice = rawCompetitorPrice * (1 + effectiveShock / 100);
   const gapVsCompetitor = competitorPrice > 0 ? (newPrice - competitorPrice) / competitorPrice : 0;
   const channelGapSensitivity = row.channel_group === 'mass' ? 0.72 : 0.46;
   const competitorMultiplier = clamp(1 - gapVsCompetitor * channelGapSensitivity, 0.55, 1.38);
@@ -301,11 +306,14 @@ function computeScenarioForRow(
     : 0;
 
   const marginPctBase = Number(row.gross_margin_pct) || 0.4;
-  const marginPctScenario = clamp(
-    marginPctBase + objective.marginAdjustment - promoDepthPct * 0.0014,
-    0.2,
-    0.75
-  );
+  // Promo margin erosion: discount reduces margin because COGS stays fixed.
+  // At baseline price P with margin M, COGS = P*(1-M).
+  // At promo price P*(1-d), new margin = 1 - COGS/(P*(1-d)) = 1 - (1-M)/(1-d).
+  const promoFracForMargin = promoFrac > 0 ? promoFrac : 0;
+  const cogsRatio = 1 - marginPctBase;
+  const marginPctScenario = promoFracForMargin > 0
+    ? clamp(1 - cogsRatio / (1 - promoFracForMargin) + objective.marginAdjustment, 0.05, 0.75)
+    : clamp(marginPctBase + objective.marginAdjustment, 0.05, 0.75);
 
   const revenueScenario = unitsScenario * newPrice;
   const profitScenario = revenueScenario * marginPctScenario;
@@ -381,33 +389,186 @@ function populateSkuSelector() {
 }
 
 function updateSignalCards(socialShockPts = 0, socialBaseScore = null, socialTrendDelta = null) {
-  const massCompEl = document.getElementById('channel-promo-comp-mass');
-  const prestigeCompEl = document.getElementById('channel-promo-comp-prestige');
+  const skuPriceBody = document.getElementById('channel-promo-sku-price-body');
   const socialScoreEl = document.getElementById('channel-promo-social-score');
-  const socialTrendEl = document.getElementById('channel-promo-social-trend');
-  if (!massCompEl || !prestigeCompEl || !socialScoreEl || !socialTrendEl) return;
+  if (!socialScoreEl) return;
 
-  const marketRow = getExternalFactorsForWeek(currentSeasonWeek);
+  // --- Populate per-SKU competitor price table (aggregated by SKU + channel group) ---
+  if (skuPriceBody) {
+    const weekRows = getCurrentWeekRows();
+    if (weekRows && weekRows.length > 0) {
+      // Aggregate rows: average across sales channels within same SKU + channel group
+      const grouped = new Map();
+      weekRows.forEach(row => {
+        const key = `${row.sku_id}|${row.channel_group}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            sku_name: row.sku_name,
+            channel_group: row.channel_group,
+            listPrices: [],
+            compPrices: [],
+            gaps: []
+          });
+        }
+        const entry = grouped.get(key);
+        if (Number.isFinite(Number(row.list_price))) entry.listPrices.push(Number(row.list_price));
+        if (Number.isFinite(Number(row.competitor_price))) entry.compPrices.push(Number(row.competitor_price));
+        if (Number.isFinite(Number(row.price_gap_vs_competitor))) entry.gaps.push(Number(row.price_gap_vs_competitor));
+      });
+
+      const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+      skuPriceBody.innerHTML = [...grouped.values()].map(entry => {
+        const ourPrice = avg(entry.listPrices);
+        const compPrice = avg(entry.compPrices);
+        const gap = avg(entry.gaps);
+        const gapDisplay = Number.isFinite(gap)
+          ? `<span style="color:${gap >= 0 ? 'var(--bs-success)' : 'var(--bs-danger)'}">${formatPercent(gap)}</span>`
+          : '--';
+        const channelLabel = entry.channel_group === 'mass' ? 'Mass' : 'Prestige';
+        return `<tr>
+          <td>${entry.sku_name || '--'}</td>
+          <td>${channelLabel}</td>
+          <td class="text-end">${Number.isFinite(ourPrice) ? formatCurrency(ourPrice) : '--'}</td>
+          <td class="text-end">${Number.isFinite(compPrice) ? formatCurrency(compPrice) : '--'}</td>
+          <td class="text-end">${gapDisplay}</td>
+        </tr>`;
+      }).join('');
+    } else {
+      skuPriceBody.innerHTML = '<tr><td colspan="5" class="text-muted text-center">--</td></tr>';
+    }
+  }
+
+  // --- Social engagement score & channel breakdown ---
+  const currentWeekSocial = getSocialSignalForWeek(currentSeasonWeek);
   const { score, trendDelta } = getSocialSummary();
-  const baseScore = Number.isFinite(Number(socialBaseScore)) ? Number(socialBaseScore) : score;
-  const baseTrendDelta = Number.isFinite(Number(socialTrendDelta)) ? Number(socialTrendDelta) : trendDelta;
+  const baseScore = Number.isFinite(Number(socialBaseScore))
+    ? Number(socialBaseScore)
+    : normalizeSocialScore(currentWeekSocial?.brand_social_index ?? currentWeekSocial?.social_sentiment ?? score);
+  const baseTrendDelta = Number.isFinite(Number(socialTrendDelta))
+    ? Number(socialTrendDelta)
+    : trendDelta;
+  const socialTrendBadge = document.getElementById('channel-promo-social-trend-badge');
+  const socialShock = clamp(Number(socialShockPts) || 0, -20, 20);
 
-  massCompEl.textContent = marketRow?.competitor_mass_price
-    ? formatCurrency(marketRow.competitor_mass_price)
-    : '--';
-  prestigeCompEl.textContent = marketRow?.competitor_prestige_price
-    ? formatCurrency(marketRow.competitor_prestige_price)
-    : '--';
+  const buildScenarioSocialSnapshot = (row, shockPts, fallbackScore) => {
+    if (!row) return null;
+
+    const shock = clamp(Number(shockPts) || 0, -20, 20);
+    const platformConfigs = [
+      { key: 'tiktok', mentionWeight: 1.18, rateWeight: 1.15 },
+      { key: 'instagram', mentionWeight: 0.96, rateWeight: 0.92 },
+      { key: 'youtube', mentionWeight: 0.74, rateWeight: 0.82 },
+      { key: 'twitter', mentionWeight: 0.58, rateWeight: 0.68 }
+    ];
+
+    const baseSentiment = Number(row.social_sentiment);
+    const scenarioSentiment = Number.isFinite(baseSentiment)
+      ? clamp(baseSentiment + shock * 0.0042, 0.2, 0.95)
+      : null;
+    const effectiveScore = Number.isFinite(Number(fallbackScore))
+      ? clamp(Number(fallbackScore) + shock, 20, 98)
+      : normalizeSocialScore(row.brand_social_index ?? row.social_sentiment ?? null);
+
+    const platforms = platformConfigs.map(config => {
+      const baseMentions = Number(row[`${config.key}_mentions`]);
+      const baseRate = Number(row[`${config.key}_engagement_rate`]);
+      const mentionMultiplier = clamp(
+        1 + (shock / 100) * config.mentionWeight + (Number.isFinite(baseSentiment) && Number.isFinite(scenarioSentiment) ? (scenarioSentiment - baseSentiment) * 0.4 : 0),
+        0.52,
+        1.58
+      );
+      const adjustedMentions = Number.isFinite(baseMentions)
+        ? Math.max(0, Math.round(baseMentions * mentionMultiplier))
+        : null;
+      const adjustedRate = Number.isFinite(baseRate)
+        ? clamp(baseRate + shock * 0.06 * config.rateWeight, 0.2, 18)
+        : null;
+
+      return {
+        key: config.key,
+        mentions: adjustedMentions,
+        rate: adjustedRate,
+        baseMentions,
+        baseRate
+      };
+    });
+
+    const totalBaseMentions = platforms.reduce((sum, item) => sum + (Number.isFinite(item.baseMentions) ? item.baseMentions : 0), 0);
+    const totalScenarioMentions = platforms.reduce((sum, item) => sum + (Number.isFinite(item.mentions) ? item.mentions : 0), 0);
+    const baseWeightedRate = totalBaseMentions > 0
+      ? platforms.reduce((sum, item) => sum + ((Number.isFinite(item.baseMentions) ? item.baseMentions : 0) * (Number.isFinite(item.baseRate) ? item.baseRate : 0)), 0) / totalBaseMentions
+      : null;
+    const scenarioWeightedRate = totalScenarioMentions > 0
+      ? platforms.reduce((sum, item) => sum + ((Number.isFinite(item.mentions) ? item.mentions : 0) * (Number.isFinite(item.rate) ? item.rate : 0)), 0) / totalScenarioMentions
+      : null;
+
+    const mentionLift = totalBaseMentions > 0 ? totalScenarioMentions / totalBaseMentions : 1;
+    const engagementLift = Number.isFinite(baseWeightedRate) && baseWeightedRate > 0 && Number.isFinite(scenarioWeightedRate)
+      ? scenarioWeightedRate / baseWeightedRate
+      : 1;
+    const sentimentLift = Number.isFinite(baseSentiment) && baseSentiment > 0 && Number.isFinite(scenarioSentiment)
+      ? scenarioSentiment / baseSentiment
+      : 1;
+    const baseEarned = Number(row.earned_social_value);
+    const scenarioEarned = Number.isFinite(baseEarned)
+      ? baseEarned * clamp(
+        Math.pow(mentionLift, 0.72) * Math.pow(engagementLift, 0.85) * Math.pow(sentimentLift, 0.58),
+        0.45,
+        1.95
+      )
+      : null;
+
+    return {
+      effectiveScore,
+      sentiment: scenarioSentiment,
+      earned: scenarioEarned,
+      platforms
+    };
+  };
+
+  const scenarioSocial = buildScenarioSocialSnapshot(currentWeekSocial, socialShock, baseScore);
 
   if (Number.isFinite(baseScore)) {
-    const effectiveScore = baseScore + Number(socialShockPts || 0);
+    const effectiveScore = Number.isFinite(scenarioSocial?.effectiveScore)
+      ? scenarioSocial.effectiveScore
+      : clamp(baseScore + socialShock, 20, 98);
     socialScoreEl.textContent = effectiveScore.toFixed(1);
-    const dir = baseTrendDelta > 0 ? 'up' : baseTrendDelta < 0 ? 'down' : 'flat';
-    socialTrendEl.textContent =
-      `Trend ${dir} (${baseTrendDelta >= 0 ? '+' : ''}${baseTrendDelta.toFixed(1)} vs prior week, shock ${socialShockPts >= 0 ? '+' : ''}${socialShockPts} pts)`;
+    if (socialTrendBadge) {
+      const effectiveTrendDelta = (Number.isFinite(baseTrendDelta) ? baseTrendDelta : 0) + socialShock;
+      const dir = effectiveTrendDelta > 0 ? 1 : effectiveTrendDelta < 0 ? -1 : 0;
+      const icon = dir > 0 ? 'bi-arrow-up' : dir < 0 ? 'bi-arrow-down' : 'bi-dash';
+      const color = dir > 0 ? 'text-success' : dir < 0 ? 'text-danger' : 'text-muted';
+      socialTrendBadge.innerHTML = `<i class="bi ${icon} ${color}"></i> <span class="${color}">${effectiveTrendDelta >= 0 ? '+' : ''}${effectiveTrendDelta.toFixed(1)}</span>`;
+    }
   } else {
     socialScoreEl.textContent = '--';
-    socialTrendEl.textContent = '--';
+    if (socialTrendBadge) socialTrendBadge.innerHTML = '';
+  }
+
+  // Populate per-channel social metrics
+  if (scenarioSocial) {
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const fmtMentions = (n) => { const v = Number(n); return Number.isFinite(v) ? (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)) : '--'; };
+    const fmtRate = (r) => { const v = Number(r); return Number.isFinite(v) ? `${v.toFixed(1)}%` : '--%'; };
+
+    const tiktok = scenarioSocial.platforms.find(item => item.key === 'tiktok');
+    const instagram = scenarioSocial.platforms.find(item => item.key === 'instagram');
+    const youtube = scenarioSocial.platforms.find(item => item.key === 'youtube');
+    const twitter = scenarioSocial.platforms.find(item => item.key === 'twitter');
+
+    setEl('social-tiktok-mentions', fmtMentions(tiktok?.mentions));
+    setEl('social-tiktok-rate', fmtRate(tiktok?.rate));
+    setEl('social-instagram-mentions', fmtMentions(instagram?.mentions));
+    setEl('social-instagram-rate', fmtRate(instagram?.rate));
+    setEl('social-youtube-mentions', fmtMentions(youtube?.mentions));
+    setEl('social-youtube-rate', fmtRate(youtube?.rate));
+    setEl('social-twitter-mentions', fmtMentions(twitter?.mentions));
+    setEl('social-twitter-rate', fmtRate(twitter?.rate));
+
+    const sentiment = Number(scenarioSocial.sentiment);
+    setEl('social-sentiment-value', Number.isFinite(sentiment) ? `${(sentiment * 100).toFixed(0)}%` : '--');
+    const earned = Number(scenarioSocial.earned);
+    setEl('social-earned-value', Number.isFinite(earned) ? `$${(earned / 1000).toFixed(1)}k` : '--');
   }
 }
 
@@ -789,7 +950,8 @@ function buildObjectiveSnapshot(
   skuBoostPct,
   socialScore,
   competitorShockPct,
-  socialReferenceScore = null
+  socialReferenceScore = null,
+  compShockProductFilter = 'all'
 ) {
   const scenarios = rows.map(row => {
     const baseDepth = row.channel_group === 'mass' ? massPromo : prestigePromo;
@@ -802,7 +964,8 @@ function buildObjectiveSnapshot(
       objectiveKey,
       socialScore,
       competitorShockPct,
-      socialReferenceScore
+      socialReferenceScore,
+      compShockProductFilter
     );
   });
   const transfers = applyCannibalizationTransfers(scenarios, objectiveKey, selectedSku, skuBoostPct);
@@ -1548,39 +1711,96 @@ function updateInventoryProjectionChart(groupLift = { mass: 1, prestige: 1 }) {
     return true;
   });
 
-  const currentRows = allRows.filter(row => Number(row.week_of_season) === currentSeasonWeek);
-  const startingInventory = currentRows.reduce(
-    (sum, row) => sum + (Number(row.end_inventory_units) || 0),
-    0
-  );
+  const totalWeeks = getSeasonWeeks();
 
+  // --- Build labels for all weeks (W1 .. W<totalWeeks>) ---
+  const labels = [];
+  for (let w = 1; w <= totalWeeks; w++) {
+    labels.push(`W${w}`);
+  }
+
+  // --- Historical actual series (Week 1 to currentSeasonWeek) ---
+  const actualSeries = [];
+  for (let w = 1; w <= totalWeeks; w++) {
+    if (w <= currentSeasonWeek) {
+      const weekRows = allRows.filter(row => Number(row.week_of_season) === w);
+      const endInv = weekRows.reduce(
+        (sum, row) => sum + (Number(row.end_inventory_units) || 0),
+        0
+      );
+      actualSeries.push(Math.round(endInv));
+    } else {
+      actualSeries.push(null);
+    }
+  }
+
+  // --- Starting inventory for projections (end inventory at currentSeasonWeek) ---
+  const startingInventory = actualSeries[currentSeasonWeek - 1] || 0;
+
+  // --- Projected series (currentSeasonWeek onwards) ---
   let baselineInv = startingInventory;
   let scenarioInv = startingInventory;
-  const labels = [`W${currentSeasonWeek}`];
-  const baselineSeries = [baselineInv];
-  const scenarioSeries = [scenarioInv];
+  const baselineSeries = [];
+  const scenarioSeries = [];
 
-  for (let w = currentSeasonWeek + 1; w <= getSeasonWeeks(); w += 1) {
-    const weekRows = allRows.filter(row => Number(row.week_of_season) === w);
-    const baselineDemand = weekRows.reduce((sum, row) => sum + (Number(row.net_units_sold) || 0), 0);
-    const scenarioDemand = weekRows.reduce((sum, row) => {
-      const baseUnits = Number(row.net_units_sold) || 0;
-      const multiplier = row.channel_group === 'prestige'
-        ? Number(groupLift.prestige || 1)
-        : Number(groupLift.mass || 1);
-      return sum + (baseUnits * multiplier);
-    }, 0);
-    baselineInv = Math.max(0, baselineInv - baselineDemand);
-    scenarioInv = Math.max(0, scenarioInv - scenarioDemand);
-    labels.push(`W${w}`);
-    baselineSeries.push(Math.round(baselineInv));
-    scenarioSeries.push(Math.round(scenarioInv));
+  for (let w = 1; w <= totalWeeks; w++) {
+    if (w < currentSeasonWeek) {
+      baselineSeries.push(null);
+      scenarioSeries.push(null);
+    } else if (w === currentSeasonWeek) {
+      // Transition point: matches last actual value so lines connect
+      baselineSeries.push(startingInventory);
+      scenarioSeries.push(startingInventory);
+    } else {
+      const weekRows = allRows.filter(row => Number(row.week_of_season) === w);
+      const baselineDemand = weekRows.reduce((sum, row) => sum + (Number(row.net_units_sold) || 0), 0);
+      const scenarioDemand = weekRows.reduce((sum, row) => {
+        const baseUnits = Number(row.net_units_sold) || 0;
+        const multiplier = row.channel_group === 'prestige'
+          ? Number(groupLift.prestige || 1)
+          : Number(groupLift.mass || 1);
+        return sum + (baseUnits * multiplier);
+      }, 0);
+      baselineInv = Math.max(0, baselineInv - baselineDemand);
+      scenarioInv = Math.max(0, scenarioInv - scenarioDemand);
+      baselineSeries.push(Math.round(baselineInv));
+      scenarioSeries.push(Math.round(scenarioInv));
+    }
   }
+
+  // --- Custom plugin: draw vertical dashed line at the current-week boundary ---
+  const currentWeekLinePlugin = {
+    id: 'currentWeekLine',
+    afterDraw(chart) {
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      if (!xScale || !yScale) return;
+      const index = currentSeasonWeek - 1; // 0-based index for the current week
+      const x = xScale.getPixelForValue(index);
+      const ctx2 = chart.ctx;
+      ctx2.save();
+      ctx2.beginPath();
+      ctx2.setLineDash([6, 4]);
+      ctx2.strokeStyle = 'rgba(107, 114, 128, 0.7)';
+      ctx2.lineWidth = 1.5;
+      ctx2.moveTo(x, yScale.top);
+      ctx2.lineTo(x, yScale.bottom);
+      ctx2.stroke();
+      // Label
+      ctx2.setLineDash([]);
+      ctx2.fillStyle = 'rgba(107, 114, 128, 0.85)';
+      ctx2.font = '11px sans-serif';
+      ctx2.textAlign = 'center';
+      ctx2.fillText('Today', x, yScale.top - 6);
+      ctx2.restore();
+    }
+  };
 
   if (channelPromoInventoryChart) {
     channelPromoInventoryChart.data.labels = labels;
-    channelPromoInventoryChart.data.datasets[0].data = baselineSeries;
-    channelPromoInventoryChart.data.datasets[1].data = scenarioSeries;
+    channelPromoInventoryChart.data.datasets[0].data = actualSeries;
+    channelPromoInventoryChart.data.datasets[1].data = baselineSeries;
+    channelPromoInventoryChart.data.datasets[2].data = scenarioSeries;
     channelPromoInventoryChart.update();
   } else if (window.Chart) {
     channelPromoInventoryChart = new Chart(ctx, {
@@ -1589,28 +1809,44 @@ function updateInventoryProjectionChart(groupLift = { mass: 1, prestige: 1 }) {
         labels,
         datasets: [
           {
-            label: 'Baseline inventory',
+            label: 'Actual inventory',
+            data: actualSeries,
+            borderColor: 'rgba(245, 158, 11, 1)',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            fill: false,
+            tension: 0.25,
+            borderWidth: 2.5,
+            pointRadius: 3,
+            spanGaps: false
+          },
+          {
+            label: 'Baseline projection',
             data: baselineSeries,
             borderColor: 'rgba(99, 102, 241, 0.9)',
             backgroundColor: 'rgba(99, 102, 241, 0.15)',
             fill: false,
-            tension: 0.25
+            tension: 0.25,
+            borderDash: [6, 3],
+            spanGaps: false
           },
           {
-            label: 'Scenario inventory',
+            label: 'Scenario projection',
             data: scenarioSeries,
             borderColor: 'rgba(16, 185, 129, 0.95)',
             backgroundColor: 'rgba(16, 185, 129, 0.2)',
             fill: false,
-            tension: 0.25
+            tension: 0.25,
+            spanGaps: false
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 20 } },
         plugins: { legend: { position: 'bottom' } }
-      }
+      },
+      plugins: [currentWeekLinePlugin]
     });
   }
 
@@ -1618,7 +1854,7 @@ function updateInventoryProjectionChart(groupLift = { mass: 1, prestige: 1 }) {
   const scenarioEnd = scenarioSeries[scenarioSeries.length - 1] || 0;
   noteEl.textContent =
     `Start inventory now: ${formatNumber(startingInventory)} units. ` +
-    `Projected week-${getSeasonWeeks()} left: baseline ${formatNumber(baselineEnd)}, scenario ${formatNumber(scenarioEnd)}.`;
+    `Projected week-${totalWeeks} left: baseline ${formatNumber(baselineEnd)}, scenario ${formatNumber(scenarioEnd)}.`;
 
   return {
     startingInventory,
@@ -1648,122 +1884,98 @@ function updateAiRecommendation(rows, objectiveKey, socialScore, inventoryProjec
   const excludeEl = document.getElementById('channel-promo-ai-exclude');
   const riskEl = document.getElementById('channel-promo-ai-risks');
   const briefEl = document.getElementById('channel-promo-ai-brief');
-  if (!summaryEl || !includeEl || !excludeEl || !riskEl || !briefEl) return;
+  const applyBtn = document.getElementById('channel-promo-apply-recommendation');
+  if (!summaryEl) return;
 
-  const underperformers = getHistoricalUnderperformerSet();
-  const objectiveWeights = {
-    balance: { inv: 1.0, elast: 1.0, gap: 1.0 },
-    sales: { inv: 1.1, elast: 1.2, gap: 1.1 },
-    profit: { inv: 0.7, elast: 0.75, gap: 0.8 }
-  };
-  const weights = objectiveWeights[objectiveKey] || objectiveWeights.balance;
+  // Show loading state — LLM will populate via app.js copilot flow
+  summaryEl.textContent = 'Analyzing scenario with LLM...';
+  if (includeEl) includeEl.textContent = 'Waiting for LLM...';
+  if (excludeEl) excludeEl.textContent = 'Waiting for LLM...';
+  if (riskEl) riskEl.textContent = 'Waiting for LLM...';
+  if (briefEl) briefEl.textContent = 'Waiting for LLM analysis...';
+  if (applyBtn) applyBtn.disabled = true;
+}
 
-  const skuMap = new Map();
-  rows.forEach(row => {
-    const key = row.sku_id;
-    if (!skuMap.has(key)) {
-      skuMap.set(key, {
-        sku_id: row.sku_id,
-        sku_name: row.sku_name,
-        inventory: 0,
-        elasticity: 0,
-        gap: 0,
-        count: 0
-      });
+function renderWeeklyActionPlan(massPromo, prestigePromo, focusSku, groupLift, objectiveKey) {
+  const planBody = document.getElementById('channel-promo-weekly-plan-body');
+  const planRange = document.getElementById('channel-promo-plan-range');
+  if (!planBody) return;
+
+  const horizon = getSeasonWeeks();
+  if (massPromo === 0 && prestigePromo === 0) {
+    planBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Set promo sliders to generate weekly plan.</td></tr>';
+    if (planRange) planRange.textContent = '--';
+    return;
+  }
+
+  if (planRange) planRange.textContent = `Week ${currentSeasonWeek}–${horizon}`;
+
+  const { group, sku } = getSelectedFilters();
+  const rows = [];
+
+  for (let w = currentSeasonWeek; w <= horizon; w++) {
+    const weekRows = skuWeeklyData.filter(r => {
+      if (Number(r.week_of_season) !== w) return false;
+      if (group !== 'all' && r.product_group !== group) return false;
+      if (sku !== 'all' && r.sku_id !== sku) return false;
+      return true;
+    });
+
+    const baseUnits = weekRows.reduce((s, r) => s + (Number(r.net_units_sold) || 0), 0);
+    const liftedUnits = weekRows.reduce((s, r) => {
+      const mult = r.channel_group === 'prestige'
+        ? Number(groupLift?.prestige || 1)
+        : Number(groupLift?.mass || 1);
+      return s + ((Number(r.net_units_sold) || 0) * mult);
+    }, 0);
+    const unitDelta = liftedUnits - baseUnits;
+
+    // Determine phase
+    const pctThrough = (w - 1) / horizon;
+    let phase = 'Launch';
+    if (pctThrough >= 0.75) phase = 'Clearance';
+    else if (pctThrough >= 0.4) phase = 'Peak Season';
+    else if (pctThrough >= 0.15) phase = 'Ramp-up';
+
+    // Ramp promo depth: lighter early, heavier in clearance
+    let massDepth = massPromo;
+    let prestigeDepth = prestigePromo;
+    if (phase === 'Launch') {
+      massDepth = Math.round(massPromo * 0.5);
+      prestigeDepth = Math.round(prestigePromo * 0.3);
+    } else if (phase === 'Ramp-up') {
+      massDepth = Math.round(massPromo * 0.75);
+      prestigeDepth = Math.round(prestigePromo * 0.6);
+    } else if (phase === 'Clearance') {
+      massDepth = Math.min(40, Math.round(massPromo * 1.3));
+      prestigeDepth = Math.min(30, Math.round(prestigePromo * 1.2));
     }
-    const entry = skuMap.get(key);
-    entry.inventory += Number(row.end_inventory_units || 0);
-    entry.elasticity += Math.abs(Number(row.base_elasticity || 0));
-    entry.gap += Number(row.price_gap_vs_competitor || 0);
-    entry.count += 1;
-  });
 
-  const ranked = [...skuMap.values()].map(entry => {
-    const avgElasticity = entry.count ? entry.elasticity / entry.count : 0;
-    const avgGap = entry.count ? entry.gap / entry.count : 0;
-    let score = 0;
-    const reasons = [];
-
-    if (entry.inventory >= 180) {
-      score += 2.0 * weights.inv;
-      reasons.push('high inventory');
-    }
-    if (avgElasticity >= 1.8) {
-      score += 2.0 * weights.elast;
-      reasons.push('elastic response');
-    } else {
-      score -= 0.8 * weights.elast;
-      reasons.push('less elastic');
-    }
-    if (avgGap > 0.02) {
-      score += 1.4 * weights.gap;
-      reasons.push('above competitor');
-    }
-    if (underperformers.has(entry.sku_id)) {
-      score -= 1.8;
-      reasons.push('past underperformance');
-    }
-    if (Number.isFinite(socialScore) && socialScore >= 75 && avgElasticity < 1.5) {
-      score -= 1.2;
-      reasons.push('strong social hold-price signal');
+    // Pick focus SKU: use the recommendation if available
+    let skuLabel = '--';
+    if (focusSku && focusSku !== 'all') {
+      const skuRow = weekRows.find(r => r.sku_id === focusSku);
+      skuLabel = skuRow?.sku_name || focusSku;
+    } else if (weekRows.length > 0) {
+      // Pick SKU with highest inventory
+      const topRow = weekRows.reduce((best, r) =>
+        (Number(r.end_inventory_units) || 0) > (Number(best.end_inventory_units) || 0) ? r : best
+      , weekRows[0]);
+      skuLabel = topRow.sku_name || topRow.sku_id;
     }
 
-    return {
-      ...entry,
-      avgElasticity,
-      avgGap,
-      score,
-      reasons
-    };
-  }).sort((a, b) => b.score - a.score);
+    const isCurrentWeek = w === currentSeasonWeek;
+    rows.push(`<tr class="${isCurrentWeek ? 'table-info' : ''}">
+      <td><strong>W${w}</strong>${isCurrentWeek ? ' <span class="badge bg-info text-dark">Now</span>' : ''}</td>
+      <td>${phase}</td>
+      <td>${massDepth > 0 ? `${massDepth}% off` : 'Hold'}</td>
+      <td>${prestigeDepth > 0 ? `${prestigeDepth}% off` : 'Hold'}</td>
+      <td class="text-nowrap">${skuLabel}</td>
+      <td>${unitDelta > 0 ? `<span class="text-success">+${Math.round(unitDelta)} units</span>` : unitDelta < 0 ? `<span class="text-danger">${Math.round(unitDelta)} units</span>` : '--'}</td>
+    </tr>`);
+  }
 
-  const include = ranked.filter(x => x.score >= 1.5).slice(0, 3);
-  const exclude = ranked.filter(x => x.score < 1.5).slice(0, 3);
-
-  const projectedEnd = Number(inventoryProjection?.scenarioEnd || 0);
-  const totalCurrentInv = ranked.reduce((s, r) => s + r.inventory, 0);
-  const clearancePct = totalCurrentInv > 0
-    ? ((totalCurrentInv - projectedEnd) / totalCurrentInv) * 100
-    : 0;
-
-  summaryEl.textContent = `Objective: ${OBJECTIVE_CONFIG[objectiveKey]?.label || objectiveKey}. Forecast clearance by week ${getSeasonWeeks()}: ${clearancePct.toFixed(1)}% of currently selected inventory.`;
-  includeEl.textContent = include.length
-    ? include.map(x => `${x.sku_name || x.sku_id} (${x.reasons[0] || 'fit'})`).join(', ')
-    : 'No strong promo candidates.';
-  excludeEl.textContent = exclude.length
-    ? exclude.map(x => `${x.sku_name || x.sku_id} (${x.reasons[0] || 'hold'})`).join(', ')
-    : 'No SKU exclusions suggested.';
-
-  const riskBits = [];
-  if (projectedEnd > 0) riskBits.push(`${formatNumber(projectedEnd)} units may remain by week ${getSeasonWeeks()}`);
-  if (Number.isFinite(socialScore) && socialScore >= 75) riskBits.push('high social score favors selective discounting');
-  if (ranked.some(x => x.avgGap > 0.05)) riskBits.push('some SKUs are materially above competitor pricing');
-  riskEl.textContent = riskBits.length ? riskBits.join('; ') : 'No immediate risk flags.';
-
-  const massRows = rows.filter(r => r.channel_group === 'mass');
-  const prestigeRows = rows.filter(r => r.channel_group === 'prestige');
-  const avgGap = list => list.length
-    ? list.reduce((sum, row) => sum + Number(row.price_gap_vs_competitor || 0), 0) / list.length
-    : 0;
-  const massGap = avgGap(massRows);
-  const prestigeGap = avgGap(prestigeRows);
-  const channelAction = [
-    massGap > 0.02 ? 'Mass: defend volume with selective promo on elastic SKUs.' : 'Mass: hold or shallow promos only.',
-    prestigeGap > 0.02 ? 'Prestige: limited tactical offers where elasticity supports.' : 'Prestige: hold pricing where possible.'
-  ].join(' ');
-
-  const topInclude = include.slice(0, 2).map(x => x.sku_name || x.sku_id).join(', ') || 'none';
-  const topExclude = exclude.slice(0, 2).map(x => x.sku_name || x.sku_id).join(', ') || 'none';
-  const liftVsBaseline = totalCurrentInv > 0
-    ? ((totalCurrentInv - projectedEnd) / totalCurrentInv)
-    : 0;
-
-  briefEl.innerHTML =
-    `<strong>Decision Brief (Week ${currentSeasonWeek})</strong><br>` +
-    `1. <strong>Include:</strong> ${topInclude}.<br>` +
-    `2. <strong>Exclude/Hold:</strong> ${topExclude}.<br>` +
-    `3. <strong>Channel Plan:</strong> ${channelAction}<br>` +
-    `4. <strong>Expected Week-${getSeasonWeeks()} Inventory Effect:</strong> ${liftVsBaseline >= 0 ? '+' : ''}${formatPercent(liftVsBaseline)} clearance vs current stock baseline.`;
+  planBody.innerHTML = rows.join('');
 }
 
 function updateChannelPromoSimulator() {
@@ -1773,6 +1985,7 @@ function updateChannelPromoSimulator() {
   const prestigePromo = Number(document.getElementById('prestige-promo-slider')?.value || 0);
   const skuBoostPct = Number(document.getElementById('channel-promo-sku-boost-slider')?.value || 0);
   const competitorShockPct = Number(document.getElementById('channel-promo-comp-shock')?.value || 0);
+  const compShockProduct = document.getElementById('channel-promo-comp-shock-product')?.value || 'all';
   const socialShockPts = Number(document.getElementById('channel-promo-social-shock')?.value || 0);
   const objectiveKey = document.getElementById('channel-promo-objective')?.value || 'balance';
   const objective = OBJECTIVE_CONFIG[objectiveKey] || OBJECTIVE_CONFIG.balance;
@@ -1825,7 +2038,8 @@ function updateChannelPromoSimulator() {
     skuBoostPct,
     socialScore,
     competitorShockPct,
-    socialReferenceForModel
+    socialReferenceForModel,
+    compShockProduct
   );
   const objectiveNoSocialShockSnapshot = buildObjectiveSnapshot(
     rows,
@@ -1836,7 +2050,8 @@ function updateChannelPromoSimulator() {
     skuBoostPct,
     socialNoShockScore,
     competitorShockPct,
-    socialReferenceForModel
+    socialReferenceForModel,
+    compShockProduct
   );
   const {
     scenarios,
@@ -1854,7 +2069,8 @@ function updateChannelPromoSimulator() {
       objectiveKey,
       socialScore,
       competitorShockPct,
-      socialReferenceForModel
+      socialReferenceForModel,
+      compShockProduct
     )
   );
   const migrationSnapshot = (rowsForMigration.length >= 2)
@@ -1867,7 +2083,8 @@ function updateChannelPromoSimulator() {
       skuBoostPct,
       socialScore,
       competitorShockPct,
-      socialReferenceForModel
+      socialReferenceForModel,
+      compShockProduct
     )
     : objectiveSnapshot;
   const migrationNoSocialSnapshot = (rowsForMigration.length >= 2)
@@ -1880,7 +2097,8 @@ function updateChannelPromoSimulator() {
       skuBoostPct,
       socialNoShockScore,
       competitorShockPct,
-      socialReferenceForModel
+      socialReferenceForModel,
+      compShockProduct
     )
     : objectiveNoSocialShockSnapshot;
   const migrationTransfers = migrationSnapshot.transfers || cannibalizationTransfers;
@@ -1894,15 +2112,18 @@ function updateChannelPromoSimulator() {
   const profitDeltaEl = document.getElementById('channel-promo-profit-delta');
   const profitNoteEl = document.getElementById('channel-promo-profit-note');
 
+  const revenueDollarDelta = totals.scenarioRevenue - totals.baselineRevenue;
+  const profitDollarDelta = totals.scenarioProfit - totals.baselineProfit;
+
   if (revenueDeltaEl && revenueNoteEl) {
-    revenueDeltaEl.textContent = formatPercent(revenueDeltaPct);
+    revenueDeltaEl.textContent = `${formatPercent(revenueDeltaPct)} (${revenueDollarDelta >= 0 ? '+' : ''}${formatCurrency(revenueDollarDelta)})`;
     revenueDeltaEl.className = `fs-4 fw-bold ${revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}`;
-    revenueNoteEl.textContent = `Baseline = ${formatCurrency(totals.baselineRevenue)}`;
+    revenueNoteEl.innerHTML = `<span>Baseline ${formatCurrency(totals.baselineRevenue)}</span><span>Scenario ${formatCurrency(totals.scenarioRevenue)}</span>`;
   }
   if (profitDeltaEl && profitNoteEl) {
-    profitDeltaEl.textContent = formatPercent(profitDeltaPct);
+    profitDeltaEl.textContent = `${formatPercent(profitDeltaPct)} (${profitDollarDelta >= 0 ? '+' : ''}${formatCurrency(profitDollarDelta)})`;
     profitDeltaEl.className = `fs-4 fw-bold ${profitDeltaPct >= 0 ? 'text-success' : 'text-danger'}`;
-    profitNoteEl.textContent = `Baseline = ${formatCurrency(totals.baselineProfit)}`;
+    profitNoteEl.innerHTML = `<span>Baseline ${formatCurrency(totals.baselineProfit)}</span><span>Scenario ${formatCurrency(totals.scenarioProfit)}</span>`;
   }
 
   let posture = 'Balanced';
@@ -1927,9 +2148,15 @@ function updateChannelPromoSimulator() {
     posturePill.className = pillClass;
     posturePill.textContent = posture;
     postureLine1.textContent = `${objective.label}.`;
-    postureLine2.textContent =
-      `Projected unit lift vs baseline: ${formatPercent((liftFactor - 1) || 0)}. ` +
-      `Competitor shock ${competitorShockPct >= 0 ? '+' : ''}${competitorShockPct}%, social shock ${socialShockPts >= 0 ? '+' : ''}${socialShockPts} pts.`;
+    const liftPct = formatPercent((liftFactor - 1) || 0);
+    const revSign = revenueDollarDelta >= 0 ? '+' : '';
+    const profSign = profitDollarDelta >= 0 ? '+' : '';
+    const compSign = competitorShockPct >= 0 ? '+' : '';
+    const socSign = socialShockPts >= 0 ? '+' : '';
+    postureLine2.innerHTML =
+      `<span class="me-3">Units <strong>${liftPct}</strong></span>` +
+      `<span class="me-3">Rev <strong>${revSign}${formatCurrency(revenueDollarDelta)}</strong></span>` +
+      `<span>Profit <strong>${profSign}${formatCurrency(profitDollarDelta)}</strong></span>`;
   }
 
   const liveRevenueEl = document.getElementById('channel-promo-live-revenue');
@@ -1937,11 +2164,11 @@ function updateChannelPromoSimulator() {
   const livePostureEl = document.getElementById('channel-promo-live-posture');
   const liveNoteEl = document.getElementById('channel-promo-live-note');
   if (liveRevenueEl) {
-    liveRevenueEl.textContent = formatPercent(revenueDeltaPct);
+    liveRevenueEl.textContent = `${formatPercent(revenueDeltaPct)} (${revenueDollarDelta >= 0 ? '+' : ''}${formatCurrency(revenueDollarDelta)})`;
     liveRevenueEl.className = `fw-semibold ${revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}`;
   }
   if (liveProfitEl) {
-    liveProfitEl.textContent = formatPercent(profitDeltaPct);
+    liveProfitEl.textContent = `${formatPercent(profitDeltaPct)} (${profitDollarDelta >= 0 ? '+' : ''}${formatCurrency(profitDollarDelta)})`;
     liveProfitEl.className = `fw-semibold ${profitDeltaPct >= 0 ? 'text-success' : 'text-danger'}`;
   }
   if (livePostureEl) {
@@ -1953,7 +2180,7 @@ function updateChannelPromoSimulator() {
       `${objective.label}. Shock inputs: competitor ${competitorShockPct >= 0 ? '+' : ''}${competitorShockPct}%, social ${socialShockPts >= 0 ? '+' : ''}${socialShockPts} pts.`;
   }
 
-  const labels = ['Mass Channel', 'Prestige Channel'];
+  const labels = ['Target & Amazon', 'Sephora & Ulta'];
   const revenueBaselineData = [totals.mass.baselineRevenue, totals.prestige.baselineRevenue];
   const revenueScenarioData = [totals.mass.scenarioRevenue, totals.prestige.scenarioRevenue];
   const profitBaselineData = [totals.mass.baselineProfit, totals.prestige.baselineProfit];
@@ -2040,7 +2267,8 @@ function updateChannelPromoSimulator() {
       skuBoostPct,
       socialScore,
       competitorShockPct,
-      socialReferenceForModel
+      socialReferenceForModel,
+      compShockProduct
     );
     const projection = projectWeek17Inventory(group, sku, applyMass, applyPrestige, snapshot.groupLift);
     const clearancePct = totalCurrentInventory > 0
@@ -2075,6 +2303,78 @@ function updateChannelPromoSimulator() {
   renderLivePulseChart();
   renderLiveFeed(currentSeasonWeek);
   updateAiRecommendation(rows, objectiveKey, socialScore, inventoryProjection);
+  renderWeeklyActionPlan(massPromo, prestigePromo, sku, groupLift, objectiveKey);
+
+  // --- ROI calculation ---
+  // Promo spend = discount depth * units sold at discount (revenue given up per unit * scenario units)
+  const avgBaselinePrice = totals.baselineUnits > 0
+    ? totals.baselineRevenue / totals.baselineUnits
+    : 0;
+  const avgScenarioPrice = totals.scenarioUnits > 0
+    ? totals.scenarioRevenue / totals.scenarioUnits
+    : 0;
+  const priceDiscount = Math.max(0, avgBaselinePrice - avgScenarioPrice);
+  const promoSpend = priceDiscount * totals.scenarioUnits;
+  // Incremental revenue = extra units sold * scenario price
+  const incrementalUnits = Math.max(0, totals.scenarioUnits - totals.baselineUnits);
+  const incrementalRevenue = incrementalUnits * avgScenarioPrice;
+  const promoROI = promoSpend > 0 ? incrementalRevenue / promoSpend : 0;
+
+  const spendEl = document.getElementById('channel-promo-spend');
+  const spendNoteEl = document.getElementById('channel-promo-spend-note');
+  const incrRevEl = document.getElementById('channel-promo-incremental-rev');
+  const incrNoteEl = document.getElementById('channel-promo-incremental-note');
+  const roiEl = document.getElementById('channel-promo-roi');
+  const roiNoteEl = document.getElementById('channel-promo-roi-note');
+
+  if (spendEl) {
+    spendEl.textContent = promoSpend > 0 ? formatCurrency(promoSpend) : '$0';
+    spendEl.className = `fs-5 fw-bold ${promoSpend > 0 ? 'text-danger' : 'text-muted'}`;
+  }
+  if (spendNoteEl) {
+    spendNoteEl.textContent = promoSpend > 0
+      ? `Avg discount: ${formatCurrency(priceDiscount)}/unit on ${formatNumber(totals.scenarioUnits)} units`
+      : 'No promo discount applied';
+  }
+  if (incrRevEl) {
+    incrRevEl.textContent = incrementalRevenue > 0 ? `+${formatCurrency(incrementalRevenue)}` : '$0';
+    incrRevEl.className = `fs-5 fw-bold ${incrementalRevenue > 0 ? 'text-success' : 'text-muted'}`;
+  }
+  if (incrNoteEl) {
+    incrNoteEl.textContent = incrementalUnits > 0
+      ? `+${formatNumber(incrementalUnits)} extra units at ${formatCurrency(avgScenarioPrice)}/unit`
+      : 'No incremental volume from promo';
+  }
+  if (roiEl) {
+    if (promoSpend > 0 && incrementalRevenue > 0) {
+      roiEl.textContent = `${promoROI.toFixed(1)}x`;
+      if (promoROI >= 3) {
+        roiEl.className = 'fs-4 fw-bold text-success';
+      } else if (promoROI >= 1.5) {
+        roiEl.className = 'fs-4 fw-bold text-primary';
+      } else {
+        roiEl.className = 'fs-4 fw-bold text-danger';
+      }
+    } else if (promoSpend === 0) {
+      roiEl.textContent = '--';
+      roiEl.className = 'fs-4 fw-bold text-muted';
+    } else {
+      roiEl.textContent = '0x';
+      roiEl.className = 'fs-4 fw-bold text-danger';
+    }
+  }
+  if (roiNoteEl) {
+    if (promoSpend > 0 && promoROI > 0) {
+      let roiVerdict = '';
+      if (promoROI >= 3) roiVerdict = 'Strong return — approve';
+      else if (promoROI >= 1.5) roiVerdict = 'Acceptable return';
+      else if (promoROI >= 1) roiVerdict = 'Marginal — review before approving';
+      else roiVerdict = 'Below breakeven — reduce promo depth';
+      roiNoteEl.innerHTML = `${formatCurrency(promoSpend)} spend → ${formatCurrency(incrementalRevenue)} gain. <strong>${roiVerdict}.</strong>`;
+    } else {
+      roiNoteEl.textContent = 'Return per $1 of promo spend';
+    }
+  }
 
   const marketRow = getExternalFactorsForWeek(currentSeasonWeek) || {};
   latestPromoSnapshot = {
@@ -2121,6 +2421,120 @@ function updateChannelPromoSimulator() {
   if (window.onChannelPromoSnapshotUpdated && typeof window.onChannelPromoSnapshotUpdated === 'function') {
     window.onChannelPromoSnapshotUpdated(latestPromoSnapshot);
   }
+
+}
+
+// --------------- Competitor Alert Banner ---------------
+const SKU_DISPLAY_NAMES = {
+  SUN_S1: 'Daily Shield SPF 40',
+  SUN_S2: 'Invisible Mist SPF 50',
+  SUN_S3: 'Sport Gel SPF 60',
+  MOI_M1: 'Hydra Daily Lotion',
+  MOI_M2: 'Barrier Repair Cream',
+  MOI_M3: 'Night Recovery Balm'
+};
+
+const CHANNEL_DISPLAY_NAMES = {
+  target: 'Target',
+  amazon: 'Amazon',
+  sephora: 'Sephora',
+  ulta: 'Ulta'
+};
+
+async function updateCompetitorAlertBanner() {
+  const banner = document.getElementById('competitor-alert-banner');
+  if (!banner) return;
+
+  try {
+    const feed = await loadCompetitorPriceFeed();
+    if (!feed?.length) { banner.classList.add('d-none'); return; }
+
+    // Group by week (captured_at date)
+    const weekMap = new Map();
+    for (const row of feed) {
+      const weekKey = row.captured_at?.slice(0, 10) || '';
+      if (!weekMap.has(weekKey)) weekMap.set(weekKey, []);
+      weekMap.get(weekKey).push(row);
+    }
+
+    const sortedWeeks = [...weekMap.keys()].sort();
+    if (sortedWeeks.length < 2) { banner.classList.add('d-none'); return; }
+
+    const latestWeek = sortedWeeks[sortedWeeks.length - 1];
+    const prevWeek = sortedWeeks[sortedWeeks.length - 2];
+    const latestRows = weekMap.get(latestWeek);
+    const prevRows = weekMap.get(prevWeek);
+
+    // Build lookup: sku+channel -> price for previous week
+    const prevPriceMap = new Map();
+    for (const row of prevRows) {
+      prevPriceMap.set(`${row.matched_sku_id}_${row.channel}`, Number(row.observed_price) || 0);
+    }
+
+    // Find significant drops (>5%)
+    const alerts = [];
+    for (const row of latestRows) {
+      const currPrice = Number(row.observed_price) || 0;
+      const prevPrice = prevPriceMap.get(`${row.matched_sku_id}_${row.channel}`) || 0;
+      if (prevPrice <= 0 || currPrice <= 0) continue;
+      const dropPct = ((prevPrice - currPrice) / prevPrice) * 100;
+      if (dropPct > 5) {
+        alerts.push({
+          sku: row.matched_sku_id,
+          skuName: SKU_DISPLAY_NAMES[row.matched_sku_id] || row.matched_sku_id,
+          channel: row.channel,
+          channelName: CHANNEL_DISPLAY_NAMES[row.channel] || row.channel,
+          prevPrice,
+          currPrice,
+          dropPct,
+          promo: String(row.promo_flag).toLowerCase() === 'true'
+        });
+      }
+    }
+
+    if (alerts.length === 0) { banner.classList.add('d-none'); return; }
+
+    // Sort by drop magnitude
+    alerts.sort((a, b) => b.dropPct - a.dropPct);
+
+    const titleEl = document.getElementById('competitor-alert-title');
+    const bodyEl = document.getElementById('competitor-alert-body');
+
+    if (alerts.length === 1) {
+      const a = alerts[0];
+      titleEl.textContent = `Competitor Price Alert: ${a.skuName} (${a.sku})`;
+      bodyEl.innerHTML = `${a.channelName} competitor undercut <strong>${a.skuName}</strong> by ${a.dropPct.toFixed(1)}% — price dropped from $${a.prevPrice.toFixed(2)} to $${a.currPrice.toFixed(2)}${a.promo ? ' (promo flagged)' : ''}. Your price gap may be widening.`;
+    } else {
+      titleEl.textContent = `Competitor Price Alert: ${alerts.length} undercuts detected`;
+      const lines = alerts.slice(0, 4).map(a =>
+        `<strong>${a.skuName}</strong> on ${a.channelName}: down ${a.dropPct.toFixed(1)}% ($${a.prevPrice.toFixed(2)} → $${a.currPrice.toFixed(2)})${a.promo ? ' ⚡promo' : ''}`
+      );
+      bodyEl.innerHTML = lines.join('<br>');
+    }
+
+    banner.classList.remove('d-none');
+
+    // Wire buttons
+    const impactBtn = document.getElementById('competitor-alert-impact-btn');
+    const adjustBtn = document.getElementById('competitor-alert-adjust-btn');
+
+    if (impactBtn) {
+      impactBtn.onclick = () => {
+        const skuTable = document.getElementById('channel-promo-sku-response');
+        if (skuTable) skuTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    }
+
+    if (adjustBtn) {
+      adjustBtn.onclick = () => {
+        const pivotBtn = document.getElementById('channel-promo-preset-pivot');
+        if (pivotBtn) pivotBtn.click();
+      };
+    }
+  } catch (err) {
+    console.warn('Competitor alert banner error:', err);
+    banner.classList.add('d-none');
+  }
 }
 
 async function initializeChannelPromoSimulator() {
@@ -2163,17 +2577,13 @@ async function initializeChannelPromoSimulator() {
     const skuSelect = document.getElementById('channel-promo-sku');
     const skuBoostSlider = document.getElementById('channel-promo-sku-boost-slider');
     const compShockSlider = document.getElementById('channel-promo-comp-shock');
+    const compShockProductSelect = document.getElementById('channel-promo-comp-shock-product');
     const socialShockSlider = document.getElementById('channel-promo-social-shock');
     const presetBaselineBtn = document.getElementById('channel-promo-preset-baseline');
     const presetPivotBtn = document.getElementById('channel-promo-preset-pivot');
     const presetSocialBtn = document.getElementById('channel-promo-preset-social');
     const presetClearanceBtn = document.getElementById('channel-promo-preset-clearance');
     const runCannibalDemoBtn = document.getElementById('channel-promo-run-cannibal-demo');
-    const runPitchBtn = document.getElementById('channel-promo-run-pitch');
-    const stopPitchBtn = document.getElementById('channel-promo-stop-pitch');
-    const pitchCaptionEl = document.getElementById('channel-promo-pitch-caption');
-    const defaultPitchCaption =
-      'Pitch mode will auto-run: Start of Season -> In-Season Pivot -> Future Vision.';
     const narrativeNoteEl = document.getElementById('channel-promo-narrative-note');
     const applyMass = document.getElementById('channel-promo-apply-mass');
     const applyPrestige = document.getElementById('channel-promo-apply-prestige');
@@ -2222,29 +2632,6 @@ async function initializeChannelPromoSimulator() {
       setLivePlaybackButton(false);
     };
 
-    const setPitchButtons = (running) => {
-      if (runPitchBtn) runPitchBtn.disabled = running;
-      if (stopPitchBtn) stopPitchBtn.disabled = !running;
-    };
-
-    const setPitchCaption = (text) => {
-      if (!pitchCaptionEl) return;
-      pitchCaptionEl.textContent = text;
-    };
-
-    const stopPitchMode = (caption = null) => {
-      if (pitchModeTimer) {
-        clearTimeout(pitchModeTimer);
-        pitchModeTimer = null;
-      }
-      pitchModeActive = false;
-      setPitchButtons(false);
-      if (caption === null) {
-        setPitchCaption(defaultPitchCaption);
-      } else {
-        setPitchCaption(caption);
-      }
-    };
 
     const getPlaybackIntervalMs = () => {
       const speed = String(liveSpeedSelect?.value || '1x');
@@ -2390,7 +2777,6 @@ async function initializeChannelPromoSimulator() {
     };
 
     const runCannibalizationDemo = () => {
-      stopPitchMode();
       stopLivePlayback();
       setControl(groupSelect, 'sunscreen');
       populateSkuSelector();
@@ -2408,67 +2794,39 @@ async function initializeChannelPromoSimulator() {
       updateValues();
     };
 
-    const runPitchMode = () => {
-      stopPitchMode();
-      stopLivePlayback();
-      pitchModeActive = true;
-      setPitchButtons(true);
-      const finalActWeek = clamp(getSeasonWeeks() - 2, 1, getEffectiveMaxWeek());
 
-      const acts = [
-        {
-          title: 'Act 1/3: Start of Season',
-          caption: 'Establish baseline inventory, product elasticity, and channel posture.',
-          durationMs: 5200,
-          run: () => {
-            applyPreset('baseline');
-            setWeek(2, { applyAutoSignals: true });
-            updateValues();
-          }
-        },
-        {
-          title: 'Act 2/3: In-Season Pivot',
-          caption: 'Inject competitor + social market signal and recalculate channel promotions in real-time.',
-          durationMs: 5600,
-          run: () => {
-            applyPreset('pivot');
-            setControl(socialShockSlider, 10);
-            setWeek(8, { applyAutoSignals: false });
-            updateValues();
-          }
-        },
-        {
-          title: 'Act 3/3: Future Vision',
-          caption: `Push guided clearance strategy toward week-${getSeasonWeeks()} close while managing cannibalization.`,
-          durationMs: 6400,
-          run: () => {
-            applyPreset('clearance');
-            setWeek(finalActWeek, { applyAutoSignals: false });
-            updateValues();
-          }
+
+    // Apply Recommendation button
+    const applyRecommendationBtn = document.getElementById('channel-promo-apply-recommendation');
+    const applyStatusEl = document.getElementById('channel-promo-apply-status');
+    if (applyRecommendationBtn) {
+      applyRecommendationBtn.addEventListener('click', () => {
+        if (!latestRecommendation) return;
+        const rec = latestRecommendation;
+        setControl(massSlider, rec.massPromo);
+        setControl(prestigeSlider, rec.prestigePromo);
+        if (rec.focusSku) {
+          setControl(groupSelect, 'all');
+          populateSkuSelector();
+          setControl(skuSelect, rec.focusSku);
+          setControl(skuBoostSlider, rec.skuBoost);
+          updateSkuBoostState();
         }
-      ];
-
-      const playAct = (idx) => {
-        if (!pitchModeActive) return;
-        if (idx >= acts.length) {
-          stopPitchMode(`Pitch complete: baseline -> pivot -> week-${getSeasonWeeks()} optimization walkthrough finished.`);
-          return;
+        updateValues();
+        if (applyStatusEl) {
+          applyStatusEl.textContent = `Applied: Mass ${rec.massPromo}%, Prestige ${rec.prestigePromo}%${rec.focusSku ? `, focus ${rec.focusSku}` : ''}`;
+          applyStatusEl.className = 'small text-success';
+          setTimeout(() => { applyStatusEl.textContent = ''; }, 4000);
         }
-        const act = acts[idx];
-        act.run();
-        setPitchCaption(`${act.title}. ${act.caption}`);
-        pitchModeTimer = setTimeout(() => playAct(idx + 1), act.durationMs);
-      };
-
-      playAct(0);
-    };
+      });
+    }
 
     stopLivePlayback();
     massSlider?.addEventListener('input', updateValues);
     prestigeSlider?.addEventListener('input', updateValues);
     skuBoostSlider?.addEventListener('input', updateValues);
     compShockSlider?.addEventListener('input', updateValues);
+    compShockProductSelect?.addEventListener('change', updateChannelPromoSimulator);
     socialShockSlider?.addEventListener('input', updateValues);
     objectiveSelect?.addEventListener('change', updateChannelPromoSimulator);
     groupSelect?.addEventListener('change', () => {
@@ -2481,30 +2839,21 @@ async function initializeChannelPromoSimulator() {
       updateChannelPromoSimulator();
     });
     presetBaselineBtn?.addEventListener('click', () => {
-      stopPitchMode();
       applyPreset('baseline');
     });
     presetPivotBtn?.addEventListener('click', () => {
-      stopPitchMode();
       applyPreset('pivot');
     });
     presetSocialBtn?.addEventListener('click', () => {
-      stopPitchMode();
       applyPreset('social');
     });
     presetClearanceBtn?.addEventListener('click', () => {
-      stopPitchMode();
       applyPreset('clearance');
     });
     runCannibalDemoBtn?.addEventListener('click', runCannibalizationDemo);
-    runPitchBtn?.addEventListener('click', runPitchMode);
-    stopPitchBtn?.addEventListener('click', () => {
-      stopPitchMode('Pitch mode stopped.');
-    });
     applyMass?.addEventListener('change', updateChannelPromoSimulator);
     applyPrestige?.addEventListener('change', updateChannelPromoSimulator);
     weekSlider?.addEventListener('input', () => {
-      stopPitchMode();
       stopLivePlayback();
       setWeek(weekSlider.value, { applyAutoSignals: true });
       updateValues();
@@ -2529,7 +2878,6 @@ async function initializeChannelPromoSimulator() {
       }, getPlaybackIntervalMs());
     });
     liveToggleBtn?.addEventListener('click', () => {
-      stopPitchMode();
       if (livePlaybackTimer) {
         stopLivePlayback();
         return;
@@ -2551,21 +2899,21 @@ async function initializeChannelPromoSimulator() {
       if (currentSeasonWeek > updated) {
         setWeek(updated, { applyAutoSignals: true });
       }
-      stopPitchMode('Planning horizon updated.');
       stopLivePlayback();
       updateValues();
     });
     liveResetBtn?.addEventListener('click', () => {
-      stopPitchMode();
       stopLivePlayback();
       setWeek(1, { applyAutoSignals: true });
       updateValues();
     });
 
-    setPitchButtons(false);
     updateSkuBoostState();
     setWeek(currentSeasonWeek, { applyAutoSignals: true });
     updateValues();
+
+    // Populate competitor alert banner
+    updateCompetitorAlertBanner();
   } catch (error) {
     console.error('Error initializing Channel Promotions Simulator:', error);
   }
@@ -2573,3 +2921,6 @@ async function initializeChannelPromoSimulator() {
 
 window.initializeChannelPromoSimulator = initializeChannelPromoSimulator;
 window.getChannelPromoSnapshot = () => latestPromoSnapshot;
+window.setChannelPromoRecommendation = (rec) => {
+  latestRecommendation = rec;
+};

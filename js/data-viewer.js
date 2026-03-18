@@ -651,7 +651,7 @@ function renderDatasetChart() {
         labels,
         datasets: [
           {
-            label: 'Mass Channel revenue',
+            label: 'Target & Amazon revenue',
             data: massSeries,
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.2)',
@@ -659,7 +659,7 @@ function renderDatasetChart() {
             tension: 0.3
           },
           {
-            label: 'Prestige Channel revenue',
+            label: 'Sephora & Ulta revenue',
             data: prestigeSeries,
             borderColor: '#8b5cf6',
             backgroundColor: 'rgba(139, 92, 246, 0.2)',

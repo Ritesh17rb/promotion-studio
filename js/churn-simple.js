@@ -19,6 +19,9 @@ let churnTimeLag = null;  // Will be loaded from data
 // Baseline churn rate (loaded from elasticity-params.json)
 let baselineChurn = null;
 
+// SKU-level elasticity data (loaded from elasticity-params.json)
+let skuElasticityData = null;
+
 // Cohort data for dynamic curve shaping
 let cohortData = null;
 
@@ -59,6 +62,12 @@ async function loadChurnParams() {
         price: elasticityData.tiers.ad_free.price_range.current
       }
     };
+
+    // Store SKU-level elasticity data for product filtering
+    if (elasticityData.sku_elasticity) {
+      skuElasticityData = elasticityData.sku_elasticity;
+      console.log('✓ Loaded SKU elasticity data:', Object.keys(skuElasticityData).length, 'products');
+    }
 
     // Set default baseline churn (ad_supported)
     baselineChurn = churnParams.ad_supported.baseline_repeat_loss;
@@ -510,6 +519,15 @@ function setupChurnInteractivity() {
     });
   });
 
+  // Product selection change
+  const productSelect = document.getElementById('churn-product-select');
+  if (productSelect) {
+    productSelect.addEventListener('change', () => {
+      console.log('🔄 Switching churn product:', productSelect.value);
+      updateChurnModel(currentTier);
+    });
+  }
+
   // Cohort selection change
   if (cohortSelect && cohortData) {
     cohortSelect.addEventListener('change', () => {
@@ -565,12 +583,28 @@ function updateChurnModel(currentTier = 'ad_supported') {
   const currentTierPrice = tierParams.price;
   const priceChangePct = (priceIncrease / currentTierPrice) * 100;
 
+  // Check for SKU-specific elasticity override
+  const productSelect = document.getElementById('churn-product-select');
+  const selectedSku = productSelect ? productSelect.value : 'all';
+  let effectiveElasticity = tierParams.repeat_loss_elasticity;
+
+  if (selectedSku !== 'all' && skuElasticityData && skuElasticityData[selectedSku]) {
+    // Map tier to SKU elasticity key: ad_supported → mass, ad_free → prestige
+    const skuTierKey = currentTier === 'ad_supported' ? 'mass' : 'prestige';
+    const skuData = skuElasticityData[selectedSku][skuTierKey];
+    if (skuData && skuData.base_elasticity) {
+      effectiveElasticity = skuData.base_elasticity;
+      console.log(`🏷️ SKU override: ${selectedSku} (${skuTierKey}) elasticity = ${effectiveElasticity}`);
+    }
+  }
+
   console.log('📊 Churn Model Update:', {
     priceIncrease,
     currentTierPrice,
     priceChangePct: priceChangePct.toFixed(2) + '%',
     baseline_repeat_loss: tierParams.baseline_repeat_loss,
-    repeat_loss_elasticity: tierParams.repeat_loss_elasticity,
+    repeat_loss_elasticity: effectiveElasticity,
+    selectedSku,
     chartExists: !!churnChartSimple
   });
 
@@ -578,9 +612,9 @@ function updateChurnModel(currentTier = 'ad_supported') {
   document.getElementById('churn-increase-display').textContent = '+$' + priceIncrease.toFixed(2);
   document.getElementById('churn-pct-change').textContent = '+' + priceChangePct.toFixed(1) + '%';
 
-  // Calculate total churn impact using actual churn elasticity
+  // Calculate total churn impact using actual churn elasticity (or SKU-specific override)
   // Formula: repeat_loss_change = baseline_repeat_loss × repeat_loss_elasticity × (price_change_pct / 100)
-  const totalChurnImpact = tierParams.baseline_repeat_loss * tierParams.repeat_loss_elasticity * (priceChangePct / 100);
+  const totalChurnImpact = tierParams.baseline_repeat_loss * effectiveElasticity * (priceChangePct / 100);
 
   // Distribute impact across time horizons using time lag distribution
   const impacts = {

@@ -57,8 +57,13 @@ Your job is to recommend practical promotion actions by SKU and channel using:
 
 Current business context:
 - Total customers: {currentCustomers}
+- Customer breakdown: {currentCustomersBreakdown}
 - Monthly revenue: {currentRevenue}
+- Revenue breakdown: {currentRevenueBreakdown}
+- Avg order value: {currentAov}
+- AOV breakdown: {currentAovBreakdown}
 - Average repeat-loss rate: {currentChurn}
+- Channel repeat-loss breakdown: {currentChurnBreakdown}
 - Current season position: week {seasonWeek} of {seasonLength}
 
 Channel response context:
@@ -284,8 +289,8 @@ function buildSystemPrompt() {
         const avgAOV = (totalAOV / totalSegments).toFixed(2);
 
         segmentSummary = `${totalSegments} behavioral segments across 2 channel groups:
-- Mass Channel: ${tierCounts['ad_supported'] || 0} segments
-- Prestige Channel: ${tierCounts['ad_free'] || 0} segments
+- Target & Amazon: ${tierCounts['ad_supported'] || 0} segments
+- Sephora & Ulta: ${tierCounts['ad_free'] || 0} segments
 Total Customers: ${totalCustomers.toLocaleString()}
 Avg Repeat Loss: ${avgRepeatLoss}%
 Avg Order Value: $${avgAOV}`;
@@ -337,9 +342,14 @@ Use filters by channel group, repeat-loss risk, and value tier.`;
 
   // Replace placeholders with actual values
   const prompt = promptTemplate
-    .replace('{currentCustomers}', businessContext.currentCustomers?.toLocaleString() || 'N/A')
-    .replace('{currentRevenue}', businessContext.currentRevenue ? `$${businessContext.currentRevenue.toLocaleString()}` : 'N/A')
-    .replace('{currentChurn}', businessContext.currentChurn ? `${(businessContext.currentChurn * 100).toFixed(2)}%` : 'N/A')
+    .replace('{currentCustomers}', Number.isFinite(Number(businessContext.currentCustomers)) ? businessContext.currentCustomers.toLocaleString() : 'N/A')
+    .replace('{currentCustomersBreakdown}', businessContext.currentCustomersBreakdown || 'N/A')
+    .replace('{currentRevenue}', Number.isFinite(Number(businessContext.currentRevenue)) ? `$${businessContext.currentRevenue.toLocaleString()}` : 'N/A')
+    .replace('{currentRevenueBreakdown}', businessContext.currentRevenueBreakdown || 'N/A')
+    .replace('{currentAov}', Number.isFinite(Number(businessContext.currentAov)) ? `$${businessContext.currentAov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A')
+    .replace('{currentAovBreakdown}', businessContext.currentAovBreakdown || 'N/A')
+    .replace('{currentChurn}', Number.isFinite(Number(businessContext.currentChurn)) ? `${(businessContext.currentChurn * 100).toFixed(2)}%` : 'N/A')
+    .replace('{currentChurnBreakdown}', businessContext.currentChurnBreakdown || 'N/A')
     .replace('{seasonWeek}', (businessContext.currentSeasonWeek || 'N/A').toString())
     .replace('{seasonLength}', (businessContext.seasonWeeks || 'N/A').toString())
     .replace('{elasticityAdSupported}', (businessContext.elasticityByTier?.ad_supported || -2.1).toString())
@@ -1099,7 +1109,10 @@ export async function generateLiveCopilot(payload = {}) {
     || null;
   const businessContext = payload.businessContext || dataContext?.businessContext || {};
 
-  const systemPrompt = `You are a promotion optimization copilot.
+  const systemPrompt = `You are a promotion optimization copilot for Supergoop (seasonal sunscreen & moisturizer brand).
+The 6 SKUs are: Daily Shield SPF 40 (SUN_S1), Invisible Mist SPF 50 (SUN_S2), Sport Gel SPF 60 (SUN_S3), Hydra Daily Lotion (MOI_M1), Barrier Repair Cream (MOI_M2), Night Recovery Balm (MOI_M3).
+The 4 retailers are: Target & Amazon (mass channel), Sephora & Ulta (prestige channel).
+
 Return ONLY valid JSON with schema:
 {
   "summary": "string <= 240 chars",
@@ -1107,9 +1120,22 @@ Return ONLY valid JSON with schema:
   "confidence": 0-100 number,
   "actions": ["string", "string", "string"],
   "risks": ["string", "string"],
-  "why_now": "string <= 160 chars"
+  "why_now": "string <= 160 chars",
+  "include_in_promo": "string <= 200 chars — specific SKU names to promote and why (e.g. 'Daily Shield SPF 40 (high inventory, elastic), Sport Gel SPF 60 (above competitor)')",
+  "exclude_hold": "string <= 200 chars — specific SKU names to hold/exclude and why (e.g. 'Night Recovery Balm (strong social pull, less elastic)')",
+  "risk_watch": "string <= 200 chars — key risks to monitor this week",
+  "decision_brief": "string <= 400 chars — numbered brief: 1) Include, 2) Exclude/Hold, 3) Channel plan (name Target/Amazon/Sephora/Ulta), 4) Expected inventory effect",
+  "recommended_mass_promo": "number 0-40 — recommended promo depth % for Target & Amazon",
+  "recommended_prestige_promo": "number 0-30 — recommended promo depth % for Sephora & Ulta",
+  "focus_sku": "string — SKU ID to focus boost on (e.g. SUN_S1) or empty string",
+  "sku_boost": "number 0-20 — recommended extra discount % for focus SKU"
 }
-Use only the provided data and avoid fabricating metrics.`;
+
+Rules:
+- Name specific products by their full name (not SKU codes) and specific retailers
+- If social buzz is high, recommend HOLDING price on those products
+- Factor in weeks remaining in season vs inventory levels
+- Do NOT fabricate metrics — only reference numbers from the provided data`;
 
   const userPrompt = JSON.stringify({
     task: 'Analyze current live promo scenario and recommend immediate actions.',
@@ -1122,7 +1148,7 @@ Use only the provided data and avoid fabricating metrics.`;
     }
   });
 
-  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.15, maxTokens: 700 });
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.15, maxTokens: 1000 });
 }
 
 export async function generateScenarioPlanFromText(payload = {}) {
@@ -1187,3 +1213,4 @@ Tie analysis to competitor delta, social momentum, inventory runway, and channel
 
   return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.2, maxTokens: 700 });
 }
+

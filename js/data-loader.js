@@ -522,6 +522,8 @@ function normalizeRetailEvents(rows) {
     event_id: row.event_id,
     date: row.week_start,
     event_type: row.event_type,
+    channel_group: row.channel_group,
+    affected_channel: row.affected_channel,
     tier: channelGroupToTier(row.channel_group),
     affected_cohort: row.affected_channel,
     price_before: row.price_before,

@@ -376,7 +376,7 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
         .text(yLabel);
 
     // Title (retail: Mass / Prestige channel)
-    const tierLabel = tier === 'ad_supported' ? 'Mass Channel' : tier === 'ad_free' ? 'Prestige Channel' : tier.replace('_', ' ').toUpperCase();
+    const tierLabel = tier === 'ad_supported' ? 'Target & Amazon' : tier === 'ad_free' ? 'Sephora & Ulta' : tier.replace('_', ' ').toUpperCase();
     svg.append('text')
         .attr('x', width / 2)
         .attr('y', -margin.top / 2)
@@ -808,9 +808,9 @@ export function render3AxisRadialChart(containerId, tier, highlightSegment = nul
 
     // Center title (use retail-friendly tier label)
     const tierLabel = tier === 'ad_supported'
-        ? 'Mass Channel Cohorts'
+        ? 'Target & Amazon Cohorts'
         : tier === 'ad_free'
-            ? 'Prestige Channel Cohorts'
+            ? 'Sephora & Ulta Cohorts'
             : tier.replace('_', ' ').toUpperCase();
 
     svg.append('text')
@@ -1059,9 +1059,9 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
 
     // Title (retail-friendly tier label)
     const tierLabel = tier === 'ad_supported'
-        ? 'Mass Channel'
+        ? 'Target & Amazon'
         : tier === 'ad_free'
-            ? 'Prestige Channel'
+            ? 'Sephora & Ulta'
             : tier.replace('_', ' ').toUpperCase();
 
     svg.append('text')
