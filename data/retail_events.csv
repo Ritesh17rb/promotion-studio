@@ -1,27 +1,27 @@
 event_id,week_start,event_type,channel_group,affected_channel,price_before,price_after,promo_id,promo_discount_pct,notes,validation_window
-EVT_001,2026-02-02,Tentpole,all,all,0.0,0.0,,0.0,Season kickoff: SUN_S1 S2 S3 + MOI_M1 M2 M3 assortment load-in across all retailers,confounded
-EVT_002,2026-03-02,Tentpole,all,all,0.0,0.0,,0.0,Memorial Day sun care spike: SUN_S1 S2 S3 demand surge at Target & Amazon & Sephora & Ulta,confounded
-EVT_003,2026-03-23,Tentpole,all,all,0.0,0.0,,0.0,Prime Day marketplace pressure: Amazon aggressive on SUN_S3 (Sport Gel) and MOI_M2 (Hydra Boost),confounded
-EVT_004,2026-04-20,Tentpole,all,all,0.0,0.0,,0.0,Back-to-routine hydration push: MOI_M1 M2 M3 see 15-20% demand lift post-summer,confounded
-EVT_005,2026-05-11,Tentpole,all,all,0.0,0.0,,0.0,Labor Day closeout: Target & Amazon push SUN_S1 S2 S3 clearance pricing,confounded
-EVT_006,2026-05-25,Tentpole,all,all,0.0,0.0,,0.0,End-of-season inventory close: all SKUs enter clearance across all channels,confounded
-EVT_007,2026-02-23,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Defensive 17.5% promo on SUN_S1 S2 S3 at Target & Amazon — countering competitor undercut on SUN_S3,confounded
-EVT_008,2026-02-23,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Amazon undercut SUN_S3 (SPF 50 Sport Gel) from $22.40 to $19.90 — down 11.2% on mass channel,confounded
-EVT_009,2026-03-02,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Defensive 17.5% promo on SUN_S1 S2 S3 at Target & Amazon — countering competitor undercut on SUN_S3,confounded
-EVT_010,2026-03-02,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Amazon undercut SUN_S3 (SPF 50 Sport Gel) from $22.40 to $19.90 — down 11.2% on mass channel,confounded
-EVT_011,2026-03-23,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Defensive 17.5% promo on SUN_S1 S2 S3 at Target & Amazon — countering competitor undercut on SUN_S3,confounded
-EVT_012,2026-03-23,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Amazon undercut SUN_S3 (SPF 50 Sport Gel) from $22.40 to $19.90 — down 11.2% on mass channel,confounded
-EVT_013,2026-04-20,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Defensive 17.5% promo on SUN_S1 S2 S3 at Target & Amazon — countering competitor undercut on SUN_S3,confounded
-EVT_014,2026-04-20,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Amazon undercut SUN_S3 (SPF 50 Sport Gel) from $22.40 to $19.90 — down 11.2% on mass channel,confounded
-EVT_015,2026-05-11,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Defensive 17.5% promo on SUN_S1 S2 S3 at Target & Amazon — countering competitor undercut on SUN_S3,confounded
-EVT_016,2026-05-11,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Amazon undercut SUN_S3 (SPF 50 Sport Gel) from $22.40 to $19.90 — down 11.2% on mass channel,confounded
-EVT_017,2026-02-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,8% Glow Weekend promo on elastic prestige SKUs (SUN_S2 + MOI_M2) at Sephora & Ulta,clean
-EVT_018,2026-03-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,8% Glow Weekend promo on elastic prestige SKUs (SUN_S2 + MOI_M2) at Sephora & Ulta,clean
-EVT_019,2026-04-13,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,8% Glow Weekend promo on elastic prestige SKUs (SUN_S2 + MOI_M2) at Sephora & Ulta,clean
-EVT_020,2026-05-04,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,8% Glow Weekend promo on elastic prestige SKUs (SUN_S2 + MOI_M2) at Sephora & Ulta,clean
-EVT_021,2026-02-02,Promo Start,mass,target|amazon,0.0,0.0,PROMO_SPRING_BASELINE_SPF_2026,10.0,Season opening 10% SPF baseline: SUN_S1 S2 S3 at Target & Amazon,clean
-EVT_022,2026-03-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_TIKTOK_SPORT_GEL_HOLD_2026,5.0,5% social momentum hold on SUN_S3 (Sport Gel SPF 50) at Sephora & Ulta — riding TikTok virality,clean
-EVT_023,2026-05-25,Promo Start,all,sephora|ulta|target|amazon,0.0,0.0,PROMO_WEEK17_CLEARANCE_MIX_2026,20.0,Week-17 smart clearance: 20% off remaining SUN_S1 S2 S3 + MOI_M1 M2 M3 inventory across all channels,holdout
-EVT_024,2026-03-02,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral TikTok content boosted SUN_S3 (Sport Gel) awareness — lowered price sensitivity across all channels,confounded
-EVT_025,2026-04-13,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral TikTok content boosted SUN_S3 (Sport Gel) awareness — lowered price sensitivity across all channels,confounded
-EVT_026,2026-05-04,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral TikTok content boosted SUN_S3 (Sport Gel) awareness — lowered price sensitivity across all channels,confounded
+EVT_001,2026-02-02,Tentpole,all,all,0.0,0.0,,0.0,Season kickoff assortment load-in,confounded
+EVT_002,2026-03-02,Tentpole,all,all,0.0,0.0,,0.0,Memorial Day sun care spike,confounded
+EVT_003,2026-03-23,Tentpole,all,all,0.0,0.0,,0.0,Prime Day marketplace pressure,confounded
+EVT_004,2026-04-20,Tentpole,all,all,0.0,0.0,,0.0,Back-to-routine hydration push,confounded
+EVT_005,2026-05-11,Tentpole,all,all,0.0,0.0,,0.0,Labor Day closeout pressure,confounded
+EVT_006,2026-05-25,Tentpole,all,all,0.0,0.0,,0.0,End-of-season inventory close,confounded
+EVT_007,2026-02-23,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Mass defensive promo launched due competitor undercut.,confounded
+EVT_008,2026-02-23,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Competitor dropped price on key mass SKU cluster.,confounded
+EVT_009,2026-03-02,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Mass defensive promo launched due competitor undercut.,confounded
+EVT_010,2026-03-02,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Competitor dropped price on key mass SKU cluster.,confounded
+EVT_011,2026-03-23,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Mass defensive promo launched due competitor undercut.,confounded
+EVT_012,2026-03-23,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Competitor dropped price on key mass SKU cluster.,confounded
+EVT_013,2026-04-20,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Mass defensive promo launched due competitor undercut.,confounded
+EVT_014,2026-04-20,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Competitor dropped price on key mass SKU cluster.,confounded
+EVT_015,2026-05-11,Promo Start,mass,target|amazon,0.0,0.0,PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026,17.5,Mass defensive promo launched due competitor undercut.,confounded
+EVT_016,2026-05-11,Competitor Price Change,mass,amazon,22.4,19.9,COMP_SCAN,0.0,Competitor dropped price on key mass SKU cluster.,confounded
+EVT_017,2026-02-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,Selective prestige promo on elastic SKUs only.,clean
+EVT_018,2026-03-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,Selective prestige promo on elastic SKUs only.,clean
+EVT_019,2026-04-13,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,Selective prestige promo on elastic SKUs only.,clean
+EVT_020,2026-05-04,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_PRESTIGE_GLOW_WEEKEND_2026,8.0,Selective prestige promo on elastic SKUs only.,clean
+EVT_021,2026-02-02,Promo Start,mass,target|amazon,0.0,0.0,PROMO_SPRING_BASELINE_SPF_2026,10.0,Season opening SPF baseline campaign started.,clean
+EVT_022,2026-03-16,Promo Start,prestige,sephora|ulta,0.0,0.0,PROMO_TIKTOK_SPORT_GEL_HOLD_2026,5.0,Social momentum hold campaign on premium SPF SKUs.,clean
+EVT_023,2026-05-25,Promo Start,all,sephora|ulta|target|amazon,0.0,0.0,PROMO_WEEK17_CLEARANCE_MIX_2026,20.0,Week-17 smart clearance mix activated to close inventory.,holdout
+EVT_024,2026-03-02,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral creator content increased brand pull and lowered elasticity.,confounded
+EVT_025,2026-04-13,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral creator content increased brand pull and lowered elasticity.,confounded
+EVT_026,2026-05-04,Social Spike,all,all,0.0,0.0,SOCIAL_VIRAL,0.0,Viral creator content increased brand pull and lowered elasticity.,confounded

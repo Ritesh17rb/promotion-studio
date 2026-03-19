@@ -4,7 +4,8 @@
       "Bash(ls:*)",
       "Bash(du -sh data/* js/* css/*)",
       "Bash(node:*)",
-      "Bash(grep -n \"rank-scenarios-btn\\\\|recommend-scenario-btn\" /c/Users/admin/work/promotion-studio/js/*.js)"
+      "Bash(grep -n \"rank-scenarios-btn\\\\|recommend-scenario-btn\" /c/Users/admin/work/promotion-studio/js/*.js)",
+      "Bash(python:*)"
     ]
   }
 }

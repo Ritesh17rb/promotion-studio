@@ -282,7 +282,7 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
                     <strong>${window.segmentEngine.formatCompositeKey(d.compositeKey)}</strong><br>
                     <em class="text-white-50" style="font-size: 11px;">${segmentSummary}</em><br>
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <strong>Elasticity:</strong> ${d.elasticity.toFixed(2)}<br>
+                        <strong>Response score:</strong> ${d.elasticity.toFixed(2)}<br>
                         <strong>${axis === 'engagement' ? 'Repeat Loss' :
                                 axis === 'monetization' ? 'Avg Order Value' : 'CAC Sensitivity'}:</strong>
                         ${axis === 'engagement' ? (d.kpi * 100).toFixed(2) + '%' :
@@ -322,7 +322,7 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
                 `
                   <div>${segmentSummary}</div>
                   <div class="mt-1">
-                    <strong>Elasticity:</strong> ${d.elasticity.toFixed(2)}<br>
+                    <strong>Response score:</strong> ${d.elasticity.toFixed(2)}<br>
                     <strong>Customers:</strong> ${d.customers.toLocaleString()}
                   </div>
                 `
@@ -376,14 +376,14 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
         .text(yLabel);
 
     // Title (retail: Mass / Prestige channel)
-    const tierLabel = tier === 'ad_supported' ? 'Target & Amazon' : tier === 'ad_free' ? 'Sephora & Ulta' : tier.replace('_', ' ').toUpperCase();
+    const tierLabel = tier === 'ad_supported' ? 'Mass Cohorts' : tier === 'ad_free' ? 'Prestige Cohorts' : tier.replace('_', ' ').toUpperCase();
     svg.append('text')
         .attr('x', width / 2)
         .attr('y', -margin.top / 2)
         .attr('text-anchor', 'middle')
         .attr('font-size', '16px')
         .attr('font-weight', 'bold')
-        .text(`${window.segmentEngine.axisLabels[axis]} – ${tierLabel}`);
+        .text(`${window.segmentEngine.axisLabels[axis]} - ${tierLabel}`);
 
     // Legend
     const legendWidth = 20;
@@ -432,7 +432,7 @@ export function renderSegmentElasticityHeatmap(containerId, tier, filters = {}, 
         .attr('text-anchor', 'middle')
         .attr('font-size', '11px')
         .attr('font-weight', 'bold')
-        .text('Elasticity scale');
+        .text('Response scale');
 }
 
 /**
@@ -765,7 +765,7 @@ export function render3AxisRadialChart(containerId, tier, highlightSegment = nul
         .attr('y', 130)
         .attr('font-size', '10px')
         .attr('fill', '#666')
-        .text('Bubble color: Repeat-loss risk');
+        .text('Bubble color: Repeat-pressure level');
 
     // Low (green)
     legend.append('circle')
@@ -804,13 +804,13 @@ export function render3AxisRadialChart(containerId, tier, highlightSegment = nul
         .attr('y', 188)
         .attr('font-size', '9px')
         .attr('fill', '#ef4444')
-        .text('High (retention risk)');
+        .text('High (watch closely)');
 
     // Center title (use retail-friendly tier label)
     const tierLabel = tier === 'ad_supported'
-        ? 'Target & Amazon Cohorts'
+        ? 'Mass Cohorts'
         : tier === 'ad_free'
-            ? 'Sephora & Ulta Cohorts'
+            ? 'Prestige Cohorts'
             : tier.replace('_', ' ').toUpperCase();
 
     svg.append('text')
@@ -820,7 +820,7 @@ export function render3AxisRadialChart(containerId, tier, highlightSegment = nul
         .attr('font-weight', 'bold')
         .attr('font-size', '16px')
         .attr('fill', '#333')
-        .text(`3-Axis Customer Cohorts – ${tierLabel}`);
+        .text(`3-Axis Customer Cohorts - ${tierLabel}`);
 }
 
 /**
@@ -905,10 +905,10 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
         .attr('text-anchor', 'middle')
         .attr('font-weight', 'bold')
         .text(axis === 'engagement'
-            ? 'Elasticity (repeat-loss impact)'
+            ? 'Response intensity (loyalty pressure)'
             : axis === 'acquisition'
-                ? 'Elasticity (acquisition response)'
-                : 'Elasticity (tier migration)');
+                ? 'Response intensity (own-price reaction)'
+                : 'Response intensity (basket migration)');
 
     // Quadrant line
     // Reference line at elasticity ~0 (no sensitivity)
@@ -958,7 +958,7 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
                 .html(`
                     <strong>${window.segmentEngine.formatCompositeKey(d.compositeKey)}</strong><br>
                     Customers: ${d.customers.toLocaleString()}<br>
-                    Elasticity (repeat loss): ${d.elasticity.toFixed(2)}<br>
+                    Response score: ${d.elasticity.toFixed(2)}<br>
                     Repeat loss rate: ${(d.repeat_loss_rate * 100).toFixed(2)}%<br>
                     Avg Order Value: $${d.avg_order_value.toFixed(2)}
                 `);
@@ -988,7 +988,7 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
                 `
                   <div>
                     Customers: ${d.customers.toLocaleString()}<br>
-                    Elasticity (${axisLabel}): ${d.elasticity.toFixed(2)}<br>
+                    Response score (${axisLabel}): ${d.elasticity.toFixed(2)}<br>
                     Repeat loss rate: ${(d.repeat_loss_rate * 100).toFixed(2)}%<br>
                     Avg Order Value: $${d.avg_order_value.toFixed(2)}
                   </div>
@@ -1031,7 +1031,7 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
         .attr('x', 22)
         .attr('y', 98)
         .attr('font-size', '9px')
-        .text('Low retention risk');
+        .text('Low repeat pressure');
 
     // Medium (yellow)
     legend.append('circle')
@@ -1043,7 +1043,7 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
         .attr('x', 22)
         .attr('y', 115)
         .attr('font-size', '9px')
-        .text('Medium retention risk');
+        .text('Medium repeat pressure');
 
     // High (red)
     legend.append('circle')
@@ -1055,13 +1055,13 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
         .attr('x', 22)
         .attr('y', 132)
         .attr('font-size', '9px')
-        .text('High retention risk');
+        .text('High repeat pressure');
 
     // Title (retail-friendly tier label)
     const tierLabel = tier === 'ad_supported'
-        ? 'Target & Amazon'
+        ? 'Mass Cohorts'
         : tier === 'ad_free'
-            ? 'Sephora & Ulta'
+            ? 'Prestige Cohorts'
             : tier.replace('_', ' ').toUpperCase();
 
     svg.append('text')
@@ -1070,7 +1070,7 @@ export function renderSegmentScatterPlot(containerId, tier, axis = 'engagement')
         .attr('text-anchor', 'middle')
         .attr('font-weight', 'bold')
         .attr('font-size', '14px')
-        .text(`Segment Analysis – ${tierLabel} cohorts`);
+        .text(`Cohort response map - ${tierLabel}`);
 }
 
 /**

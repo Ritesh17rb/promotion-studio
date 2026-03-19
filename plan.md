@@ -1,372 +1,476 @@
-# Promotion Optimization Implementation Plan (v2)
+# Transcript-Aligned Delivery Plan
 
-Date: 2026-03-04  
-Primary source: `meeting_transcript.md` (Ritesh Aggarwal feedback, Mar 2, 2026)
+Date: 2026-03-19
+Primary source: `meeting_transcript.md`
+Goal: realign the product to the exact story, data visibility, and business signals requested by Ritesh Aggarwal for the promotion optimization demo.
 
-## 1) Objective and Non-Negotiables
+## 1. What Ritesh Actually Wants
 
-This build must behave like a promotion optimization product, not a generic elasticity demo.
+This product should present itself as a business-facing promotion optimization workflow, not as a generic simulator or a pure elasticity demo.
 
-Non-negotiables from transcript:
+The intended presentation flow is:
 
-1. Narrative first:
-   - Start of season baseline.
-   - In-season pivot when market signals change.
-   - Future vision via roadmap placeholders.
-2. Model must be SKU-level:
-   - 2 product groups: `sunscreen`, `moisturizer`.
-   - 3 SKUs each (6 SKUs total).
-3. Market signals must be causal, not decorative:
-   - Competitor price movement changes sales even if we do not change our price.
-   - Social engagement changes effective price sensitivity and recommendations.
-4. Cannibalization must be explicit:
-   - Discounting SKU1 can pull volume from SKU2/SKU3 in same group.
-5. Season projection must be explicit:
-   - 17-week horizon, current week marker, inventory trendline to week 17.
-   - Goal is end-of-season inventory close to zero.
-6. Event/history must be drillable:
-   - Event type includes competitor price change.
-   - Past promotions show which SKUs were promoted, by channel and season, with up/down outcome.
-7. AI assistant must optimize:
-   - Include elastic SKUs with overhang.
-   - Exclude inelastic or repeatedly underperforming SKUs.
+1. Data Explorer first.
+2. Current state of the business second.
+3. Weekly deep dive / Event Calendar third.
+4. Segmentation and elasticity as supporting evidence for why segments react differently.
+5. Promotion simulation later in the flow.
+6. AI optimization last.
 
-## 2) Requirement Traceability Matrix
+What he wants to see in the product:
 
-`R01` Copy and framing must say promotion optimization everywhere, not elasticity modeling.  
-`R02` Step 1 must show channel examples and realistic KPIs.  
-`R03` Objective selector must change outputs (balance/sales/profit).  
-`R04` Competitor delta must impact sales without own price change.  
-`R05` Social signal must change effective elasticity and forecast behavior.  
-`R06` Competitive + social signals must be visible on dashboard and in the data exploration flow.  
-`R07` Event timeline must include `Competitor Price Change` type.  
-`R08` Promo cards/tables must identify promoted SKUs and season timing.  
-`R09` Elasticity must be SKU-specific; one table per SKU via dropdown in Step 5.  
-`R10` Season story must show baseline -> current week -> projected end week 17 -> optimized path.  
-`R11` Cannibalization within product group must be modeled and visualized.  
-`R12` AI assistant must recommend inclusion/exclusion based on elasticity, competition, social, and history.
+1. A clear opening that shows the underlying data being used.
+2. A current-state dashboard that tells the business story before asking the user to simulate anything.
+3. Explicit visibility of competitor price changes and social buzz as first-class inputs.
+4. Event reporting framed in operational business terms:
+   - what happened
+   - which SKUs/channels were affected
+   - what discount was used
+   - how many units moved
+   - what happened to revenue
+5. Cohort language that uses mass/prestige framing instead of retailer-name framing wherever the purpose is segmentation.
+6. More realistic underlying elasticity-related values, especially repeat loss and average order value.
 
-Each implementation task below is tagged back to these IDs.
+## 2. Requirement Breakdown from the Transcript
 
-## 3) Target Narrative (Demo Script)
+## 2.1 Screen Order / Narrative Requirements
 
-### Act A: Start of Season (Step 1)
+1. `Data Explorer` must be the first step.
+2. The current Step 1 content must move to Step 2 and become the current-state business view.
+3. Event Calendar remains an early analytical step and should read as the weekly deep dive.
+4. Simulation should not appear as the opening interaction; it should come later after the business context is established.
 
-1. We began a 17-week season with SKU-level starting inventory (example: 100 units for demo SKU, full dataset for 6 SKUs).
-2. Today we are in current week (for demo data: week 7).
-3. Baseline trendline shows expected inventory at week 17 if we do nothing.
-4. We decide whether to promote by channel and by SKU using elasticity + signals.
+Intent:
+Ritesh wants the demo to earn credibility first by showing data, then explain business state, then drill into what changed, and only then move into predictive / optimization actions.
 
-### Act B: In-Season Pivot (Step 2 + Step 3)
+## 2.2 Data Explorer Requirements
 
-1. A competitor changes price on Amazon/Target (simulated web-scraped signal).
-2. Social momentum changes (viral vs negative chatter).
-3. Engine recalculates SKU/channel demand, cannibalization, and inventory path in real time.
-4. Event Calendar explains what happened and when.
+1. Data Explorer must explicitly surface competitor data.
+2. Data Explorer must explicitly surface social media data.
+3. The purpose of the Data Explorer is not interpretation-first; it is source visibility and traceability.
+4. The missing gap called out in the meeting is channel-specific social buzz and competitor price changes by product.
 
-### Act C: Future Vision (Steps 6/7/8 roadmap modules + Step 9 AI)
+Intent:
+The audience should immediately understand that the downstream recommendations are grounded in multiple datasets, not fabricated by a simulator.
 
-1. Show planned modules for in-season planner, markdown sequencing, and cross-channel migration.
-2. AI summarizes recommended SKU mix: include/exclude rationale with data.
+## 2.3 Current State Dashboard Requirements
 
-## 4) Data and Model Design
+1. It should read as the “current state of the business”.
+2. It should support drill-down from total business to individual products.
+3. It should show the 4 key metrics together over time:
+   - own price
+   - competitor price
+   - competitor difference
+   - social media buzz
+4. This chart should be over a selected period, not just a latest-point snapshot.
 
-## 4.1 Canonical Dataset (R04, R05, R08, R10, R11)
+Intent:
+The dashboard should help a commercial stakeholder see the market position and demand context before deciding any action.
 
-Current direction is correct and will be hardened with the following contracts:
+## 2.4 Event Calendar Requirements
 
-1. `data/sku_channel_weekly.csv`
-   - Grain: `week x sku x sales_channel`.
-   - Required: inventory start/end, own price, competitor price, gap, base/effective elasticity, units, cannibalization outflow, revenue, margin.
-2. `data/channel_weekly.csv`
-   - Grain: `week x channel_group`.
-   - KPI rollup for cards.
-3. `data/market_signals.csv`
-   - Weekly competitive aggregate and market context.
-4. `data/social_signals.csv`
-   - Weekly social trend and brand social index.
-5. `data/retail_events.csv`
-   - Includes `Competitor Price Change` entries.
-6. `data/promo_metadata.json`
-   - Includes `promoted_skus`, per-SKU outcome, per-channel outcome, season tag.
+1. Simplify the timeline to 4 critical event types:
+   - promotions
+   - competitor price changes
+   - social spikes
+   - seasonal tentpoles
+2. Add seasonal tentpole events such as Christmas and Thanksgiving.
+3. Show history for 1 year and future for 1 year.
+4. Separate past and future with a vertical `Today` line.
+5. Remove unused placeholder event concepts.
+6. Clicking an event should show:
+   - event details
+   - impacted products
+   - impacted channels
+   - discount
+   - units sold
+   - ROI / revenue impact
+7. The secondary impact table should show:
+   - change in own price
+   - change in competitor price
+   - change in social buzz
+   - baseline sales
+   - incremental sales
+   - net revenue change
 
-New file to add for traceability narrative:
+Intent:
+The Event Calendar is meant to be a weekly commercial-review screen, not just a decorative timeline.
 
-7. `data/competitor_price_feed.csv`
-   - Simulated "web-scraped" raw feed.
-   - Fields: `captured_at`, `source_domain`, `channel`, `competitor_sku`, `matched_sku_id`, `match_confidence`, `observed_price`, `promo_flag`.
-   - UI copy will explicitly state: "Prices are simulated as website-scraped and SKU-matched."
+## 2.5 Metrics / Labeling Requirements
 
-## 4.2 Forecast Math Contracts (R03, R04, R05, R11)
+1. Replace `ads` as the impact metric with `units`.
+2. Add revenue impact to the event impact table.
+3. Update customer cohort labels to `mass cohorts` and `prestige cohorts`.
+4. Avoid retailer-specific naming in places where the discussion is really about cohort/channel archetypes.
 
-Per row (`week, sku, channel`):
+Intent:
+The output must speak in business measures and channel archetypes that generalize to client discussions.
 
-1. Own-price demand response:
-   - `units_own = baseline_units * (new_price / baseline_price) ^ effective_elasticity`
-2. Competitor delta response:
-   - `gap = (our_effective_price - competitor_price) / competitor_price`
-   - `units_comp = units_own * clamp(1 - gap * alpha_channel, min_comp, max_comp)`
-3. Social modulation:
-   - `effective_elasticity = base_elasticity * social_modifier(score)`
-4. Cannibalization within group:
-   - `transfer_i_to_j = units_i * max(0, promo_depth_j - promo_depth_i) * gamma_ij`
-   - Net units respect conservation and inventory limits.
-5. Inventory:
-   - `end_inventory_w = max(0, start_inventory_w - net_units_w)`
+## 2.6 Elasticity / Realism Requirements
 
-Objective modes:
+1. The elasticity section must explicitly support 3 response drivers:
+   - own price elasticity
+   - competitor price elasticity / competitive response
+   - social buzz elasticity / social-demand effect
+2. Segment differences must remain visible.
+3. `repeat loss` values need realism review.
+4. `average order value` values need realism review.
+5. Any related synthetic assumptions should be made more believable.
 
-1. `balance`: weighted revenue + profit + inventory-to-zero penalty.
-2. `sales`: maximize sell-through and week-17 inventory reduction.
-3. `profit`: maximize gross profit with guardrails against steep repeat-loss risk.
+Intent:
+Ritesh is not rejecting synthetic data; he is rejecting synthetic data that looks implausible or distracts from the demo.
 
-## 5) Step-by-Step UX Plan
+## 3. Current Codebase Mapping
 
-## Step 1 - Current State Overview (R01, R02, R03, R10, R11)
+## 3.1 Current Step Structure
 
-1. Keep title/copy strictly promotion optimization.
-2. Add season story strip:
-   - Start inventory (week 1), current week status, week-17 baseline vs scenario ending inventory.
-3. Keep product-group and SKU selectors as primary controls.
-4. Keep objective selector and show objective explanation next to result.
-5. Add SKU cannibalization panel:
-   - "If SKU A promo deepens, expected units pulled from SKU B/C."
-6. Add explicit channel promo toggles (Mass only, Prestige only, both).
+Current visible structure in `index.html` is already partially reworked but still inconsistent:
 
-## Step 2 - Data Explorer (R06)
+1. Section `#section-1` is `Step 1 / Current State Overview`.
+2. Section `#section-2` is `Step 2 / Data Explorer`.
+3. Section `#section-8` is `Step 3 / Event Calendar`.
+4. Sections `#section-6` and `#section-7` are `Step 4` and `Step 5`.
+5. Sections `#section-3`, `#section-4`, `#section-5` visually show `Step 6`, `Step 7`, `Step 8`.
 
-Add a "Signals Impact Lab" at top of Step 2:
+Implication:
+The demo story is partly aligned already, but the opening screen order still violates the meeting ask because Current State is still first and Data Explorer is second.
 
-1. Competitive signal cards:
-   - Average competitor mass price.
-   - Average competitor prestige price.
-   - Delta vs our current price.
-2. Social signal card with trend sparkline and current score.
-3. "What changed this week?" panel:
-   - Lists deltas vs prior week and expected sales direction.
-4. Dataset tabs include raw competitor feed (`competitor_price_feed.csv`) and mapped SKU prices.
+## 3.2 Relevant Files
 
-## Step 3 - Event Calendar (R06, R07, R08)
+Primary files that control the requested changes:
 
-1. Event filter includes `Competitor Price Change`.
-2. Market/social signal boxes use same numbers as Step 1 and Step 2.
-3. Promo drilldown cards show:
-   - Promoted SKUs.
-   - Season.
-   - Channel.
-   - SKU outcomes (up/down).
-4. Add "Actionable learning" summary:
-   - Example: "Exclude MOI_M3 next cycle in Amazon mass defense promos."
+1. `index.html`
+   - step headers
+   - subtitles
+   - navigation buttons
+   - section order and labels
+   - current Step 1 and Data Explorer markup
 
-## Step 4 - Customer Cohorts
+2. `js/step-navigation.js`
+   - step sequencing
+   - injected navigation controls
+   - which content is mounted into each step container
 
-1. Keep segmentation as-is (not product-specific), but link to product selection context.
-2. Clarify that this step informs targeting overlays for promotion choices.
+3. `js/data-viewer.js`
+   - Data Explorer datasets
+   - accordion grouping
+   - table/chart summary behavior
+   - should be enhanced for clearer competitor/social surfacing
 
-## Step 5 - Segment Response Comparison (R09)
+4. `js/app.js`
+   - current-state KPI snapshot logic
+   - Step 2 market signal summary
+   - segmentation summaries
+   - several business metric calculations and labels
 
-1. Add SKU dropdown in this step (in addition to metric dropdown).
-2. Recompute table/chart by selected SKU.
-3. Show SKU-specific elasticity and risk outputs.
-4. Label explicitly: "Elasticity shown below is for selected SKU."
+5. `js/channel-promo-simulator.js`
+   - current-state simulator content presently shown in Step 1
+   - owns key market, social, competitor, and product-level scenario logic
+   - likely source for the current-state trend chart once moved to Step 2
 
-## Steps 6/7/8 - Roadmap Placeholders (Future Vision)
+6. `js/event-calendar.js`
+   - event loading
+   - event filtering
+   - event timeline rendering
+   - event detail tables
+   - promo drilldown
 
-1. Keep as roadmap placeholders with concise "current implementation already covers core logic" notes.
-2. Ensure naming stays promotion-roadmap oriented.
+7. Data files
+   - `data/retail_events.csv`
+   - `data/social_signals.csv`
+   - `data/competitor_price_feed.csv`
+   - `data/segment_kpis.csv`
+   - `data/elasticity-params.json`
+   - possibly `data/segment_elasticity.json`
 
-## Step 9 - AI Promotion Optimization Assistant (R12)
+## 3.3 Already-Implemented Pieces We Can Reuse
 
-1. Context payload must include:
-   - Selected product group/SKU.
-   - Inventory runway to week 17.
-   - Competitor gap by channel.
-   - Social trend.
-   - Historical promo outcomes.
-2. Response format:
-   - Include list.
-   - Exclude list.
-   - Why now.
-   - Expected week-17 inventory effect.
+The codebase already contains useful building blocks:
 
-## 6) Detailed Engineering Tasks
+1. Data Explorer already includes `competitor_price_feed` and `social_signals`.
+2. Step 2 already has a market signal snapshot block.
+3. Event Calendar already supports:
+   - competitor price events
+   - social spikes
+   - promo drilldown
+   - product/SKU mapping
+4. Step 1 simulator already contains competitor/social logic and rich product/channel state.
+5. Segmentation already distinguishes mass vs prestige internally, even if visible labels still overuse retailer names.
 
-## Phase A - Data generator hardening (R04, R05, R08, R10, R11)
+Conclusion:
+This is a realignment/refactor task more than a greenfield build. The work is mostly about narrative, surfacing, consistency, and realism calibration.
+
+## 4. Gaps Against the Transcript
+
+## 4.1 Highest-Priority Gaps
+
+1. Wrong opening step order.
+2. Current-state business dashboard is still presented before Data Explorer.
+3. The “4 key metrics on one chart” requirement is not yet clearly satisfied in the current-state opening view.
+4. Event Calendar does not yet reflect a true 1-year-back / 1-year-forward operating timeline with a Today divider.
+5. Seasonal tentpoles are present, but not in the broader business calendar form requested by Ritesh.
+6. Event impact reporting still needs stronger units/revenue framing.
+7. Cohort naming still exposes retailer-specific channel labels in places that should be mass/prestige cohort language.
+8. Segment KPI realism needs recalibration review.
+
+## 4.2 Secondary Gaps
+
+1. Some visible copy still leans too much into elasticity-model language.
+2. Watchlist framing around “at risk of attrition” may not be the strongest demo framing for this meeting.
+3. Existing data date ranges are season-specific rather than a full operating-year window.
+
+## 5. Implementation Strategy
+
+Implementation will follow the order that best protects demo coherence:
+
+1. Lock the story first.
+2. Move the right content into the right steps.
+3. Upgrade the screens Ritesh will actually see in sequence.
+4. Then calibrate the supporting model/metric realism.
+
+## 5.1 Phase 1: Narrative and Step Realignment
+
+Goal:
+Make the product open in the exact narrative order requested in the meeting.
+
+Changes:
+
+1. Swap Step 1 and Step 2 roles so `Data Explorer` becomes Step 1.
+2. Move `Current State Overview` to Step 2.
+3. Update top navigation labels, steps overview modal, and next/previous actions.
+4. Ensure step-navigation mounts the correct content into the correct sections.
+5. Review any “Step 1” hard-coded language in help text, methodology, and pitch copy.
 
 Files:
 
-1. `scripts/generate_promo_optimization_data.py`
-2. `data/*.csv`
-3. `data/*.json`
+1. `index.html`
+2. `js/step-navigation.js`
+3. `js/app.js`
+4. potentially `js/channel-promo-simulator.js`
 
-Tasks:
+Acceptance criteria:
 
-1. Emit and wire `competitor_price_feed.csv` with simulated scraped source fields.
-2. Ensure deterministic SKU-level cannibalization matrix is explicit and configurable.
-3. Ensure `is_current_week` is normalized safely (`True`/`False` parsing, no truthy-string bug).
-4. Regenerate all dependent datasets.
+1. First screen after home is Data Explorer.
+2. Next screen is the current-state dashboard.
+3. Event Calendar remains Step 3.
+4. No obvious numbering mismatch remains in the visible user flow.
 
-## Phase B - Loader normalization and helpers (R04, R05, R06, R08, R10)
+## 5.2 Phase 2: Data Explorer Upgrade
+
+Goal:
+Make Step 1 clearly show the actual data sources that power the analysis, with competitor and social data impossible to miss.
+
+Changes:
+
+1. Add a stronger source-of-truth intro block explaining what each dataset contributes.
+2. Explicitly call out competitor price feed and social signals as critical external datasets.
+3. Surface channel-specific social buzz summaries, not only raw tables.
+4. Surface product-specific competitor price changes, ideally with a compact chart/table summary before the raw tables.
+5. Ensure dataset descriptions reinforce “data source traceability,” not “analysis result”.
 
 Files:
 
-1. `js/data-loader.js`
+1. `index.html`
 2. `js/data-viewer.js`
+3. `js/app.js` if the current market signal snapshot stays attached to the Data Explorer
 
-Tasks:
+Acceptance criteria:
 
-1. Add parser for competitor feed and typed boolean conversion.
-2. Add helper selectors:
-   - `getCurrentWeekSnapshot(group, sku)`
-   - `getCompetitorDeltaTrend(group, sku)`
-   - `getSocialTrendWindow(weeks)`
-   - `getPromoHistoryBySkuChannelSeason(...)`
+1. A user can point to the competitor source and social source within 10 seconds.
+2. Data Explorer clearly includes both product-level competitor data and social signal data.
+3. The purpose of the screen feels like data provenance and business context, not simulation.
 
-## Phase C - Step 1 simulator and story widgets (R03, R04, R05, R10, R11)
+## 5.3 Phase 3: Current State Dashboard Upgrade
+
+Goal:
+Turn the moved current-state screen into the business dashboard Ritesh described.
+
+Changes:
+
+1. Keep overall KPI summary, but reframe the page away from “what happens if we adjust promo depth” and toward “where the business stands right now.”
+2. Add or upgrade a single trend chart that overlays:
+   - own price
+   - competitor price
+   - competitor difference
+   - social buzz
+3. Support drill-down:
+   - total business
+   - product group
+   - SKU
+4. Ensure the chart period is selectable or at least uses a sensible recent time window.
+5. Keep simulator controls lower on the page or de-emphasized so the opening impression remains “dashboard first”.
 
 Files:
 
-1. `js/channel-promo-simulator.js`
+1. `index.html`
+2. `js/channel-promo-simulator.js`
+3. `js/app.js`
+
+Acceptance criteria:
+
+1. The top half of the screen reads as a current-state business review.
+2. The 4 requested metrics appear in one coherent trend view.
+3. Product drill-down works without breaking the narrative.
+
+## 5.4 Phase 4: Event Calendar Refactor
+
+Goal:
+Make Step 3 function like a weekly commercial-review and event-impact workspace.
+
+Changes:
+
+1. Rebuild the timeline range to show:
+   - 12 months historical
+   - Today divider
+   - 12 months forward
+2. Limit event categories to the 4 types called out in the meeting.
+3. Add seasonal tentpoles such as Thanksgiving and Christmas into the future/past event list.
+4. Remove unused placeholder event concepts from filters and labels.
+5. Update event detail reporting to use `units` instead of `ads`.
+6. Add revenue impact as an explicit metric in event tables.
+7. Build or improve the secondary metrics-change table:
+   - own price delta
+   - competitor price delta
+   - social delta
+   - baseline sales
+   - incremental sales
+   - net revenue change
+
+Files:
+
+1. `js/event-calendar.js`
 2. `index.html`
 3. `css/style.css`
-4. `js/app.js`
+4. `data/retail_events.csv`
+5. possibly `data/promo_metadata.json`
 
-Tasks:
+Acceptance criteria:
 
-1. Keep objective-specific output differences obvious and explainable.
-2. Add cannibalization impact table for selected SKU group.
-3. Add week-17 baseline vs scenario endpoint callout.
-4. Show competitor/social contribution decomposition:
-   - "X% from own promo, Y% from competitor delta, Z% from social shift."
+1. Timeline visibly separates past and future with a Today marker.
+2. Seasonal tentpoles include recognizable business moments.
+3. Event click/drilldown is readable in business terms.
+4. Units and revenue impact are explicitly shown.
 
-## Phase D - Step 2 and Step 3 signal coherence (R06, R07, R08)
+## 5.5 Phase 5: Cohort Renaming and Segmentation Framing
 
-Files:
+Goal:
+Align segmentation with the meeting’s preferred business language.
 
-1. `index.html`
-2. `js/data-viewer.js`
-3. `js/event-calendar.js`
+Changes:
 
-Tasks:
-
-1. Add Signals Impact Lab to Step 2.
-2. Add competitor-source narrative ("web-scraped + SKU matched") in Step 2 and Step 3.
-3. Enforce numeric consistency between Step 1 cards and Step 3 cards.
-4. Extend event badges/count logic for competitor price changes.
-
-## Phase E - Step 5 SKU dropdown and per-SKU output (R09)
+1. Replace visible retailer-name cohort framing with `mass cohorts` and `prestige cohorts` where the user is choosing cohort/channel archetypes.
+2. Keep retailer names only where channel-level operational detail is genuinely needed.
+3. Review watchlist and attrition framing; keep it only if it supports the story rather than distracting from it.
+4. Update explanatory text, labels, and recommendation cards to use generalized cohort language.
 
 Files:
 
 1. `index.html`
-2. `js/segment-charts.js`
-3. `js/segmentation-engine.js`
-4. `js/app.js`
-
-Tasks:
-
-1. Add SKU selector in Step 5 controls.
-2. Recompute chart/table for selected SKU.
-3. Render SKU-specific elasticity/risk summary.
-
-## Phase F - AI recommendation upgrade (R12)
-
-Files:
-
-1. `js/chat.js`
 2. `js/app.js`
-3. `js/channel-promo-simulator.js`
+3. any segmentation rendering helpers in `js/step-navigation.js` and related modules
 
-Tasks:
+Acceptance criteria:
 
-1. Extend tool context with SKU-level signal decomposition.
-2. Add rule-based preface for deterministic include/exclude recommendations.
-3. Ensure output references product, channel, and season week.
+1. Segmentation screens read as reusable client-facing archetypes.
+2. Retailer names are not overused in cohort-selection contexts.
 
-## Phase G - Narrative and copy QA pass (R01)
+## 5.6 Phase 6: Realism Calibration
+
+Goal:
+Reduce the chance that synthetic metrics undermine trust during the demo.
+
+Changes:
+
+1. Audit `avg_order_value` ranges in `segment_kpis.csv`.
+2. Audit `repeat_loss_rate` ranges in `segment_kpis.csv` and repeat-loss baselines in `elasticity-params.json`.
+3. Review whether visible KPI cards and downstream calculations are using the intended fields.
+4. Adjust unrealistic outliers or inconsistent units.
+5. Verify that cohort recommendations still look directionally right after calibration.
 
 Files:
 
-1. `index.html`
-2. `README.md`
-3. `js/step-navigation.js`
+1. `data/segment_kpis.csv`
+2. `data/elasticity-params.json`
+3. possibly `data/segment_elasticity.json`
+4. `js/app.js`
+5. `js/churn-simple.js`
+6. `js/chat.js` if thresholds are hard-coded there
 
-Tasks:
+Acceptance criteria:
 
-1. Remove conflicting legacy elasticity wording where this demo is shown as promo optimization.
-2. Ensure step order supports the story: baseline -> signals -> historical context -> recommendations -> roadmap.
+1. AOV values look commercially plausible for the product portfolio.
+2. Repeat-loss values are neither trivially low nor implausibly high.
+3. No obvious metric-field mismatch remains.
 
-## 7) Acceptance Test Suite (Must Pass)
+## 6. Detailed Work Order
 
-`T01` Objective mode changes outputs:
+Recommended build order:
 
-1. Set same SKU and promos.
-2. Toggle `balance/sales/profit`.
-3. Revenue/profit/week-17 inventory all change with rationale text.
+1. Update visible step order and navigation.
+2. Move/relabel current-state content into Step 2.
+3. Strengthen Data Explorer source visibility.
+4. Add the current-state 4-metric trend chart.
+5. Refactor Event Calendar timeline and drilldowns.
+6. Sweep labels for mass/prestige cohort framing.
+7. Calibrate AOV and repeat-loss realism.
+8. Run final UI and data sanity checks.
 
-`T02` Competitor-only shock:
+Reason for this order:
 
-1. Keep own promo depth constant.
-2. Lower competitor mass price by 10%.
-3. Mass volume forecast decreases; explanation shows competitor delta effect.
+1. Step order affects copy, nav, and where modules render.
+2. Current-state/Data Explorer alignment must stabilize before polishing downstream screens.
+3. Event Calendar and metric realism are easier to validate after the narrative flow is correct.
 
-`T03` Social-only shock:
+## 7. Risks and Constraints
 
-1. Keep prices fixed.
-2. Increase social index by +15 points.
-3. Effective elasticity and forecast update; recommendation may shift toward lighter discounting.
+## 7.1 Structural Risks
 
-`T04` Cannibalization:
+1. Section ids and displayed step numbers are already decoupled.
+2. `step-navigation.js` injects content into containers with a custom mapping.
+3. A superficial numbering change without remapping content could leave the UI internally inconsistent.
 
-1. In sunscreen group, deepen promo only for `SUN_S1`.
-2. `SUN_S1` units rise while `SUN_S2`/`SUN_S3` decline due to internal migration.
-3. Cannibalization table reflects transfer.
+Mitigation:
+Treat section order, injected content, modal labels, and overview navigation as one coordinated change.
 
-`T05` Week-17 inventory narrative:
+## 7.2 Data Risks
 
-1. Baseline endpoint shows residual inventory.
-2. Scenario endpoint moves closer to zero.
-3. Story strip shows start/current/end state clearly.
+1. The current event dataset appears focused on the synthetic season window rather than a rolling 24-month view.
+2. Historical/future 1-year Event Calendar may require extending `retail_events.csv`, not only changing rendering.
+3. Some labels in sample data still reference season-specific synthetic events that may not match the new calendar framing.
 
-`T06` Step 5 SKU drilldown:
+Mitigation:
+If full rolling-window data is not present, expand the synthetic event file in a controlled way with clearly business-relevant tentpoles.
 
-1. Change SKU dropdown.
-2. Table and risk metrics update for that SKU.
+## 7.3 Metric Risks
 
-`T07` Historical promo effectiveness:
+1. Some parts of the app compute AOV from revenue/customers, while segmentation uses `avg_order_value`.
+2. Repeat-loss values are used across multiple modules with slightly different assumptions.
 
-1. Select a promo campaign.
-2. See promoted SKU list and per-SKU up/down outcomes by channel and season.
+Mitigation:
+Trace metric usage before changing source values so downstream charts do not silently drift or contradict each other.
 
-`T08` Cross-page signal consistency:
+## 8. Verification Plan
 
-1. Compare Step 1, Step 2, Step 3 competitor/social metrics for current week.
-2. Values match within rounding tolerance.
+After implementation, verify:
 
-`T09` AI recommendation quality:
+1. Home -> Step 1 lands on Data Explorer.
+2. Step order in nav, modal, and next/prev controls is consistent.
+3. Data Explorer visibly includes competitor and social data summaries plus raw tables.
+4. Current State screen contains the combined 4-metric trend chart.
+5. Event Calendar shows past/future with Today divider.
+6. Event detail tables use units and include revenue impact.
+7. Cohort labels favor mass/prestige language.
+8. AOV and repeat-loss values look plausible in UI summaries.
+9. No console-breaking regressions occur while navigating steps.
 
-1. Ask "Which SKUs should we promote this week in mass channel?"
-2. Answer includes include/exclude lists with competitor/social/inventory/history evidence.
+## 9. Definition of Done
 
-## 8) Execution Sequence (Implementation Order)
+This work is done when:
 
-1. Data contracts and generator (`Phase A`).
-2. Loader and helper APIs (`Phase B`).
-3. Step 1 simulator + season story + cannibalization visuals (`Phase C`).
-4. Step 2 Signals Impact Lab + Step 3 event/signal coherence (`Phase D`).
-5. Step 5 SKU drilldown (`Phase E`).
-6. AI recommendation upgrade (`Phase F`).
-7. Narrative copy QA and walkthrough polish (`Phase G`).
-8. Full acceptance-test run and final fixes.
+1. The product follows the transcript’s intended narrative order.
+2. The opening screens clearly establish data credibility and current business state.
+3. Competitor data and social buzz are explicit in both Data Explorer and decision-making views.
+4. Event Calendar functions as a commercial weekly deep dive with business-friendly impact reporting.
+5. Cohort framing and KPI realism no longer distract from the demo.
+6. The resulting flow shows exactly what Ritesh asked to see, in the order he asked to see it.
 
-## 9) Done Criteria
-
-The work is done only when:
-
-1. The walkthrough clearly tells the Start of Season -> In-Season Pivot -> Future Vision story.
-2. SKU-level promotion optimization is visible for 2 groups x 3 SKUs.
-3. Competitor and social changes drive real forecast changes.
-4. Cannibalization is modeled and visible.
-5. Week-17 inventory-to-zero planning is front-and-center.
-6. Historical promo drilldown identifies winning/losing SKUs by channel/season.
-7. AI gives actionable include/exclude recommendations grounded in model outputs.

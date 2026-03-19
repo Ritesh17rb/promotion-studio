@@ -13,6 +13,7 @@
 const dataCache = {
   weeklyAggregated: null,
   skuWeekly: null,
+  productHistory: null,
   pricingHistory: null,
   externalFactors: null,
   competitorPriceFeed: null,
@@ -39,6 +40,7 @@ export async function loadAllData() {
       metadata,
       weeklyAggregated,
       skuWeekly,
+      productHistory,
       pricingHistory,
       externalFactors,
       competitorPriceFeed,
@@ -53,6 +55,7 @@ export async function loadAllData() {
       loadMetadata(),
       loadWeeklyAggregated(),
       loadSkuWeeklyData(),
+      loadProductChannelHistory(),
       loadPricingHistory(),
       loadExternalFactors(),
       loadCompetitorPriceFeed(),
@@ -78,6 +81,7 @@ export async function loadAllData() {
       metadata,
       weeklyAggregated,
       skuWeekly,
+      productHistory,
       pricingHistory,
       externalFactors,
       competitorPriceFeed,
@@ -210,6 +214,49 @@ export async function loadSkuWeeklyData() {
     return normalized;
   } catch (error) {
     console.error('Error loading SKU weekly data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load 52-week product x channel history from CSV
+ * @returns {Promise<Array>} Array of historical product-channel records
+ */
+export async function loadProductChannelHistory() {
+  if (dataCache.productHistory) {
+    return dataCache.productHistory;
+  }
+
+  try {
+    const response = await fetch('data/product_channel_history.csv');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+    const data = parseCSV(csvText);
+    dataCache.productHistory = data.map(row => ({
+      date: row.week_start,
+      week_start: row.week_start,
+      history_week_index: row.history_week_index,
+      weeks_from_current: row.weeks_from_current,
+      is_latest_week: parseBooleanish(row.is_latest_week),
+      product_group: row.product_group,
+      sku_id: row.sku_id,
+      sku_name: row.sku_name,
+      channel_group: row.channel_group,
+      tier: channelGroupToTier(row.channel_group),
+      sales_channel: row.sales_channel,
+      own_price: row.own_price,
+      competitor_price: row.competitor_price,
+      price_gap_vs_competitor: row.price_gap_vs_competitor,
+      social_buzz_score: row.social_buzz_score,
+      units_sold: row.units_sold,
+      revenue: row.revenue,
+      promo_depth_pct: row.promo_depth_pct
+    }));
+    return dataCache.productHistory;
+  } catch (error) {
+    console.error('Error loading product channel history:', error);
     throw error;
   }
 }

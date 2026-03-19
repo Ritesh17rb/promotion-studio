@@ -53,20 +53,22 @@
               <div class="step-line"></div>
               <div class="step-dot module-data-foundation" data-step="3">3</div>
               <div class="step-line"></div>
-              <!-- Segmentation -->
-              <div class="step-dot module-segmentation" data-step="4">4</div>
+              <div class="step-dot module-data-foundation" data-step="4">4</div>
               <div class="step-line"></div>
+              <!-- Segmentation -->
               <div class="step-dot module-segmentation" data-step="5">5</div>
               <div class="step-line"></div>
-              <!-- Promotion Planning Roadmap -->
-              <div class="step-dot module-elasticity" data-step="6">6</div>
+              <div class="step-dot module-segmentation" data-step="6">6</div>
               <div class="step-line"></div>
+              <!-- Promotion Planning Roadmap -->
               <div class="step-dot module-elasticity" data-step="7">7</div>
               <div class="step-line"></div>
               <div class="step-dot module-elasticity" data-step="8">8</div>
               <div class="step-line"></div>
+              <div class="step-dot module-elasticity" data-step="9">9</div>
+              <div class="step-line"></div>
               <!-- AI & Advanced Analytics -->
-              <div class="step-dot module-analytics" data-step="9">9</div>
+              <div class="step-dot module-analytics" data-step="10">10</div>
             </div>
             <div class="step-legend">
               <div class="legend-item legend-data-foundation">
@@ -135,55 +137,158 @@
       </div>
     </section>
 
-    <!-- Section 1: Dashboard -->
+    <!-- Section 1: Current State Overview -->
     <section class="section" id="section-1">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 1</div>
+        <div class="section-number">Step 2</div>
         <h2 class="section-title">
           Current State Overview
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step1" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Start with current season position, channel performance, and market signals before choosing promotion actions.</p>
+        <p class="section-subtitle">Review the last 52 weeks across all 6 products and channels, then trace sales performance against your three operating levers: own price, competitor price gap, and social buzz.</p>
       </div>
     </div>
 
     <!-- Top Navigation -->
     <div class="section-header-nav">
-      <button class="btn btn-secondary-custom" onclick="goToStep(0)"><i class="bi bi-arrow-left me-2"></i> Back to Home</button>
-      <button class="btn btn-primary-custom" onclick="goToStep(2)">Next: Data Explorer <i class="bi bi-arrow-right ms-2"></i></button>
+      <button class="btn btn-secondary-custom" onclick="goToStep(1)"><i class="bi bi-arrow-left me-2"></i> Back to Data Explorer</button>
+      <button class="btn btn-primary-custom" onclick="goToStep(3)">Next: Last Week Drilldown <i class="bi bi-arrow-right ms-2"></i></button>
     </div>
 
-    <!-- Auto-Loading Progress -->
-    <div class="text-center my-4" id="load-data-section">
-      <div class="glass-card" style="padding: 2rem;">
-        <h5 class="mb-3">
-          <i class="bi bi-database me-2"></i>
-          Loading Data
-        </h5>
-        <p class="text-muted">Initializing promotion optimization models and loading season data...</p>
-
-        <!-- Progress Bar (shown by default) -->
-        <div id="loading-progress" class="mt-4" style="display: block !important; visibility: visible !important;">
-          <div class="mb-2">
-            <small id="loading-stage" class="d-block fw-semibold text-primary">Initializing...</small>
-          </div>
-          <div class="progress" style="height: 25px; background-color: rgba(0, 102, 255, 0.1); border: 1px solid rgba(0, 102, 255, 0.2);">
-            <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                 role="progressbar" style="width: 5%; min-width: 5%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-              <span id="loading-percentage">0%</span>
+    <div id="current-state-history-section" style="display: none;">
+      <div class="wd-panel mb-4">
+        <div class="wd-panel-header">
+          <h6 class="wd-panel-title"><i class="bi bi-funnel me-2"></i>Filters</h6>
+        </div>
+        <div style="padding: 0 1.25rem 1.25rem;">
+          <div class="row g-3 align-items-end">
+            <div class="col-lg-4">
+              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-product-filter">Product</label>
+              <select id="history-product-filter" class="form-select">
+                <option value="all">All 6 Products</option>
+              </select>
+            </div>
+            <div class="col-lg-3">
+              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-window-filter">Lookback Window</label>
+              <select id="history-window-filter" class="form-select">
+                <option value="52" selected>Last 1 Year</option>
+                <option value="26">Last 26 Weeks</option>
+                <option value="13">Last 13 Weeks</option>
+                <option value="5">Last 5 Weeks</option>
+              </select>
+            </div>
+            <div class="col-lg-5">
+              <div class="small text-muted" id="history-selection-note">
+                Loading portfolio trend context...
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Hidden load button as fallback -->
-        <button id="load-data-btn" class="btn btn-primary-custom mt-3" style="display: none;">
-          <i class="bi bi-cloud-download me-2"></i>
-          Load Sample Data
-        </button>
+      <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Total Revenue</div>
+            <div class="wd-kpi-value" id="history-total-revenue">--</div>
+            <div class="wd-kpi-change" id="history-revenue-change">--</div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Units Sold</div>
+            <div class="wd-kpi-value" id="history-total-units">--</div>
+            <div class="wd-kpi-change" id="history-units-change">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Avg Own Price</div>
+            <div class="wd-kpi-value" id="history-avg-price">--</div>
+            <div class="wd-kpi-change" id="history-price-change">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Avg Comp Gap</div>
+            <div class="wd-kpi-value" id="history-gap">--</div>
+            <div class="wd-kpi-change" id="history-gap-change">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Avg Social Buzz</div>
+            <div class="wd-kpi-value" id="history-social">--</div>
+            <div class="wd-kpi-change" id="history-social-change">--</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wd-panel mb-4">
+        <div class="wd-panel-header">
+          <h6 class="wd-panel-title"><i class="bi bi-graph-up me-2"></i>Sales Trend vs Operating Levers</h6>
+          <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
+        </div>
+        <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with your price, competitor gap, and social buzz for the selected product scope.</div>
+        <div class="chart-container" style="height: 340px; padding: 0 1rem;">
+          <canvas id="history-performance-chart"></canvas>
+        </div>
+        <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-trend-note">
+          Building 52-week trendline across revenue, own price, competitor gap, and social buzz...
+        </div>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-pie-chart me-2"></i>Channel Mix Revenue</h6>
+            </div>
+            <div class="small text-muted mb-2" style="padding: 0 1.25rem;">See which channels are driving sales for the selected product or for the total portfolio.</div>
+            <div class="chart-container" style="height: 320px; padding: 0 1rem;">
+              <canvas id="history-channel-mix-chart"></canvas>
+            </div>
+            <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-channel-note">
+              Comparing Target, Amazon, Sephora, and Ulta revenue over the selected window.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-arrow-left-right me-2"></i>Channel & Product Price Position</h6>
+              <span class="badge bg-secondary-subtle text-secondary small">Top channels in scope</span>
+            </div>
+            <div class="table-responsive" style="padding: 0 1.25rem 1rem;">
+              <table class="table table-sm align-middle mb-1 wd-product-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Channel</th>
+                    <th class="text-end">Revenue</th>
+                    <th class="text-end">Units</th>
+                    <th class="text-end">Own Price</th>
+                    <th class="text-end">Competitor</th>
+                    <th class="text-end">Gap</th>
+                    <th class="text-end">Social Buzz</th>
+                  </tr>
+                </thead>
+                <tbody id="history-channel-table-body">
+                  <tr>
+                    <td colspan="8" class="text-center text-muted">Loading channel-product performance...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="small text-muted" style="padding: 0 1.25rem 1rem;" id="history-table-note">
+              Showing channel-level rollups for the selected product scope.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -204,124 +309,240 @@
         </div>
       </div>
       <!-- Channel Groups -->
-      <h5 class="mb-3">Current Channel Groups</h5>
+      <h6 class="wd-section-title"><i class="bi bi-shop me-2"></i>Current Channel Groups</h6>
       <div class="row g-4 mb-5">
         <div class="col-md-6">
-        <div class="glass-card tier-card ad-lite">
-          <div class="tier-name">Target &amp; Amazon</div>
-          <div class="tier-price" id="step1-mass-channel-price">$24.00<span>/unit avg</span></div>
-          <div class="mt-2 mb-3">
-            Target, Amazon &bull; High-volume, promo-responsive demand
-          </div>
-          <div class="small">
-            <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Products in Channel</div>
-            <table class="table table-sm table-borderless mb-0" style="font-size: 0.8rem;">
-              <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Target</th><th>Amazon</th></tr></thead>
-              <tbody>
-                <tr><td>Daily Shield SPF 40</td><td><code>SUN_S1</code></td><td>$18.74</td><td>$18.49</td></tr>
-                <tr><td>Invisible Mist SPF 50</td><td><code>SUN_S2</code></td><td>$21.25</td><td>$21.00</td></tr>
-                <tr><td>Sport Gel SPF 60</td><td><code>SUN_S3</code></td><td>$23.75</td><td>$23.50</td></tr>
-                <tr><td>Hydra Daily Lotion</td><td><code>MOI_M1</code></td><td>$16.50</td><td>$16.25</td></tr>
-                <tr><td>Barrier Repair Cream</td><td><code>MOI_M2</code></td><td>$19.25</td><td>$19.00</td></tr>
-                <tr><td>Night Recovery Balm</td><td><code>MOI_M3</code></td><td>$21.75</td><td>$21.50</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="glass-card tier-card ad-free">
-          <div class="tier-name">Sephora &amp; Ulta</div>
-          <div class="tier-price" id="step1-prestige-channel-price">$36.00<span>/unit avg</span></div>
-          <div class="mt-2 mb-3">
-            Sephora, Ulta &bull; Premium retail with margin-protected pricing
-          </div>
-          <div class="small">
-            <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Products in Channel</div>
-            <table class="table table-sm table-borderless mb-0" style="font-size: 0.8rem;">
-              <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Sephora</th><th>Ulta</th></tr></thead>
-              <tbody>
-                <tr><td>Daily Shield SPF 40</td><td><code>SUN_S1</code></td><td>$29.75</td><td>$29.25</td></tr>
-                <tr><td>Invisible Mist SPF 50</td><td><code>SUN_S2</code></td><td>$33.75</td><td>$33.25</td></tr>
-                <tr><td>Sport Gel SPF 60</td><td><code>SUN_S3</code></td><td>$36.75</td><td>$36.25</td></tr>
-                <tr><td>Hydra Daily Lotion</td><td><code>MOI_M1</code></td><td>$27.75</td><td>$27.25</td></tr>
-                <tr><td>Barrier Repair Cream</td><td><code>MOI_M2</code></td><td>$31.75</td><td>$31.25</td></tr>
-                <tr><td>Night Recovery Balm</td><td><code>MOI_M3</code></td><td>$35.75</td><td>$35.25</td></tr>
-              </tbody>
-            </table>
+          <div class="wd-channel-card wd-channel-mass" style="height: 100%;">
+            <div class="wd-channel-card-header">
+              <span class="wd-channel-name">Target & Amazon</span>
+              <span class="wd-channel-tier-badge">mass</span>
+            </div>
+            <div class="wd-channel-card-revenue">
+              <span class="wd-channel-rev-value" id="step1-mass-channel-price">$29.00</span>
+              <span class="small text-muted">/unit avg</span>
+            </div>
+            <div class="small text-muted mb-3" style="padding: 0 1rem;">High-volume, promo-responsive demand</div>
+            <div style="padding: 0 1rem 1rem;">
+              <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px; opacity: 0.7;">Products in Channel</div>
+              <table class="table table-sm table-borderless mb-0" style="font-size: 0.78rem;">
+                <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Target</th><th>Amazon</th></tr></thead>
+                <tbody>
+                  <tr><td>Unseen Sunscreen SPF 40</td><td><code>SUN_S1</code></td><td>$33.50</td><td>$33.00</td></tr>
+                  <tr><td>Glowscreen SPF 40</td><td><code>SUN_S2</code></td><td>$35.50</td><td>$35.00</td></tr>
+                  <tr><td>Play Everyday Lotion SPF 50</td><td><code>SUN_S3</code></td><td>$21.50</td><td>$21.00</td></tr>
+                  <tr><td>Superscreen Daily Moisturizer</td><td><code>MOI_M1</code></td><td>$27.50</td><td>$27.00</td></tr>
+                  <tr><td>Mineral Sheerscreen SPF 30</td><td><code>MOI_M2</code></td><td>$31.50</td><td>$31.00</td></tr>
+                  <tr><td>(Re)setting Powder SPF 35</td><td><code>MOI_M3</code></td><td>$25.50</td><td>$25.00</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+        <div class="col-md-6">
+          <div class="wd-channel-card wd-channel-prestige" style="height: 100%;">
+            <div class="wd-channel-card-header">
+              <span class="wd-channel-name">Sephora & Ulta</span>
+              <span class="wd-channel-tier-badge">prestige</span>
+            </div>
+            <div class="wd-channel-card-revenue">
+              <span class="wd-channel-rev-value" id="step1-prestige-channel-price">$36.00</span>
+              <span class="small text-muted">/unit avg</span>
+            </div>
+            <div class="small text-muted mb-3" style="padding: 0 1rem;">Premium retail with margin-protected pricing</div>
+            <div style="padding: 0 1rem 1rem;">
+              <div class="fw-semibold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 0.5px; opacity: 0.7;">Products in Channel</div>
+              <table class="table table-sm table-borderless mb-0" style="font-size: 0.78rem;">
+                <thead><tr class="text-muted"><th>Product</th><th>SKU</th><th>Sephora</th><th>Ulta</th></tr></thead>
+                <tbody>
+                  <tr><td>Unseen Sunscreen SPF 40</td><td><code>SUN_S1</code></td><td>$39.00</td><td>$38.50</td></tr>
+                  <tr><td>Glowscreen SPF 40</td><td><code>SUN_S2</code></td><td>$39.00</td><td>$38.50</td></tr>
+                  <tr><td>Play Everyday Lotion SPF 50</td><td><code>SUN_S3</code></td><td>$33.00</td><td>$32.50</td></tr>
+                  <tr><td>Superscreen Daily Moisturizer</td><td><code>MOI_M1</code></td><td>$39.00</td><td>$38.50</td></tr>
+                  <tr><td>Mineral Sheerscreen SPF 30</td><td><code>MOI_M2</code></td><td>$39.00</td><td>$38.50</td></tr>
+                  <tr><td>(Re)setting Powder SPF 35</td><td><code>MOI_M3</code></td><td>$35.00</td><td>$34.50</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- KPI Metrics -->
-      <h5 class="mb-3">Key Performance Metrics (Latest Week)</h5>
+      <h6 class="wd-section-title"><i class="bi bi-speedometer2 me-2"></i>Key Performance Metrics (Latest Week)</h6>
       <div class="row g-3" id="kpi-cards">
         <div class="col-md-3">
-          <div class="card kpi-card h-100">
-            <div class="card-body">
-              <div class="text-muted mb-2 small text-uppercase">Total Customers</div>
-              <div class="fs-2 fw-bold" id="kpi-customers">--</div>
-              <div class="small text-success" id="kpi-customers-change">
-                <i class="bi bi-arrow-up"></i> --
-              </div>
-              <div class="kpi-breakdown" id="kpi-customers-breakdown"></div>
-            </div>
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Total Customers</div>
+            <div class="wd-kpi-value" id="kpi-customers">--</div>
+            <div class="wd-kpi-change" id="kpi-customers-change">--</div>
+            <div class="kpi-breakdown" id="kpi-customers-breakdown"></div>
           </div>
         </div>
         <div class="col-md-3">
-          <div class="card kpi-card h-100">
-            <div class="card-body">
-              <div class="text-muted mb-2 small text-uppercase">Monthly Revenue</div>
-              <div class="fs-2 fw-bold" id="kpi-revenue">--</div>
-              <div class="small text-success" id="kpi-revenue-change">
-                <i class="bi bi-arrow-up"></i> --
-              </div>
-              <div class="kpi-breakdown" id="kpi-revenue-breakdown"></div>
-            </div>
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Monthly Revenue</div>
+            <div class="wd-kpi-value" id="kpi-revenue">--</div>
+            <div class="wd-kpi-change" id="kpi-revenue-change">--</div>
+            <div class="kpi-breakdown" id="kpi-revenue-breakdown"></div>
           </div>
         </div>
         <div class="col-md-3">
-          <div class="card kpi-card h-100">
-            <div class="card-body">
-            <div class="text-muted mb-2 small text-uppercase">Avg Order Value</div>
-              <div class="fs-2 fw-bold" id="kpi-aov">--</div>
-              <div class="small" id="kpi-aov-change">--</div>
-              <div class="kpi-breakdown" id="kpi-aov-breakdown"></div>
-            </div>
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Avg Order Value</div>
+            <div class="wd-kpi-value" id="kpi-aov">--</div>
+            <div class="wd-kpi-change" id="kpi-aov-change">--</div>
+            <div class="kpi-breakdown" id="kpi-aov-breakdown"></div>
           </div>
         </div>
         <div class="col-md-3">
-          <div class="card kpi-card h-100">
-            <div class="card-body">
-            <div class="text-muted mb-2 small text-uppercase">Repeat Loss Rate</div>
-              <div class="fs-2 fw-bold" id="kpi-churn">--</div>
-              <div class="small text-danger" id="kpi-churn-change">
-                <i class="bi bi-arrow-down"></i> --
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Repeat Loss Rate</div>
+            <div class="wd-kpi-value" id="kpi-churn">--</div>
+            <div class="wd-kpi-change" id="kpi-churn-change">--</div>
+            <div class="kpi-breakdown" id="kpi-churn-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wd-takeaways mt-4 mb-4">
+        <div class="wd-takeaways-header" style="padding-bottom: 1rem;">
+          <i class="bi bi-broadcast-pin me-2"></i>This Week's Market Signal Snapshot
+        </div>
+        <div style="padding: 0 1.25rem 1.25rem;">
+          <div class="row g-3 mb-3">
+            <div class="col-md-3">
+              <div class="wd-kpi-card">
+                <div class="wd-kpi-label">Mass Competitor Benchmark</div>
+                <div class="wd-kpi-value" id="step2-signal-comp-mass">--</div>
               </div>
-              <div class="kpi-breakdown" id="kpi-churn-breakdown"></div>
+            </div>
+            <div class="col-md-3">
+              <div class="wd-kpi-card">
+                <div class="wd-kpi-label">Prestige Competitor Benchmark</div>
+                <div class="wd-kpi-value" id="step2-signal-comp-prestige">--</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="wd-kpi-card">
+                <div class="wd-kpi-label">Brand Social Score</div>
+                <div class="wd-kpi-value" id="step2-signal-social-score">--</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="wd-kpi-card">
+                <div class="wd-kpi-label">Social Trend</div>
+                <div class="wd-kpi-value" style="font-size: 1rem;" id="step2-signal-social-trend">--</div>
+              </div>
+            </div>
+          </div>
+          <div class="small text-muted mt-1" id="step2-signal-method-note">
+            Building a business summary of this week's competitor and social shifts...
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-lg-6">
+              <div class="wd-panel h-100">
+                <div class="wd-panel-header">
+                  <h6 class="wd-panel-title"><i class="bi bi-arrow-left-right me-2"></i>Competitor Price Moves</h6>
+                  <span class="badge bg-danger-subtle text-danger small">Scraped feed</span>
+                </div>
+                <div class="table-responsive" style="padding: 0 1rem 1rem;">
+                  <table class="table table-sm align-middle mb-1 wd-product-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Channel</th>
+                        <th class="text-end">Prev</th>
+                        <th class="text-end">Current</th>
+                        <th class="text-end">WoW</th>
+                      </tr>
+                    </thead>
+                    <tbody id="step2-competitor-moves-body">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted">Loading competitor price moves...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="small text-muted" style="padding: 0 1rem 1rem;" id="step2-competitor-moves-note">
+                  Comparing current scraped competitor prices to the prior weekly capture.
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="wd-panel h-100">
+                <div class="wd-panel-header">
+                  <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Channel Social Buzz</h6>
+                  <span class="badge bg-primary-subtle text-primary small">Channel-level signal</span>
+                </div>
+                <div class="table-responsive" style="padding: 0 1rem 1rem;">
+                  <table class="table table-sm align-middle mb-1 wd-product-table">
+                    <thead>
+                      <tr>
+                        <th>Channel</th>
+                        <th>Cohort</th>
+                        <th class="text-end">Buzz Score</th>
+                        <th class="text-end">WoW</th>
+                        <th>Lead SKU</th>
+                      </tr>
+                    </thead>
+                    <tbody id="step2-social-channel-body">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted">Loading channel social buzz...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="small text-muted" style="padding: 0 1rem 1rem;" id="step2-social-channel-note">
+                  Aggregating SKU-channel social engagement scores into a channel view for the current week.
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="wd-panel mt-3">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-broadcast me-2"></i>Products Most Exposed to External Signals</h6>
+            </div>
+            <div class="chart-container mb-3" style="height: 240px; padding: 0 1rem;">
+              <canvas id="step2-signal-sku-chart"></canvas>
+            </div>
+            <div class="table-responsive" style="padding: 0 1rem;">
+              <table class="table table-sm align-middle mb-1 wd-product-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Group</th>
+                    <th class="text-end">Current Weekly Units</th>
+                    <th class="text-end">Signal-Adjusted Units</th>
+                    <th class="text-end">Expected Impact</th>
+                    <th class="text-end">Price Position vs Competitor</th>
+                  </tr>
+                </thead>
+                <tbody id="step2-signal-sku-impact-body">
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">Loading SKU-level signal impact...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="small text-muted" style="padding: 0 1rem 1rem;" id="step2-signal-sku-impact-note">
+              Isolating external market pressure only; your own promo depth stays unchanged in this view.
             </div>
           </div>
         </div>
       </div>
 
       <!-- Insight Box -->
-      <div class="insight-box mt-4">
-        <div class="icon"><i class="bi bi-lightbulb"></i></div>
-        <h5>The Question</h5>
-      <p class="mb-0">What happens if we adjust promo depth by channel and SKU? The optimizer projects sales, profit, and inventory runway before making in-season decisions.</p>
+      <div class="wd-exec-summary mt-4 mb-4" style="border-left: 4px solid var(--bs-warning);">
+        <div class="wd-exec-icon" style="color: var(--bs-warning);"><i class="bi bi-lightbulb-fill"></i></div>
+        <div class="wd-exec-text"><strong>The Question:</strong> What happens if we adjust promo depth by channel and SKU? The optimizer projects sales, profit, and inventory runway before making in-season decisions.</div>
       </div>
 
       <!-- Channel Promotions Simulator -->
       <div class="mt-5" id="channel-promo-simulator-section">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div>
-            <h5 class="mb-1">Channel Promotions Simulator</h5>
-            <p class="text-muted small mb-0">
-              Start from the current Mass vs Prestige channels and adjust promo depth to see how revenue and profit shift by channel group.
-            </p>
-          </div>
-          <span class="badge bg-primary-subtle text-primary small">Supergoop Seasonal Use Case</span>
+        <h6 class="wd-section-title"><i class="bi bi-sliders me-2"></i>Channel Promotions Simulator</h6>
+        <div class="small text-muted mb-3">
+          Start from the current Mass vs Prestige channels and adjust promo depth to see how revenue and profit shift by channel group.
+          <span class="badge bg-primary-subtle text-primary small ms-2">Supergoop Seasonal Use Case</span>
         </div>
 
         <div class="row g-4" id="channel-promo-simulator">
@@ -509,12 +730,12 @@
                     <option value="all" selected>All Products</option>
                     <option value="sunscreen">Sunscreen (All)</option>
                     <option value="moisturizer">Moisturizer (All)</option>
-                    <option value="SUN_S1">SUN_S1 - Daily Shield SPF 40</option>
-                    <option value="SUN_S2">SUN_S2 - Invisible Mist SPF 50</option>
-                    <option value="SUN_S3">SUN_S3 - Sport Gel SPF 60</option>
-                    <option value="MOI_M1">MOI_M1 - Hydra Daily Lotion</option>
-                    <option value="MOI_M2">MOI_M2 - Barrier Repair Cream</option>
-                    <option value="MOI_M3">MOI_M3 - Night Recovery Balm</option>
+                    <option value="SUN_S1">SUN_S1 - Unseen Sunscreen SPF 40</option>
+                    <option value="SUN_S2">SUN_S2 - Glowscreen SPF 40</option>
+                    <option value="SUN_S3">SUN_S3 - Play Everyday Lotion SPF 50</option>
+                    <option value="MOI_M1">MOI_M1 - Superscreen Daily Moisturizer</option>
+                    <option value="MOI_M2">MOI_M2 - Mineral Sheerscreen SPF 30</option>
+                    <option value="MOI_M3">MOI_M3 - (Re)setting Powder SPF 35</option>
                   </select>
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <label for="channel-promo-comp-shock" class="form-label mb-0">Competitor Price Shock</label>
@@ -1069,81 +1290,234 @@
 
   </section>
 
+  <!-- Section 10: Last Week Performance Drilldown -->
+  <section class="section" id="section-10">
+  <div class="container">
+    <div class="section-header section-header-split">
+      <div class="section-header-main">
+        <div class="section-number">Step 3</div>
+        <h2 class="section-title">Last Week Performance Drilldown</h2>
+        <p class="section-subtitle">Zoom into last week only to diagnose current channel posture, competitor price moves, social buzz, and product-level signal exposure before taking action.</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="section-header-nav">
+      <button class="btn btn-secondary-custom" onclick="goToStep(2)"><i class="bi bi-arrow-left me-2"></i> Back to Current State</button>
+      <button class="btn btn-primary-custom" onclick="goToStep(4)">Next: Event Calendar <i class="bi bi-arrow-right ms-2"></i></button>
+    </div>
+
+    <div id="weekly-drilldown-content" style="display: none;">
+
+      <!-- Week Header Bar -->
+      <div class="wd-week-header" id="wd-week-header">
+        <div class="wd-week-date">
+          <i class="bi bi-calendar-week me-2"></i>
+          <span id="wd-week-label">Week of --</span>
+        </div>
+        <div class="wd-week-badges">
+          <span class="badge bg-primary-subtle text-primary" id="wd-season-badge">--</span>
+          <span class="badge bg-secondary-subtle text-secondary" id="wd-week-number-badge">--</span>
+        </div>
+      </div>
+
+      <!-- Executive Summary -->
+      <div class="wd-exec-summary" id="wd-exec-summary">
+        <div class="wd-exec-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <div class="wd-exec-text" id="wd-exec-text">Analyzing last week's performance...</div>
+      </div>
+
+      <!-- Top-line KPIs -->
+      <div class="row g-3 mb-4" id="wd-kpi-row">
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Revenue</div>
+            <div class="wd-kpi-value" id="wd-kpi-revenue">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-revenue-wow">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Units Sold</div>
+            <div class="wd-kpi-value" id="wd-kpi-units">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-units-wow">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Avg Own Price</div>
+            <div class="wd-kpi-value" id="wd-kpi-price">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-price-wow">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Competitor Gap</div>
+            <div class="wd-kpi-value" id="wd-kpi-gap">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-gap-wow">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Social Buzz</div>
+            <div class="wd-kpi-value" id="wd-kpi-social">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-social-wow">--</div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+          <div class="wd-kpi-card">
+            <div class="wd-kpi-label">Gross Margin</div>
+            <div class="wd-kpi-value" id="wd-kpi-margin">--</div>
+            <div class="wd-kpi-change" id="wd-kpi-margin-wow">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Performance Cards -->
+      <h6 class="wd-section-title"><i class="bi bi-shop me-2"></i>Channel Performance</h6>
+      <div class="row g-3 mb-4" id="wd-channel-cards">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Product Performance Grid -->
+      <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+          <div class="wd-panel">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-grid-3x3 me-2"></i>Product × Channel Performance</h6>
+              <span class="badge bg-secondary-subtle text-secondary small">Units sold · WoW change</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0 wd-product-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th class="text-center">Target</th>
+                    <th class="text-center">Amazon</th>
+                    <th class="text-center">Sephora</th>
+                    <th class="text-center">Ulta</th>
+                    <th class="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="wd-product-grid-body">
+                  <tr><td colspan="6" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-bar-chart me-2"></i>Revenue by Channel</h6>
+            </div>
+            <div class="chart-container" style="height: 280px;">
+              <canvas id="wd-channel-revenue-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Signals Row -->
+      <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+          <div class="wd-panel">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-arrow-left-right me-2"></i>Competitor Price Moves This Week</h6>
+              <span class="badge bg-danger-subtle text-danger small">Scraped competitor feed</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Channel</th>
+                    <th class="text-end">Their Price</th>
+                    <th class="text-end">Our Price</th>
+                    <th class="text-end">Gap</th>
+                    <th class="text-center">Move</th>
+                  </tr>
+                </thead>
+                <tbody id="wd-competitor-body">
+                  <tr><td colspan="6" class="text-center text-muted py-3">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="wd-panel">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Social Buzz by Product</h6>
+              <span class="badge bg-primary-subtle text-primary small">Brand social index: <span id="wd-social-index">--</span></span>
+            </div>
+            <div id="wd-social-bars">
+              <!-- Populated by JS -->
+            </div>
+            <div class="wd-social-platform-row mt-3" id="wd-platform-mix">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Takeaways -->
+      <div class="wd-takeaways" id="wd-takeaways">
+        <div class="wd-takeaways-header">
+          <i class="bi bi-clipboard2-pulse me-2"></i>Key Takeaways & Watch Items
+        </div>
+        <div class="wd-takeaways-body" id="wd-takeaways-body">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Loading state -->
+    <div id="wd-loading-state" class="text-center py-5">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <div class="text-muted">Loading weekly performance data...</div>
+    </div>
+
+  </div>
+
+  </section>
+
   <!-- Section 2: Data Explorer -->
   <section class="section" id="section-2">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 2</div>
+        <div class="section-number">Step 1</div>
         <h2 class="section-title">Data Explorer</h2>
-        <p class="section-subtitle">Explore the raw datasets powering promotion optimization, including SKU-channel inventory, competitor pricing, and social demand signals.</p>
+        <p class="section-subtitle">Start by inspecting the underlying datasets powering the analysis, including SKU-channel performance, competitor pricing, and social buzz signals.</p>
       </div>
     </div>
 
-    <div class="card mb-4 border-info-subtle">
-      <div class="card-header bg-info-subtle">
-        <h6 class="mb-0">
-          <i class="bi bi-broadcast-pin me-2"></i>This Week's Market Signal Snapshot
-        </h6>
-      </div>
-      <div class="card-body">
-        <div class="row g-3 mb-3">
-          <div class="col-md-3">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Mass competitor benchmark</div>
-              <div class="fw-semibold fs-5" id="step2-signal-comp-mass">--</div>
-            </div>
+    <div class="text-center my-4" id="load-data-section">
+      <div class="glass-card loading-card">
+        <h5 class="mb-3">
+          <i class="bi bi-database me-2"></i>
+          Loading Data
+        </h5>
+        <p class="text-muted">Initializing promotion optimization models and loading season data...</p>
+
+        <div id="loading-progress" class="mt-4" style="display: block !important; visibility: visible !important;">
+          <div class="loading-stage-row">
+            <small id="loading-stage" class="fw-semibold text-primary">Initializing...</small>
           </div>
-          <div class="col-md-3">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Prestige competitor benchmark</div>
-              <div class="fw-semibold fs-5" id="step2-signal-comp-prestige">--</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Brand social score</div>
-              <div class="fw-semibold fs-5" id="step2-signal-social-score">--</div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="border rounded p-3 h-100 bg-body-tertiary">
-              <div class="small text-muted text-uppercase mb-1">Social trend</div>
-              <div class="fw-semibold fs-6" id="step2-signal-social-trend">--</div>
+          <div class="progress loading-progress-shell">
+            <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary loading-progress-fill"
+                 role="progressbar" style="width: 5%; min-width: 5%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+              <span id="loading-percentage">0%</span>
             </div>
           </div>
         </div>
-        <div class="small text-muted mt-1" id="step2-signal-method-note">
-          Building a business summary of this week's competitor and social shifts...
-        </div>
-        <div class="border rounded p-3 mt-3 bg-body-tertiary">
-          <div class="small text-muted text-uppercase mb-2">Products Most Exposed to External Signals</div>
-          <div class="chart-container mb-3" style="height: 240px;">
-            <canvas id="step2-signal-sku-chart"></canvas>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-1">
-              <thead class="table-light">
-                <tr>
-                  <th>Product</th>
-                  <th>Group</th>
-                  <th class="text-end">Current Weekly Units</th>
-                  <th class="text-end">Signal-Adjusted Units</th>
-                  <th class="text-end">Expected Impact</th>
-                  <th class="text-end">Price Position vs Competitor</th>
-                </tr>
-              </thead>
-              <tbody id="step2-signal-sku-impact-body">
-                <tr>
-                  <td colspan="6" class="text-center text-muted">Loading SKU-level signal impact...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="small text-muted mt-2" id="step2-signal-sku-impact-note">
-            Isolating external market pressure only; your own promo depth stays unchanged in this view.
-          </div>
-        </div>
+
+        <button id="load-data-btn" class="btn btn-primary-custom mt-3" style="display: none;">
+          <i class="bi bi-cloud-download me-2"></i>
+          Load Sample Data
+        </button>
       </div>
     </div>
 
@@ -1164,7 +1538,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 6</div>
+        <div class="section-number">Step 7</div>
         <h2 class="section-title">
           In-Season Planner Model Board
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step3" title="View Methodology">
@@ -1192,7 +1566,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 7</div>
+        <div class="section-number">Step 8</div>
         <h2 class="section-title">
           End-of-Season Markdown Decision Models
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step4" title="View Methodology">
@@ -1220,7 +1594,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 8</div>
+        <div class="section-number">Step 9</div>
         <h2 class="section-title">
           Portfolio Migration & Advanced Analysis
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step5" title="View Methodology">
@@ -1248,18 +1622,18 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 4</div>
+        <div class="section-number">Step 5</div>
         <h2 class="section-title">
           Customer Cohorts
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step6" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Analyze customer cohorts and their different promotion response patterns to support targeted offers.</p>
+        <p class="section-subtitle">Analyze Mass and Prestige cohorts across acquisition, price sensitivity, loyalty, and basket value so targeting decisions reflect how customers actually behave.</p>
       </div>
     </div>
     <div class="alert alert-light border mb-3 small">
-      <strong>Business use in this pitch:</strong> identify which cohorts are promo-responsive vs hold-price candidates, then carry that targeting into Step 1 channel and SKU decisions.
+      <strong>Business use in this pitch:</strong> identify which cohorts are promo-responsive vs hold-price candidates, then carry that targeting into the weekly planning steps.
     </div>
 
     <!-- Segmentation content will be shown here by step-navigation.js -->
@@ -1279,14 +1653,14 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 5</div>
+        <div class="section-number">Step 6</div>
         <h2 class="section-title">
           Segment Response Comparison
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step7" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Compare promotion response across customer segments and identify where discounts produce incremental lift.</p>
+        <p class="section-subtitle">Compare how different cohorts respond to your own price, competitor price actions, and social buzz before committing a promotion plan.</p>
       </div>
     </div>
     <div class="alert alert-light border mb-3 small">
@@ -1310,7 +1684,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 3</div>
+        <div class="section-number">Step 4</div>
         <h2 class="section-title">Event Calendar</h2>
         <p class="section-subtitle">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that drive in-season optimization pivots.</p>
       </div>
@@ -1333,7 +1707,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 9</div>
+        <div class="section-number">Step 10</div>
         <h2 class="section-title">AI Promotion Optimization Assistant</h2>
         <p class="section-subtitle">Ask for SKU-level promotion recommendations using inventory runway, competitor price gaps, social momentum, and historical promo effectiveness.</p>
       </div>
@@ -1564,12 +1938,12 @@
                     <label class="form-label fw-semibold">Select Product</label>
                     <select class="form-select" id="acq-product-select">
                       <option value="all">All Products (Average)</option>
-                      <option value="SUN_S1">Daily Shield SPF 40</option>
-                      <option value="SUN_S2">Invisible Mist SPF 50</option>
-                      <option value="SUN_S3">Sport Gel SPF 60</option>
-                      <option value="MOI_M1">Hydra Daily Lotion</option>
-                      <option value="MOI_M2">Barrier Repair Cream</option>
-                      <option value="MOI_M3">Night Recovery Balm</option>
+                      <option value="SUN_S1">Unseen Sunscreen SPF 40</option>
+                      <option value="SUN_S2">Glowscreen SPF 40</option>
+                      <option value="SUN_S3">Play Everyday Lotion SPF 50</option>
+                      <option value="MOI_M1">Superscreen Daily Moisturizer</option>
+                      <option value="MOI_M2">Mineral Sheerscreen SPF 30</option>
+                      <option value="MOI_M3">(Re)setting Powder SPF 35</option>
                     </select>
                     <small class="text-muted">Different products have different price elasticities.</small>
                   </div>
@@ -1769,12 +2143,12 @@
                     <label class="form-label fw-semibold">Select Product</label>
                     <select class="form-select" id="churn-product-select">
                       <option value="all">All Products (Average)</option>
-                      <option value="SUN_S1">Daily Shield SPF 40</option>
-                      <option value="SUN_S2">Invisible Mist SPF 50</option>
-                      <option value="SUN_S3">Sport Gel SPF 60</option>
-                      <option value="MOI_M1">Hydra Daily Lotion</option>
-                      <option value="MOI_M2">Barrier Repair Cream</option>
-                      <option value="MOI_M3">Night Recovery Balm</option>
+                      <option value="SUN_S1">Unseen Sunscreen SPF 40</option>
+                      <option value="SUN_S2">Glowscreen SPF 40</option>
+                      <option value="SUN_S3">Play Everyday Lotion SPF 50</option>
+                      <option value="MOI_M1">Superscreen Daily Moisturizer</option>
+                      <option value="MOI_M2">Mineral Sheerscreen SPF 30</option>
+                      <option value="MOI_M3">(Re)setting Powder SPF 35</option>
                     </select>
                     <small class="text-muted">Different products have different price elasticities.</small>
                   </div>
@@ -1989,12 +2363,12 @@
                     <label class="form-label fw-semibold">Select Product</label>
                     <select class="form-select" id="migration-product-select">
                       <option value="all">All Products (Average)</option>
-                      <option value="SUN_S1">Daily Shield SPF 40</option>
-                      <option value="SUN_S2">Invisible Mist SPF 50</option>
-                      <option value="SUN_S3">Sport Gel SPF 60</option>
-                      <option value="MOI_M1">Hydra Daily Lotion</option>
-                      <option value="MOI_M2">Barrier Repair Cream</option>
-                      <option value="MOI_M3">Night Recovery Balm</option>
+                      <option value="SUN_S1">Unseen Sunscreen SPF 40</option>
+                      <option value="SUN_S2">Glowscreen SPF 40</option>
+                      <option value="SUN_S3">Play Everyday Lotion SPF 50</option>
+                      <option value="MOI_M1">Superscreen Daily Moisturizer</option>
+                      <option value="MOI_M2">Mineral Sheerscreen SPF 30</option>
+                      <option value="MOI_M3">(Re)setting Powder SPF 35</option>
                     </select>
                     <small class="text-muted">Different products have different price elasticities.</small>
                   </div>
@@ -2894,7 +3268,7 @@
               Customer Cohorts & Elasticity
             </h2>
             <p class="small text-muted mb-0">
-              Pricing changes don't affect everyone the same way
+              Mass and Prestige cohorts react differently to price, competitive pressure, loyalty, and basket-building behavior.
             </p>
           </div>
         </div>
@@ -2905,8 +3279,8 @@
           <div class="col-md-4">
             <label class="form-label fw-bold">Channel Group</label>
             <select id="segment-tier-select" class="form-select">
-              <option value="ad_supported">Target &amp; Amazon</option>
-              <option value="ad_free" selected>Sephora &amp; Ulta</option>
+              <option value="ad_supported">Mass Cohorts</option>
+              <option value="ad_free" selected>Prestige Cohorts</option>
             </select>
           </div>
           <div class="col-md-4">
@@ -2934,7 +3308,7 @@
             <i class="bi bi-lightbulb text-warning fs-4 me-3"></i>
             <div>
               <strong class="text-body">Promo strategy:</strong>
-              <span class="text-body-secondary">Mass channels (Target, Amazon) show higher price elasticity - use deeper promos to win volume. Prestige (Sephora, Ulta) are less elastic - focus on margin and full-price conversion. Balance sales and profit by channel.</span>
+              <span class="text-body-secondary">Mass cohorts usually respond faster to price and competitor gaps, while Prestige cohorts are more selective and often justify holding price when loyalty and social support are strong.</span>
             </div>
           </div>
         </div>
@@ -2943,8 +3317,7 @@
         <div class="alert alert-info mb-4">
           <i class="bi bi-info-circle me-2"></i>
           <strong>Cohort Segmentation:</strong>
-          Customers are segmented by price sensitivity because pricing changes don't affect everyone the same way.
-          Promo-driven joiners have high acquisition elasticity. Routine refill buyers have low elasticity. Long-tenure loyalists have very low repeat loss.
+          Customers are grouped by acquisition trigger, loyalty pattern, and basket behavior so you can see which cohorts are promo-responsive, which are better hold-price candidates, and which ones need competitor-defense support.
           <br><span class="small opacity-90">Heatmap, 3-axis, and scatter use your data: <code>segments.csv</code>, <code>segment_kpis.csv</code>, <code>segment_elasticity.json</code>.</span>
         </div>
 
@@ -2994,14 +3367,14 @@
           <!-- Elasticity Heatmap -->
           <div id="heatmap-view" class="chart-container">
             <h3 class="h6 mb-2">Cohort Elasticity Heatmap</h3>
-            <p class="text-muted small mb-3">Price/promo sensitivity by cohort. Green = lower sensitivity, Red = higher sensitivity. Use to decide where to promote.</p>
+            <p class="text-muted small mb-3">Commercial response by cohort. Green = lower pressure, Red = higher pressure. Use this to decide where price moves need the most care.</p>
             <div id="segment-elasticity-heatmap" class="rounded border bg-light bg-opacity-50 p-2"></div>
           </div>
 
           <!-- 3-Axis View -->
           <div id="3axis-view" class="chart-container" style="display: none;">
             <h3 class="h6 mb-2">3-Axis Cohort Map</h3>
-            <p class="text-muted small mb-3">Bubble size = customer count; color = repeat-loss risk. Hover for cohort details.</p>
+            <p class="text-muted small mb-3">Bubble size = customer count; color = repeat-pressure level. Hover for cohort details and business readout.</p>
             <div id="three-axis-radial-viz" class="rounded border bg-light bg-opacity-50 p-2"></div>
             <div class="mt-3">
               <button id="reset-3axis-btn" class="btn btn-sm btn-secondary">
@@ -3016,7 +3389,7 @@
           <!-- Scatter Plot View -->
           <div id="scatter-view" class="chart-container" style="display: none;">
             <h3 class="h6 mb-2">Cohort Scatter: Customers vs Elasticity</h3>
-            <p class="text-muted small mb-3">X = customer count, Y = elasticity (repeat-loss impact). Bubble size = AOV, color = repeat-loss rate. Use to spot high-risk, high-size cohorts.</p>
+            <p class="text-muted small mb-3">X = customer count, Y = response intensity on the selected cohort axis. Bubble size = AOV, color = repeat-loss rate. Use to spot large cohorts with meaningful commercial sensitivity.</p>
             <div id="segment-scatter-plot" class="rounded border bg-light bg-opacity-50 p-2"></div>
           </div>
 
@@ -3059,22 +3432,22 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <h6 class="mb-0 text-body-emphasis">
                     <i class="bi bi-shield-exclamation text-warning me-1"></i>
-                    Customer group watchlist
+                    Customer response watchlist
                   </h6>
                   <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis" id="segment-watchlist-badge">Loading...</span>
                 </div>
                 <p class="small text-body-secondary mb-1">
-                  Shows the customer groups most at risk of not coming back at current price points. Click any row for SKU-level drilldown.
+                  Shows the customer groups under the most commercial pressure at current price points after accounting for competitor gap, social support, and current product mix. Click any row for SKU-level drilldown.
                 </p>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2 small text-body-secondary cohort-watchlist-legend">
                   <span class="d-inline-flex align-items-center gap-1">
-                    <span class="cohort-legend-dot bg-success"></span> Fewer at risk
+                    <span class="cohort-legend-dot bg-success"></span> Lower pressure
                   </span>
                   <span class="d-inline-flex align-items-center gap-1">
-                    <span class="cohort-legend-dot bg-warning"></span> Some at risk
+                    <span class="cohort-legend-dot bg-warning"></span> Moderate pressure
                   </span>
                   <span class="d-inline-flex align-items-center gap-1">
-                    <span class="cohort-legend-dot bg-danger"></span> Many at risk
+                    <span class="cohort-legend-dot bg-danger"></span> Higher pressure
                   </span>
                 </div>
                 <div class="row g-3">
@@ -3085,7 +3458,7 @@
                     <div id="segment-watchlist-drilldown" class="cohort-watchlist-drilldown">
                       <div class="text-center py-4 text-body-secondary small">
                         <i class="bi bi-cursor-fill fs-5 d-block mb-1"></i>
-                        Select a customer group to view SKU-level drivers and recommended actions.
+                        Select a customer group to view SKU-level drivers, pressure points, and recommended actions.
                       </div>
                     </div>
                   </div>
@@ -3111,21 +3484,24 @@
         </div>
       </div>
       <div class="card-body">
+        <div class="alert alert-light border mb-4">
+          <strong>What this view compares:</strong> each cohort is scored on three levers that Ritesh asked to see explicitly: response to your own price, response to competitor price actions, and response to social buzz. Use it to decide which cohorts should get promo depth, competitor-defense support, or a hold-price strategy.
+        </div>
         <!-- Controls -->
         <div class="row mb-4">
           <div class="col-md-3">
-            <label class="form-label fw-bold">Axis</label>
+            <label class="form-label fw-bold">Cohort Dimension</label>
             <select id="compare-axis-select" class="form-select">
-              <option value="acquisition">Acquisition</option>
-              <option value="engagement" selected>Engagement</option>
-              <option value="monetization">Monetization</option>
+              <option value="acquisition">Acquisition Cohorts</option>
+              <option value="engagement" selected>Loyalty Cohorts</option>
+              <option value="monetization">Basket Cohorts</option>
             </select>
           </div>
           <div class="col-md-3">
             <label class="form-label fw-bold">Channel Group</label>
             <select id="compare-tier-select" class="form-select">
-              <option value="ad_supported">Target &amp; Amazon</option>
-              <option value="ad_free" selected>Sephora &amp; Ulta</option>
+              <option value="ad_supported">Mass Cohorts</option>
+              <option value="ad_free" selected>Prestige Cohorts</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -3137,23 +3513,27 @@
           <div class="col-md-3">
             <label class="form-label fw-bold">Sort By</label>
             <select id="compare-sort-select" class="form-select">
-              <option value="elasticity">Elasticity</option>
+              <option value="own_price">Own Price Response</option>
+              <option value="competitor">Competitor Response</option>
+              <option value="social">Social Buzz Response</option>
               <option value="customers">Customers</option>
-              <option value="churn">Repeat Loss</option>
+              <option value="repeat_loss">Repeat Loss</option>
               <option value="aov">AOV</option>
             </select>
           </div>
         </div>
         <div class="small text-muted mb-3" id="compare-sku-summary">
-          Segment response metrics currently shown at channel-group level.
+          Segment response metrics are shown at channel-group level and update when you switch to an individual SKU.
         </div>
+
+        <div id="segment-response-summary" class="row g-3 mb-4"></div>
 
         <!-- Comparison Table -->
         <div id="segment-comparison-table" class="table-responsive"></div>
 
         <!-- Comparison Chart -->
         <div class="mt-4">
-          <h6 class="fw-bold">Elasticity Comparison Chart</h6>
+          <h6 class="fw-bold" id="segment-comparison-chart-title">Three-Lever Cohort Response</h6>
           <canvas id="segment-comparison-chart" height="80"></canvas>
         </div>
       </div>
@@ -3252,11 +3632,6 @@
                   <i class="bi bi-check-all me-1"></i>All Events
                 </label>
 
-                <input type="checkbox" class="btn-check" id="filter-price-change" checked autocomplete="off">
-                <label class="btn btn-outline-success btn-sm" for="filter-price-change">
-                  <i class="bi bi-currency-dollar me-1"></i>Price Changes
-                </label>
-
                 <input type="checkbox" class="btn-check" id="filter-competitor-price-change" checked autocomplete="off">
                 <label class="btn btn-outline-danger btn-sm" for="filter-competitor-price-change">
                   <i class="bi bi-arrow-left-right me-1"></i>Competitor Price Changes
@@ -3286,159 +3661,10 @@
           <!-- Timeline Visualization -->
           <div class="mb-4">
             <h6 class="fw-bold mb-3">
-              <i class="bi bi-clock-history me-2"></i>Event Timeline (Seasonal Years)
+              <i class="bi bi-clock-history me-2"></i>Event Timeline (12M History + 12M Forward)
             </h6>
             <div id="event-timeline" class="p-3 rounded" style="min-height: 300px;">
               <!-- Timeline will be rendered here -->
-            </div>
-          </div>
-
-          <!-- Event Table -->
-          <div class="mb-4">
-            <h6 class="fw-bold mb-3">
-              <button class="btn btn-link p-0 text-decoration-none fw-bold" type="button"
-                data-bs-toggle="collapse" data-bs-target="#event-details-collapse"
-                aria-expanded="false" aria-controls="event-details-collapse">
-                <i class="bi bi-list-ul me-2"></i>Event Details
-                <i class="bi bi-chevron-down ms-2 small"></i>
-              </button>
-            </h6>
-            <div class="collapse" id="event-details-collapse">
-              <div class="table-responsive event-details-table">
-                <table class="table table-sm table-hover" id="event-table">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Event Type</th>
-                      <th>Products</th>
-                      <th>Channel Group</th>
-                      <th>Price Change</th>
-                      <th>Promo</th>
-                      <th>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody id="event-table-body">
-                    <!-- Events will be populated here -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- Promo Campaign Performance (Supergoop / portfolio client) -->
-          <div class="mb-4">
-            <h6 class="fw-bold mb-1">
-              <i class="bi bi-megaphone me-2"></i>Promo Campaign Performance
-            </h6>
-            <p class="text-muted small mb-3">
-              Campaign story across the season: baseline setup, in-season pivot from competitor/social shocks, and end-of-season inventory push across Sephora, Ulta, Target, and Amazon.
-            </p>
-            <div id="promo-data-methodology" class="alert alert-light border small mb-3">
-              Loading campaign data sources and analysis summary...
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-md-4">
-                <label class="form-label small text-muted mb-1" for="promo-season-filter">Season</label>
-                <select id="promo-season-filter" class="form-select form-select-sm">
-                  <option value="all" selected>All Seasons</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small text-muted mb-1" for="promo-channel-filter">Channel</label>
-                <select id="promo-channel-filter" class="form-select form-select-sm">
-                  <option value="all" selected>All Channels</option>
-                </select>
-              </div>
-              <div class="col-md-4 d-flex align-items-end">
-                <button id="promo-clear-filters" class="btn btn-sm btn-outline-secondary w-100" type="button">
-                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Promo Filters
-                </button>
-              </div>
-            </div>
-            <div id="promo-campaign-summary" class="small text-muted mb-2"></div>
-            <div class="row g-3 mb-3">
-              <div class="col-lg-6">
-                <div class="card border-0 bg-body-tertiary h-100">
-                  <div class="card-body p-3">
-                    <h6 class="small text-uppercase text-muted mb-2">Campaign Story Mix (Start vs Pivot vs Future)</h6>
-                    <div class="chart-container" style="height: 220px;">
-                      <canvas id="promo-story-phase-chart"></canvas>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-lg-6">
-                <div class="card border-0 bg-body-tertiary h-100">
-                  <div class="card-body p-3">
-                    <h6 class="small text-uppercase text-muted mb-2">Average Promo Uplift by Retail Channel</h6>
-                    <div class="chart-container" style="height: 220px;">
-                      <canvas id="promo-channel-impact-chart"></canvas>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-12">
-                <div class="small text-muted" id="promo-story-visual-note">
-                  Building story-mix and channel-lift visuals from campaign outcomes...
-                </div>
-              </div>
-            </div>
-            <div class="row" id="promo-cards-container">
-              <!-- Promo campaign cards will be rendered here -->
-            </div>
-            <div id="promo-drilldown-panel" class="mt-3" style="display: none;"></div>
-            <div class="card border-0 bg-body-tertiary mt-3">
-              <div class="card-body p-3">
-                <h6 class="small text-uppercase text-muted mb-2">Promo Outcome Matrix (Product x Channel Uplift)</h6>
-                <div class="small text-muted mb-2" id="promo-outcome-summary">
-                  Building channel response matrix from campaign history...
-                </div>
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle mb-1">
-                    <thead class="table-light">
-                      <tr>
-                        <th>Product</th>
-                        <th>Sunscreen / Moisturizer</th>
-                        <th class="text-end">Target</th>
-                        <th class="text-end">Amazon</th>
-                        <th class="text-end">Sephora</th>
-                        <th class="text-end">Ulta</th>
-                      </tr>
-                    </thead>
-                    <tbody id="promo-outcome-matrix-body">
-                      <tr>
-                        <td colspan="6" class="text-center text-muted">Loading outcome matrix...</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="card border-0 bg-body-tertiary mt-3">
-              <div class="card-body p-3">
-                <h6 class="small text-uppercase text-muted mb-2">Promo Policy Extractor (From Historical Outcomes)</h6>
-                <div class="small text-muted mb-2" id="promo-policy-summary">
-                  Deriving include/exclude policies from campaign history...
-                </div>
-                <div class="table-responsive">
-                  <table class="table table-sm align-middle mb-1">
-                    <thead class="table-light">
-                      <tr>
-                        <th>Product</th>
-                        <th class="text-end">Campaigns</th>
-                        <th class="text-end">Avg Uplift</th>
-                        <th>Best Channel</th>
-                        <th>Recommended Policy</th>
-                      </tr>
-                    </thead>
-                    <tbody id="promo-policy-table-body">
-                      <tr>
-                        <td colspan="5" class="text-center text-muted">Loading policy extraction...</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -3604,22 +3830,22 @@
 
   <!-- Methodology Modals -->
 
-  <!-- Step 1: KPI Calculations -->
+  <!-- Step 2: Current State Overview -->
   <div class="modal fade" id="methodology-modal-step1" tabindex="-1" aria-labelledby="methodology-modal-step1-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step1-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Current State KPIs
+            <i class="bi bi-calculator me-2"></i> Methodology: Current State Overview
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <h6 class="mb-3"><i class="bi bi-database me-2"></i> Data Sources</h6>
           <ul>
-            <li><strong>customers.csv</strong> - 50,000 customer records (synthetic data)</li>
-            <li><strong>channel_weekly.csv</strong> - 471 weekly KPI snapshots by tier</li>
-            <li><strong>price_calendar.csv</strong> - Historical pricing and promotions</li>
+            <li><strong>product_channel_history.csv</strong> - rolling 52-week product x channel history with revenue, own price, competitor price gap, and social buzz</li>
+            <li><strong>customers.csv</strong> - season-aligned customer master with channel mix, basket behavior, and repeat-loss status</li>
+            <li><strong>channel_weekly.csv</strong> - active season weekly KPI snapshots used for the latest-week context</li>
           </ul>
 
           <h6 class="mb-3 mt-4"><i class="bi bi-graph-up me-2"></i> KPI Formulas</h6>
@@ -3628,7 +3854,7 @@
             <div class="card-header"><strong>Average Order Value (AOV)</strong></div>
             <div class="card-body">
               <code>AOV = Total Revenue / Active Customers</code>
-              <p class="small text-muted mt-2 mb-0">Calculated per channel group, weighted by customer count</p>
+              <p class="small text-muted mt-2 mb-0">Used in the latest-week overlay; the 52-week dashboard itself aggregates product x channel revenue, units, price, competitor gap, and social buzz.</p>
             </div>
           </div>
 
@@ -3651,9 +3877,9 @@
           <h6 class="mb-3 mt-4"><i class="bi bi-lightbulb me-2"></i> Key Assumptions</h6>
           <ul>
             <li>All data is synthetic, representing a realistic seasonal retail brand</li>
-            <li>Baseline period: Last 12 weeks of available data</li>
+            <li>Historical overview uses a rolling 52-week lookback with shorter drilldown filters</li>
             <li>Currency: USD</li>
-            <li>No seasonal adjustments applied</li>
+            <li>Seasonality is preserved across sunscreen and moisturizer demand</li>
           </ul>
         </div>
         <div class="modal-footer">
@@ -3677,7 +3903,7 @@
           <h6 class="mb-3"><i class="bi bi-calendar-week me-2"></i> Active Model Stack</h6>
           <p>This section combines four active models: own promo response, competitor delta impact, social momentum impact, and SKU migration/cannibalization to produce weekly channel-specific actions.</p>
           <div class="alert alert-info mb-0">
-            <strong>Current implementation:</strong> Step 1 delivers core promotion optimization logic with a configurable planning horizon (default 17 weeks), including objective-based controls and baseline-vs-scenario inventory projection.
+            <strong>Current implementation:</strong> Step 2 delivers core promotion optimization logic with a configurable planning horizon (default 17 weeks), including objective-based controls and baseline-vs-scenario inventory projection.
           </div>
         </div>
         <div class="modal-footer">
@@ -3701,7 +3927,7 @@
           <h6 class="mb-3"><i class="bi bi-hourglass-split me-2"></i> Active Model Stack</h6>
           <p>This section combines historical promotion effectiveness by SKU/channel with a markdown ladder model to reduce season-end leftover inventory while preserving margin floors.</p>
           <div class="alert alert-info mb-0">
-            <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 1 through configurable-horizon projection and AI recommendation guidance.
+            <strong>Current implementation:</strong> End-of-season inventory risk is already surfaced in Step 2 through configurable-horizon projection and AI recommendation guidance.
           </div>
         </div>
         <div class="modal-footer">
@@ -3803,8 +4029,8 @@
 
           <h6 class="mb-3 mt-4"><i class="bi bi-table me-2"></i> Data Sources</h6>
           <ul>
-            <li><strong>segments.csv:</strong> 250 cohort definitions with characteristics</li>
-            <li><strong>segment_kpis.csv:</strong> Historical performance by cohort</li>
+            <li><strong>segments.csv:</strong> tagged customer sample across acquisition, engagement, and basket-value cohorts</li>
+            <li><strong>segment_kpis.csv:</strong> current cohort performance rollup derived from the customer master</li>
             <li><strong>segment_elasticity.json:</strong> Calibrated elasticity parameters</li>
           </ul>
 
@@ -3916,7 +4142,7 @@
         <div class="modal-header">
           <div>
             <h5 class="modal-title" id="stepsOverviewLabel">
-              <i class="bi bi-compass me-2"></i> Explore the 9 Steps
+              <i class="bi bi-compass me-2"></i> Explore the 10 Steps
             </h5>
             <div class="small text-muted">Jump to any step with a single click.</div>
           </div>
@@ -3937,8 +4163,8 @@
                       <span class="steps-table-step-label">Step 1</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Current State Overview</strong>
-                      <span class="text-muted">Start with current season position, channel performance, and market signals before choosing promotion actions.</span>
+                      <strong>Data Explorer</strong>
+                      <span class="text-muted">Inspect the raw datasets powering promotion optimization, including SKU-channel performance, competitor pricing, and social buzz signals.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="2" style="--step-index: 2;">
@@ -3947,8 +4173,8 @@
                       <span class="steps-table-step-label">Step 2</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Data Explorer</strong>
-                      <span class="text-muted">Explore the raw datasets powering promotion optimization, including SKU-channel inventory, competitor pricing, and social demand signals.</span>
+                      <strong>Current State Overview</strong>
+                      <span class="text-muted">Review the last 52 weeks across all 6 products, with drilldowns by channel, price, competitor gap, social buzz, and revenue trend.</span>
                     </span>
                     
                   </button>
@@ -3958,18 +4184,18 @@
                       <span class="steps-table-step-label">Step 3</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Event Calendar</strong>
-                      <span class="text-muted">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that trigger in-season optimization pivots.</span>
+                      <strong>Last Week Performance Drilldown</strong>
+                      <span class="text-muted">Zoom into last week’s KPIs, current channel groups, competitor moves, social buzz, and product-level market signal exposure.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="4" style="--step-index: 4;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-segmentation">4</span>
+                      <span class="step-dot steps-modal-dot module-data-foundation">4</span>
                       <span class="steps-table-step-label">Step 4</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Customer Cohorts</strong>
-                      <span class="text-muted">Analyze customer cohorts and their differential promotion response patterns to guide targeted offers.</span>
+                      <strong>Event Calendar</strong>
+                      <span class="text-muted">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that trigger in-season optimization pivots.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="5" style="--step-index: 5;">
@@ -3978,18 +4204,18 @@
                       <span class="steps-table-step-label">Step 5</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Segment Response Comparison</strong>
-                      <span class="text-muted">Compare promotion response across segments and identify where discount depth drives incremental lift.</span>
+                      <strong>Customer Cohorts</strong>
+                      <span class="text-muted">Analyze customer cohorts and their differential promotion response patterns to guide targeted offers.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="6" style="--step-index: 6;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-elasticity">6</span>
+                      <span class="step-dot steps-modal-dot module-segmentation">6</span>
                       <span class="steps-table-step-label">Step 6</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>In-Season Planner Model Board</strong>
-                      <span class="text-muted">Weekly SKU-level promotion model using live inventory, competitor, social, and cannibalization signals.</span>
+                      <strong>Segment Response Comparison</strong>
+                      <span class="text-muted">Compare promotion response across segments and identify where discount depth drives incremental lift.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="7" style="--step-index: 7;">
@@ -3998,8 +4224,8 @@
                       <span class="steps-table-step-label">Step 7</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>End-of-Season Markdown Decision Models</strong>
-                      <span class="text-muted">Historical promotion evidence + markdown ladder model to finish the season closer to zero inventory.</span>
+                      <strong>In-Season Planner Model Board</strong>
+                      <span class="text-muted">Weekly SKU-level promotion model using live inventory, competitor, social, and cannibalization signals.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="8" style="--step-index: 8;">
@@ -4008,14 +4234,25 @@
                       <span class="steps-table-step-label">Step 8</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Portfolio Migration & Advanced Analysis</strong>
-                      <span class="text-muted">Simulate Mass vs Prestige migration, SKU cannibalization paths, and rank saved scenarios for growth/profit tradeoffs.</span>
+                      <strong>End-of-Season Markdown Decision Models</strong>
+                      <span class="text-muted">Historical promotion evidence + markdown ladder model to finish the season closer to zero inventory.</span>
                     </span>
                   </button>
                   <button class="steps-table-row" type="button" data-step="9" style="--step-index: 9;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-analytics">9</span>
+                      <span class="step-dot steps-modal-dot module-elasticity">9</span>
                       <span class="steps-table-step-label">Step 9</span>
+                    </span>
+                    <span class="steps-table-body">
+                      <strong>Portfolio Migration & Advanced Analysis</strong>
+                      <span class="text-muted">Simulate Mass vs Prestige migration, SKU cannibalization paths, and rank saved scenarios for growth/profit tradeoffs.</span>
+                    </span>
+                    
+                  </button>
+                  <button class="steps-table-row" type="button" data-step="10" style="--step-index: 10;">
+                    <span class="steps-table-step">
+                      <span class="step-dot steps-modal-dot module-analytics">10</span>
+                      <span class="steps-table-step-label">Step 10</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>AI Promotion Optimization Assistant</strong>

@@ -13,9 +13,9 @@
       "std_error": 0.12,
       "interpretation": "Mass channels are more price-sensitive and react strongly to competitor moves.",
       "price_range": {
-        "min": 12.0,
-        "max": 30.0,
-        "current": 20.1
+        "min": 18.0,
+        "max": 42.0,
+        "current": 29.7
       },
       "segments": {
         "new_0_3mo": {
@@ -68,9 +68,9 @@
       "std_error": 0.1,
       "interpretation": "Prestige channels are less price-sensitive and better suited for selective promo depth.",
       "price_range": {
-        "min": 24.0,
-        "max": 44.0,
-        "current": 31.4
+        "min": 28.0,
+        "max": 48.0,
+        "current": 36.3
       },
       "segments": {
         "new_0_3mo": {
@@ -159,24 +159,24 @@
   },
   "willingness_to_pay": {
     "ad_supported": {
-      "mean": 21.0,
-      "median": 20.0,
-      "std_dev": 3.2
+      "mean": 30.5,
+      "median": 29.0,
+      "std_dev": 4.8
     },
     "ad_free": {
-      "mean": 32.4,
-      "median": 31.2,
-      "std_dev": 4.3
+      "mean": 38.0,
+      "median": 37.0,
+      "std_dev": 5.2
     }
   },
   "repeat_loss_elasticity": {
     "ad_supported": {
       "repeat_loss_elasticity": 0.88,
-      "baseline_repeat_loss": 0.280
+      "baseline_repeat_loss": 0.041
     },
     "ad_free": {
       "repeat_loss_elasticity": 0.62,
-      "baseline_repeat_loss": 0.245
+      "baseline_repeat_loss": 0.032
     }
   },
   "acquisition_elasticity": {
@@ -185,44 +185,6 @@
     },
     "ad_free": {
       "acquisition_elasticity": -1.35
-    }
-  },
-  "sku_elasticity": {
-    "SUN_S1": {
-      "name": "Daily Shield SPF 40",
-      "product_group": "sunscreen",
-      "mass": { "base_elasticity": -2.35, "confidence_interval": 0.24 },
-      "prestige": { "base_elasticity": -1.55, "confidence_interval": 0.18 }
-    },
-    "SUN_S2": {
-      "name": "Invisible Mist SPF 50",
-      "product_group": "sunscreen",
-      "mass": { "base_elasticity": -2.15, "confidence_interval": 0.22 },
-      "prestige": { "base_elasticity": -1.42, "confidence_interval": 0.17 }
-    },
-    "SUN_S3": {
-      "name": "Sport Gel SPF 60",
-      "product_group": "sunscreen",
-      "mass": { "base_elasticity": -1.95, "confidence_interval": 0.20 },
-      "prestige": { "base_elasticity": -1.25, "confidence_interval": 0.15 }
-    },
-    "MOI_M1": {
-      "name": "Hydra Daily Lotion",
-      "product_group": "moisturizer",
-      "mass": { "base_elasticity": -2.10, "confidence_interval": 0.22 },
-      "prestige": { "base_elasticity": -1.40, "confidence_interval": 0.17 }
-    },
-    "MOI_M2": {
-      "name": "Barrier Repair Cream",
-      "product_group": "moisturizer",
-      "mass": { "base_elasticity": -1.92, "confidence_interval": 0.20 },
-      "prestige": { "base_elasticity": -1.30, "confidence_interval": 0.16 }
-    },
-    "MOI_M3": {
-      "name": "Night Recovery Balm",
-      "product_group": "moisturizer",
-      "mass": { "base_elasticity": -1.75, "confidence_interval": 0.19 },
-      "prestige": { "base_elasticity": -1.18, "confidence_interval": 0.14 }
     }
   },
   "notes": {

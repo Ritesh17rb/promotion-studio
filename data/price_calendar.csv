@@ -1,35 +1,35 @@
 week_start,channel_group,list_price,promo_flag,promo_discount_pct,effective_price,price_changed,price_change_pct,promo_type,promo_message
-2026-02-02,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-02-02,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-02-09,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-02-09,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-02-16,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-02-16,prestige,32.33,True,10.0,29.11,True,-9.96,prestige_selective,Selective prestige offer
-2026-02-23,mass,20.08,True,14.08,17.27,True,-13.994,competitive_defense,Defend mass volume vs competitor
-2026-02-23,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-03-02,mass,20.08,True,16.25,16.82,True,-16.235,competitive_defense,Defend mass volume vs competitor
-2026-03-02,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-03-09,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-03-09,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-03-16,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-03-16,prestige,32.33,True,9.33,29.32,True,-9.31,prestige_selective,Selective prestige offer
-2026-03-23,mass,20.08,True,16.33,16.83,True,-16.185,competitive_defense,Defend mass volume vs competitor
-2026-03-23,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-03-30,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-03-30,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-04-06,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-04-06,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-04-13,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-04-13,prestige,32.33,True,9.33,29.32,True,-9.31,prestige_selective,Selective prestige offer
-2026-04-20,mass,20.08,True,16.25,16.83,True,-16.185,competitive_defense,Defend mass volume vs competitor
-2026-04-20,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-04-27,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-04-27,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-05-04,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-05-04,prestige,32.33,True,8.67,29.53,True,-8.661,prestige_selective,Selective prestige offer
-2026-05-11,mass,20.08,True,15.92,16.86,True,-16.036,competitive_defense,Defend mass volume vs competitor
-2026-05-11,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-05-18,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-05-18,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
-2026-05-25,mass,20.08,False,0.0,20.08,False,0.0,full_price,Hold price to protect margin
-2026-05-25,prestige,32.33,False,0.0,32.33,False,0.0,full_price,Hold price to protect margin
+2026-02-02,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-02-02,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-02-09,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-02-09,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-02-16,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-02-16,prestige,37.08,True,8.5,33.92,True,-8.522,prestige_selective,Selective prestige offer
+2026-02-23,mass,28.92,True,16.83,24.08,True,-16.736,competitive_defense,Defend mass volume vs competitor
+2026-02-23,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-03-02,mass,28.92,True,16.67,24.08,True,-16.736,competitive_defense,Defend mass volume vs competitor
+2026-03-02,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-03-09,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-03-09,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-03-16,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-03-16,prestige,37.08,True,9.67,33.5,True,-9.655,prestige_selective,Selective prestige offer
+2026-03-23,mass,28.92,True,16.08,24.28,True,-16.044,competitive_defense,Defend mass volume vs competitor
+2026-03-23,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-03-30,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-03-30,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-04-06,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-04-06,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-04-13,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-04-13,prestige,37.08,True,9.17,33.67,True,-9.196,prestige_selective,Selective prestige offer
+2026-04-20,mass,28.92,True,17.33,23.89,True,-17.393,competitive_defense,Defend mass volume vs competitor
+2026-04-20,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-04-27,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-04-27,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-05-04,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-05-04,prestige,37.08,True,7.67,34.26,True,-7.605,prestige_selective,Selective prestige offer
+2026-05-11,mass,28.92,True,15.75,24.34,True,-15.837,competitive_defense,Defend mass volume vs competitor
+2026-05-11,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-05-18,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-05-18,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin
+2026-05-25,mass,28.92,False,0.0,28.92,False,0.0,full_price,Hold price to protect margin
+2026-05-25,prestige,37.08,False,0.0,37.08,False,0.0,full_price,Hold price to protect margin

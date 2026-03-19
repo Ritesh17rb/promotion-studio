@@ -1,23 +1,24 @@
 /**
  * Step Navigation System
  * Manages the step-by-step navigation flow for the Promotion Optimization Studio
- * Now with 10 steps (0-9) for better progressive disclosure
+ * Now with 11 steps (0-10) for better progressive disclosure
  */
 
-const TOTAL_STEPS = 10; // 0-9
+const TOTAL_STEPS = 11; // 0-10
 let currentStep = 0;
 const DEFAULT_PLANNING_HORIZON_WEEKS = 17;
 const stepSectionMap = {
   0: 'section-0',
-  1: 'section-1',
-  2: 'section-2',
-  3: 'section-8',
-  4: 'section-6',
-  5: 'section-7',
-  6: 'section-3',
-  7: 'section-4',
-  8: 'section-5',
-  9: 'section-9'
+  1: 'section-2',
+  2: 'section-1',
+  3: 'section-10',
+  4: 'section-8',
+  5: 'section-6',
+  6: 'section-7',
+  7: 'section-3',
+  8: 'section-4',
+  9: 'section-5',
+  10: 'section-9'
 };
 const stepVisualCharts = {};
 
@@ -115,6 +116,7 @@ function goToStep(step) {
   });
 
   currentStep = step;
+  window.__currentStepNavigation = step;
 
   // Show/hide appropriate original content sections
   showStepContent(step);
@@ -128,9 +130,12 @@ function goToStep(step) {
  * @param {number} step - Step number
  */
 function showStepContent(step) {
+  document.body.classList.remove('app-loading-step');
+
   // Hide all original content sections
   const allSections = [
     'load-data-section',
+    'current-state-history-section',
     'kpi-section',
     'elasticity-models-section',
     'comparison-section',
@@ -159,7 +164,79 @@ function showStepContent(step) {
       // Hero - no additional content
       break;
     case 1:
-      // Dashboard - load-data-section and kpi-section are now INSIDE section-1
+      // Data Explorer - bootstrap the app before showing the explorer.
+      if (window.location.protocol === 'file:') {
+        renderStartupIssue({
+          title: 'Open the app through a local server',
+          message: 'This experience cannot boot correctly from a local file because the browser blocks the JavaScript modules and data files. Launch it through localhost instead.',
+          actions: `
+            <p class="mb-2"><strong>Recommended:</strong> run <code>start-promotion-studio.bat</code> from this project folder.</p>
+            <p class="mb-2">Manual fallback from <code>C:\\Users\\admin\\work\\promotion-studio</code>:</p>
+            <pre class="mb-2"><code>py -m http.server 8000</code></pre>
+            <p class="mb-2">Then open <a href="http://127.0.0.1:8000/index.html" target="_blank" rel="noopener noreferrer">http://127.0.0.1:8000/index.html</a>.</p>
+            <button class="btn btn-sm btn-primary" onclick="window.open('http://127.0.0.1:8000/index.html', '_blank', 'noopener')">
+              Open localhost:8000
+            </button>
+          `
+        });
+        break;
+      }
+
+      const step1LoadSection = document.getElementById('load-data-section');
+      const step1LoadingProgress = document.getElementById('loading-progress');
+      const dataViewerSection = document.getElementById('data-viewer-section');
+      const dataViewerContentArea = document.getElementById('step-2-data-viewer-container-content');
+      const step1AppDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
+
+      if (dataViewerSection && dataViewerContentArea) {
+        if (dataViewerSection.parentElement !== dataViewerContentArea) {
+          dataViewerContentArea.appendChild(dataViewerSection);
+        }
+      }
+
+      if (!window.loadAppData || typeof window.loadAppData !== 'function') {
+        renderStartupIssue({
+          title: 'Application bootstrap did not complete',
+          message: 'The main application bundle is not available, so data loading cannot start. Reload the page through the local server and try again.',
+          actions: `
+            <button class="btn btn-sm btn-outline-primary me-2" onclick="location.reload()">Reload</button>
+            <a class="btn btn-sm btn-primary" href="http://127.0.0.1:8000/index.html" target="_blank" rel="noopener noreferrer">Open localhost:8000</a>
+          `
+        });
+        break;
+      }
+
+      if (step1AppDataState === 'loaded') {
+        if (step1LoadSection) step1LoadSection.style.display = 'none';
+        if (dataViewerSection) dataViewerSection.style.display = 'block';
+        break;
+      }
+
+      if (dataViewerSection) dataViewerSection.style.display = 'none';
+      if (step1LoadSection) {
+        step1LoadSection.style.display = 'block';
+        step1LoadSection.style.visibility = 'visible';
+        step1LoadSection.style.opacity = '1';
+      }
+      document.body.classList.add('app-loading-step');
+      if (step1LoadingProgress) {
+        step1LoadingProgress.style.display = 'block';
+        step1LoadingProgress.style.visibility = 'visible';
+      }
+
+      if (step1AppDataState !== 'loading') {
+        window.appDataLoadState = 'loading';
+        setTimeout(() => {
+          window.loadAppData().catch(error => {
+            console.error('Failed to load data:', error);
+            window.dataLoaded = false;
+            window.appDataLoadState = 'idle';
+          });
+        }, 100);
+      }
+      break;
+    case 2:
+      // Current state dashboard - 52-week overview
       if (window.location.protocol === 'file:') {
         renderStartupIssue({
           title: 'Open the app through a local server',
@@ -178,8 +255,7 @@ function showStepContent(step) {
       }
 
       const loadSection = document.getElementById('load-data-section');
-      const loadingProgress = document.getElementById('loading-progress');
-      const kpiSection = document.getElementById('kpi-section');
+      const historySection = document.getElementById('current-state-history-section');
       const appDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
 
       if (!window.loadAppData || typeof window.loadAppData !== 'function') {
@@ -196,74 +272,33 @@ function showStepContent(step) {
 
       if (appDataState === 'loaded') {
         if (loadSection) loadSection.style.display = 'none';
-        if (kpiSection) kpiSection.style.display = 'block';
-        break;
-      }
-
-      if (appDataState === 'loading') {
-        if (loadSection) {
-          loadSection.style.display = 'block';
-          loadSection.style.visibility = 'visible';
-          loadSection.style.opacity = '1';
-        }
-        if (loadingProgress) {
-          loadingProgress.style.display = 'block';
-          loadingProgress.style.visibility = 'visible';
+        if (historySection) historySection.style.display = 'block';
+        if (window.initializeCurrentStateHistoryDashboard && typeof window.initializeCurrentStateHistoryDashboard === 'function') {
+          window.initializeCurrentStateHistoryDashboard();
         }
         break;
       }
 
-      // Trigger data loading if not already loaded
-      if (window.loadAppData && !window.dataLoaded) {
-        window.appDataLoadState = 'loading';
-
-        // IMPORTANT: Wait for section animation to complete and ensure loading UI is visible
-        setTimeout(() => {
-          // Make sure loading section is visible
-          if (loadSection) {
-            loadSection.style.display = 'block';
-            loadSection.style.visibility = 'visible';
-            loadSection.style.opacity = '1';
-          }
-          if (loadingProgress) {
-            loadingProgress.style.display = 'block';
-            loadingProgress.style.visibility = 'visible';
-          }
-
-          // Start loading data
-          window.loadAppData().catch(error => {
-            console.error('Failed to load data:', error);
-            window.dataLoaded = false; // Reset on error
-            window.appDataLoadState = 'idle';
-            // Show error message to user
-            if (loadSection) {
-              loadSection.innerHTML = `
-                <div class="glass-card">
-                  <div class="alert alert-danger mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Failed to load data.</strong> ${error.message}
-                    <button class="btn btn-sm btn-outline-danger ms-3" onclick="location.reload()">Retry</button>
-                  </div>
-                </div>
-              `;
-            }
-          });
-        }, 100); // Small delay to ensure DOM is ready after section animation starts
-      }
-      break;
-    case 2:
-      // Data Explorer - Show data viewer
-      const dataViewerSection = document.getElementById('data-viewer-section');
-      const dataViewerContentArea = document.getElementById('step-2-data-viewer-container-content');
-      if (dataViewerSection && dataViewerContentArea) {
-        dataViewerSection.style.display = 'block';
-        // Move data viewer into step 2 content area if not already there
-        if (dataViewerSection.parentElement !== dataViewerContentArea) {
-          dataViewerContentArea.appendChild(dataViewerSection);
-        }
-      }
+      goToStep(1);
       break;
     case 3:
+      // Last week drilldown dashboard - dedicated view
+      const weeklyDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
+
+      if (weeklyDataState === 'loaded') {
+        const wdContent = document.getElementById('weekly-drilldown-content');
+        const wdLoading = document.getElementById('wd-loading-state');
+        if (wdContent) wdContent.style.display = 'block';
+        if (wdLoading) wdLoading.style.display = 'none';
+        if (window.initializeWeeklyDrilldown && typeof window.initializeWeeklyDrilldown === 'function') {
+          window.initializeWeeklyDrilldown();
+        }
+        break;
+      }
+
+      goToStep(1);
+      break;
+    case 4:
       // Event Calendar
       const eventCalendarSection = document.getElementById('event-calendar-section');
       const calendarContentArea = document.getElementById('step-8-calendar-container-content');
@@ -274,7 +309,7 @@ function showStepContent(step) {
         }
       }
       break;
-    case 4:
+    case 5:
       // Customer Cohorts & Elasticity (segmentation only)
       const segmentationSection6 = document.getElementById('segmentation-section');
       const segmentContentArea6 = document.getElementById('step-6-segmentation-container-content');
@@ -285,7 +320,7 @@ function showStepContent(step) {
         }
       }
       break;
-    case 5:
+    case 6:
       // Segment Elasticity Comparison (analysis only)
       const segmentAnalysisSection7 = document.getElementById('segment-analysis-section');
       const analysisContentArea7 = document.getElementById('step-7-analysis-container-content');
@@ -296,28 +331,28 @@ function showStepContent(step) {
         }
       }
       break;
-    case 6:
+    case 7:
       // In-Season Planner - show elasticity models, force Acquisition tab
       showElasticityModel('acquisition', 'step-3-acquisition-container');
       if (window.initAcquisitionSimple && typeof window.initAcquisitionSimple === 'function') {
         setTimeout(() => window.initAcquisitionSimple(), 100);
       }
       break;
-    case 7:
+    case 8:
       // End-of-Season Markdown - show elasticity models, force Churn tab
       showElasticityModel('churn', 'step-4-churn-container');
       if (window.initChurnSimple && typeof window.initChurnSimple === 'function') {
         setTimeout(() => window.initChurnSimple(), 100);
       }
       break;
-    case 8:
+    case 9:
       // Cross-Channel Migration - show elasticity models, force Migration tab
       showElasticityModel('migration', 'step-5-migration-container');
       if (window.initMigrationSimple && typeof window.initMigrationSimple === 'function') {
         setTimeout(() => window.initMigrationSimple(), 100);
       }
       break;
-    case 9:
+    case 10:
       // Chat & Advanced Tools
       const chatSection = document.getElementById('chat-section');
       const chatContentArea = document.getElementById('step-9-chat-container-content');
@@ -1334,9 +1369,9 @@ function renderRoadmapFutureModule(type, contentAreaId) {
       <div class="card border-warning-subtle">
         <div class="card-body">
           <h6 class="mb-2"><i class="bi bi-hourglass-split me-2"></i>Model Input Required</h6>
-          <p class="text-muted mb-2">Run Step 1 first to feed this section with live promotion outputs.</p>
+          <p class="text-muted mb-2">Run Step 2 first to feed this section with live promotion outputs.</p>
           <div class="alert alert-light border mb-0">
-            These sections are model-driven and consume live week, inventory trajectory, competitor shock, social shock, and SKU migration from Step 1.
+            These sections are model-driven and consume live week, inventory trajectory, competitor shock, social shock, and SKU migration from the Current State Overview in Step 2.
           </div>
         </div>
       </div>
@@ -3545,14 +3580,15 @@ function createStepNavigation(prevStep, nextStep, nextLabel = 'Next') {
  */
 function injectStepNavigations() {
   const stepConfigs = [
-    { step: 2, container: 'step-2-data-viewer-container', prev: 1, next: 3, nextLabel: 'Next: Event Calendar' },
-    { step: 3, container: 'step-8-calendar-container', prev: 2, next: 4, nextLabel: 'Next: Customer Cohorts' },
-    { step: 4, container: 'step-6-segmentation-container', prev: 3, next: 5, nextLabel: 'Next: Segment Comparison' },
-    { step: 5, container: 'step-7-analysis-container', prev: 4, next: 6, nextLabel: 'Next: In-Season Planner Models' },
-    { step: 6, container: 'step-3-acquisition-container', prev: 5, next: 7, nextLabel: 'Next: Markdown Decision Models' },
-    { step: 7, container: 'step-4-churn-container', prev: 6, next: 8, nextLabel: 'Next: Migration Model' },
-    { step: 8, container: 'step-5-migration-container', prev: 7, next: 9, nextLabel: 'Next: AI Assistant' },
-    { step: 9, container: 'step-9-chat-container', prev: 8, next: 0, nextLabel: null }
+    { step: 1, container: 'step-2-data-viewer-container', prev: 0, next: 2, nextLabel: 'Next: Current State Overview' },
+    { step: 3, container: 'step-10-weekly-container', prev: 2, next: 4, nextLabel: 'Next: Event Calendar' },
+    { step: 4, container: 'step-8-calendar-container', prev: 3, next: 5, nextLabel: 'Next: Customer Cohorts' },
+    { step: 5, container: 'step-6-segmentation-container', prev: 4, next: 6, nextLabel: 'Next: Segment Comparison' },
+    { step: 6, container: 'step-7-analysis-container', prev: 5, next: 7, nextLabel: 'Next: In-Season Planner Models' },
+    { step: 7, container: 'step-3-acquisition-container', prev: 6, next: 8, nextLabel: 'Next: Markdown Decision Models' },
+    { step: 8, container: 'step-4-churn-container', prev: 7, next: 9, nextLabel: 'Next: Migration Model' },
+    { step: 9, container: 'step-5-migration-container', prev: 8, next: 10, nextLabel: 'Next: AI Assistant' },
+    { step: 10, container: 'step-9-chat-container', prev: 9, next: 0, nextLabel: null }
   ];
 
   stepConfigs.forEach(config => {
@@ -3619,7 +3655,7 @@ function initStepNavigation() {
 
   // Refresh advanced model sections when planning horizon changes (default 17 -> configurable)
   window.addEventListener('promo:horizon-change', () => {
-    if ([6, 7, 8].includes(currentStep)) {
+    if ([7, 8, 9].includes(currentStep)) {
       showStepContent(currentStep);
     }
   });

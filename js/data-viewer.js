@@ -10,10 +10,10 @@ const DEFAULT_DATE_RANGE = '2026-02-02 to 2026-05-25';
 const DATASETS = {
   customers: {
     title: 'Customers',
-    description: 'Customer-level records with channel group, region, and purchase behavior',
+    description: 'Customer master with channel mix, order behavior, basket value, promo affinity, and repeat-loss status',
     file: './data/customers.csv',
-    recordCount: 500000,
-    dateRange: DEFAULT_DATE_RANGE,
+    recordCount: 70626,
+    dateRange: 'Historical master through 2026-03-19',
     dateColumn: 'first_purchase_date',
     category: 'Core Data',
     icon: 'bi-people'
@@ -27,6 +27,16 @@ const DATASETS = {
     dateColumn: 'week_start',
     category: 'Core Data',
     icon: 'bi-graph-up'
+  },
+  product_channel_history: {
+    title: '52-Week Product History',
+    description: 'Rolling 52-week product x channel history with revenue, own price, competitor price gap, and social buzz',
+    file: './data/product_channel_history.csv',
+    recordCount: 1248,
+    dateRange: '2025-03-24 to 2026-03-16',
+    dateColumn: 'week_start',
+    category: 'Core Data',
+    icon: 'bi-activity'
   },
   season_calendar: {
     title: 'Season Calendar',
@@ -60,7 +70,7 @@ const DATASETS = {
   },
   competitor_price_feed: {
     title: 'Competitor Price Feed',
-    description: 'Simulated website-scraped competitor prices with SKU matching',
+    description: 'Website-scraped competitor prices by retailer with SKU matching, promo flags, reviews, and availability',
     file: './data/competitor_price_feed.csv',
     recordCount: 408,
     dateRange: DEFAULT_DATE_RANGE,
@@ -70,7 +80,7 @@ const DATASETS = {
   },
   social_signals: {
     title: 'Social Signals',
-    description: 'Social listening proxy signals (mentions, sentiment, spend)',
+    description: 'Platform-level social listening signals with mentions, sentiment, engagement, spend, and audience growth',
     file: './data/social_signals.csv',
     recordCount: 17,
     dateRange: DEFAULT_DATE_RANGE,
@@ -82,7 +92,7 @@ const DATASETS = {
     title: 'Retail Events',
     description: 'Retail events and competitive price moves by channel',
     file: './data/retail_events.csv',
-    recordCount: 23,
+    recordCount: 26,
     dateRange: DEFAULT_DATE_RANGE,
     dateColumn: 'week_start',
     category: 'Event Data',
@@ -100,10 +110,10 @@ const DATASETS = {
   },
   segments: {
     title: 'Segments',
-    description: 'Behavioral segments mapped to channel group',
+    description: '15,000 sampled customers tagged to acquisition, engagement, and monetization cohorts',
     file: './data/segments.csv',
     recordCount: 15000,
-    dateRange: 'N/A',
+    dateRange: 'Current snapshot sample',
     category: 'Segmentation Data',
     icon: 'bi-diagram-3'
   },
@@ -120,7 +130,7 @@ const DATASETS = {
 
 // Group datasets by category
 const CATEGORIES = {
-  'Core Data': ['customers', 'channel_weekly', 'sku_channel_weekly'],
+  'Core Data': ['customers', 'channel_weekly', 'product_channel_history', 'sku_channel_weekly'],
   'Pricing Data': ['price_calendar'],
   'Event Data': ['retail_events'],
   'Segmentation Data': ['segments', 'segment_kpis'],
@@ -785,6 +795,234 @@ function renderDatasetChart() {
       }
     };
     caption = 'Seasonal demand signal over time';
+  } else if (key === 'product_channel_history') {
+    const byDate = {};
+
+    currentData.forEach(row => {
+      const date = row.week_start;
+      if (!date) return;
+      if (!byDate[date]) {
+        byDate[date] = { revenue: 0, gapWeighted: 0, socialWeighted: 0, units: 0 };
+      }
+      const revenue = toNumber(row.revenue);
+      const units = toNumber(row.units_sold) || 1;
+      byDate[date].revenue += revenue;
+      byDate[date].gapWeighted += toNumber(row.price_gap_vs_competitor) * units;
+      byDate[date].socialWeighted += toNumber(row.social_buzz_score) * units;
+      byDate[date].units += units;
+    });
+
+    const labels = Object.keys(byDate).sort();
+    const revenueSeries = labels.map(label => byDate[label].revenue);
+    const socialSeries = labels.map(label => byDate[label].units > 0 ? byDate[label].socialWeighted / byDate[label].units : null);
+    const gapSeries = labels.map(label => byDate[label].units > 0 ? (byDate[label].gapWeighted / byDate[label].units) * 100 : null);
+
+    config = {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Portfolio revenue',
+            data: revenueSeries,
+            backgroundColor: 'rgba(59, 130, 246, 0.35)',
+            borderColor: 'rgba(59, 130, 246, 0.65)',
+            borderWidth: 1,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Avg social buzz',
+            data: socialSeries,
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.14)',
+            borderWidth: 2,
+            pointRadius: 1.5,
+            tension: 0.25,
+            yAxisID: 'y1'
+          },
+          {
+            type: 'line',
+            label: 'Avg competitor gap %',
+            data: gapSeries,
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+            borderDash: [6, 4],
+            borderWidth: 2,
+            pointRadius: 1.5,
+            tension: 0.25,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' }
+        },
+        scales: {
+          y: {
+            position: 'left'
+          },
+          y1: {
+            position: 'right',
+            grid: { drawOnChartArea: false }
+          },
+          y2: {
+            position: 'right',
+            display: false,
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    };
+    caption = '52-week revenue, social buzz, and competitor gap trend';
+  } else if (key === 'competitor_price_feed') {
+    const byDateChannel = {
+      target: {},
+      amazon: {},
+      sephora: {},
+      ulta: {}
+    };
+
+    currentData.forEach(row => {
+      const date = String(row.captured_at || '').slice(0, 10);
+      const channel = String(row.channel || '').toLowerCase();
+      const price = toNumber(row.observed_price);
+      if (!date || !byDateChannel[channel]) return;
+      if (!byDateChannel[channel][date]) {
+        byDateChannel[channel][date] = [];
+      }
+      byDateChannel[channel][date].push(price);
+    });
+
+    const labels = Array.from(new Set(
+      Object.values(byDateChannel).flatMap(channelMap => Object.keys(channelMap))
+    )).sort();
+
+    const averageSeries = (channel) => labels.map(label => {
+      const values = byDateChannel[channel][label] || [];
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    });
+
+    config = {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Target competitor price',
+            data: averageSeries('target'),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+            borderWidth: 2,
+            tension: 0.25
+          },
+          {
+            label: 'Amazon competitor price',
+            data: averageSeries('amazon'),
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+            borderWidth: 2,
+            tension: 0.25
+          },
+          {
+            label: 'Sephora competitor price',
+            data: averageSeries('sephora'),
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124, 58, 237, 0.12)',
+            borderWidth: 2,
+            tension: 0.25
+          },
+          {
+            label: 'Ulta competitor price',
+            data: averageSeries('ulta'),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            borderWidth: 2,
+            tension: 0.25
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: (value) => `$${Number(value).toFixed(0)}`
+            }
+          }
+        }
+      }
+    };
+    caption = 'Observed competitor prices by retailer over time';
+  } else if (key === 'social_signals') {
+    const labels = currentData
+      .map(row => row.week_start)
+      .filter(Boolean)
+      .sort();
+
+    const rowsByDate = Object.fromEntries(currentData.map(row => [row.week_start, row]));
+    const mentionsSeries = labels.map(label => toNumber(rowsByDate[label]?.total_social_mentions));
+    const socialIndexSeries = labels.map(label => toNumber(rowsByDate[label]?.brand_social_index));
+
+    config = {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Total social mentions',
+            data: mentionsSeries,
+            backgroundColor: 'rgba(14, 165, 233, 0.35)',
+            borderColor: 'rgba(14, 165, 233, 0.6)',
+            borderWidth: 1,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Brand social index',
+            data: socialIndexSeries,
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29, 78, 216, 0.15)',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.25,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' }
+        },
+        scales: {
+          y: {
+            position: 'left',
+            ticks: {
+              callback: (value) => value.toLocaleString()
+            }
+          },
+          y1: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: {
+              callback: (value) => Number(value).toFixed(0)
+            }
+          }
+        }
+      }
+    };
+    caption = 'Weekly social buzz volume and brand social index';
   } else if (key === 'segment_kpis') {
     // Bar chart: top segments by customer count
     const sorted = [...currentData].sort((a, b) => {

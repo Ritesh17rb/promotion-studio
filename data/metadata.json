@@ -2,6 +2,7 @@
   "customers.csv": "Customer-level records with channel group, region, and purchase behavior.",
   "channel_weekly.csv": "Weekly KPIs by channel group (mass vs prestige), aggregated from SKU-channel data.",
   "sku_channel_weekly.csv": "Core optimization table by week, SKU, and channel with inventory and competitor fields.",
+  "product_channel_history.csv": "Rolling 52-week product x channel history with revenue, own price, competitor price, gap, and social buzz.",
   "season_calendar.csv": "17-week season phases, demand index, inventory position, and markdown risk.",
   "price_calendar.csv": "Promo cadence and effective price by channel group.",
   "market_signals.csv": "Competitor pricing and macro signals aligned to season.",

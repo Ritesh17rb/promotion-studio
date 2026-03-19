@@ -574,34 +574,66 @@ function updateSignalCards(socialShockPts = 0, socialBaseScore = null, socialTre
 
 function renderLivePulseChart() {
   const canvas = document.getElementById('channel-promo-live-pulse-chart');
+  const noteEl = document.getElementById('channel-promo-live-pulse-note');
   if (!canvas || !window.Chart) return;
 
   const maxWeek = clamp(Number(currentSeasonWeek) || 1, 1, getSeasonWeeks());
+  const { group, sku } = getSelectedFilters();
   const labels = [];
+  const ownPriceSeries = [];
   const competitorSeries = [];
+  const gapSeries = [];
   const socialSeries = [];
   for (let week = 1; week <= maxWeek; week += 1) {
     labels.push(`W${week}`);
-    const market = getExternalFactorsForWeek(week);
-    const social = getSocialSignalForWeek(week);
-    competitorSeries.push(Number(market?.competitor_avg_price || null));
-    socialSeries.push(Number(normalizeSocialScore(social?.brand_social_index ?? social?.social_sentiment ?? null)));
+    const rows = skuWeeklyData.filter(row => {
+      if (Number(row.week_of_season) !== week) return false;
+      if (group !== 'all' && row.product_group !== group) return false;
+      if (sku !== 'all' && row.sku_id !== sku) return false;
+      return true;
+    });
+
+    const average = (values) => {
+      const valid = values.filter(value => Number.isFinite(value));
+      return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : null;
+    };
+
+    ownPriceSeries.push(average(rows.map(row => Number(row.effective_price || row.list_price))));
+    competitorSeries.push(average(rows.map(row => Number(row.competitor_price))));
+    gapSeries.push(average(rows.map(row => Number(row.price_gap_vs_competitor) * 100)));
+    socialSeries.push(average(rows.map(row => normalizeSocialScore(row.social_engagement_score))));
   }
 
   if (channelPromoLivePulseChart) {
     channelPromoLivePulseChart.data.labels = labels;
-    channelPromoLivePulseChart.data.datasets[0].data = competitorSeries;
-    channelPromoLivePulseChart.data.datasets[1].data = socialSeries;
+    channelPromoLivePulseChart.data.datasets[0].data = ownPriceSeries;
+    channelPromoLivePulseChart.data.datasets[1].data = competitorSeries;
+    channelPromoLivePulseChart.data.datasets[2].data = gapSeries;
+    channelPromoLivePulseChart.data.datasets[3].data = socialSeries;
     channelPromoLivePulseChart.update();
+    if (noteEl) {
+      noteEl.textContent = 'Green = own price, red = competitor price, amber bars = competitor gap %, blue = social buzz. The trend respects the current product/group filter.';
+    }
     return;
   }
 
   channelPromoLivePulseChart = new Chart(canvas, {
-    type: 'line',
+    type: 'bar',
     data: {
       labels,
       datasets: [
         {
+          type: 'line',
+          label: 'Own avg price',
+          data: ownPriceSeries,
+          borderColor: 'rgba(22, 163, 74, 0.95)',
+          backgroundColor: 'rgba(22, 163, 74, 0.14)',
+          yAxisID: 'y',
+          tension: 0.25,
+          pointRadius: 1.5
+        },
+        {
+          type: 'line',
           label: 'Competitor avg price',
           data: competitorSeries,
           borderColor: 'rgba(220, 38, 38, 0.9)',
@@ -611,6 +643,16 @@ function renderLivePulseChart() {
           pointRadius: 1.5
         },
         {
+          type: 'bar',
+          label: 'Competitor gap %',
+          data: gapSeries,
+          backgroundColor: 'rgba(245, 158, 11, 0.45)',
+          borderColor: 'rgba(245, 158, 11, 0.85)',
+          borderWidth: 1,
+          yAxisID: 'y2'
+        },
+        {
+          type: 'line',
           label: 'Social index',
           data: socialSeries,
           borderColor: 'rgba(14, 165, 233, 0.95)',
@@ -638,10 +680,17 @@ function renderLivePulseChart() {
           callbacks: {
             label: (context) => {
               const value = context.parsed.y;
-              if (context.datasetIndex === 0) {
-                return `Competitor average price: ${formatCurrency(value)}`;
+              if (context.datasetIndex === 0 || context.datasetIndex === 1) {
+                const prefix = context.datasetIndex === 0 ? 'Own average price' : 'Competitor average price';
+                return `${prefix}: ${formatCurrency(value)}`;
               }
-              return `Brand social index: ${Number(value).toFixed(1)}`;
+              if (context.datasetIndex === 2) {
+                return `Competitor gap: ${Number(value).toFixed(1)}%`;
+              }
+              if (context.datasetIndex === 3) {
+                return `Brand social index: ${Number(value).toFixed(1)}`;
+              }
+              return String(context.dataset.label || '');
             }
           }
         }
@@ -665,12 +714,29 @@ function renderLivePulseChart() {
           ticks: { maxTicksLimit: 4 },
           title: {
             display: true,
-            text: 'Social Index'
+            text: 'Social Buzz'
+          }
+        },
+        y2: {
+          position: 'right',
+          offset: true,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            maxTicksLimit: 4,
+            callback: (value) => `${Number(value).toFixed(0)}%`
+          },
+          title: {
+            display: true,
+            text: 'Competitor Gap %'
           }
         }
       }
     }
   });
+
+  if (noteEl) {
+    noteEl.textContent = 'Green = own price, red = competitor price, amber bars = competitor gap %, blue = social buzz. The trend respects the current product/group filter.';
+  }
 }
 
 function renderLiveFeed(weekOfSeason) {
@@ -2426,12 +2492,12 @@ function updateChannelPromoSimulator() {
 
 // --------------- Competitor Alert Banner ---------------
 const SKU_DISPLAY_NAMES = {
-  SUN_S1: 'Daily Shield SPF 40',
-  SUN_S2: 'Invisible Mist SPF 50',
-  SUN_S3: 'Sport Gel SPF 60',
-  MOI_M1: 'Hydra Daily Lotion',
-  MOI_M2: 'Barrier Repair Cream',
-  MOI_M3: 'Night Recovery Balm'
+  SUN_S1: 'Unseen Sunscreen SPF 40',
+  SUN_S2: 'Glowscreen SPF 40',
+  SUN_S3: 'Play Everyday Lotion SPF 50',
+  MOI_M1: 'Superscreen Daily Moisturizer',
+  MOI_M2: 'Mineral Sheerscreen SPF 30',
+  MOI_M3: '(Re)setting Powder SPF 35'
 };
 
 const CHANNEL_DISPLAY_NAMES = {
@@ -2747,7 +2813,7 @@ async function initializeChannelPromoSimulator() {
       } else if (type === 'social') {
         setControl(groupSelect, 'sunscreen');
         populateSkuSelector();
-        setControl(skuSelect, findSkuIdByName('Sport Gel SPF 60') || 'SUN_S3');
+        setControl(skuSelect, findSkuIdByName('Play Everyday Lotion SPF 50') || 'SUN_S3');
         setControl(massSlider, 5);
         setControl(prestigeSlider, 0);
         setControl(skuBoostSlider, 0);
@@ -2757,11 +2823,11 @@ async function initializeChannelPromoSimulator() {
         if (applyMass) applyMass.checked = false;
         if (applyPrestige) applyPrestige.checked = true;
         updateSkuBoostState();
-        setNarrative('In-Season Pivot: TikTok momentum spikes for Sport Gel SPF 60, so we hold depth and protect margin where social pull is strong.');
+        setNarrative('In-Season Pivot: TikTok momentum spikes for Play Everyday Lotion SPF 50, so we hold depth and protect margin where social pull is strong.');
       } else if (type === 'clearance') {
         setControl(groupSelect, 'all');
         populateSkuSelector();
-        setControl(skuSelect, findSkuIdByName('Daily Shield SPF 40') || 'SUN_S1');
+        setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 40') || 'SUN_S1');
         setControl(massSlider, 20);
         setControl(prestigeSlider, 10);
         setControl(skuBoostSlider, 8);
@@ -2780,7 +2846,7 @@ async function initializeChannelPromoSimulator() {
       stopLivePlayback();
       setControl(groupSelect, 'sunscreen');
       populateSkuSelector();
-      setControl(skuSelect, findSkuIdByName('Daily Shield SPF 40') || 'SUN_S1');
+      setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 40') || 'SUN_S1');
       setControl(massSlider, 10);
       setControl(prestigeSlider, 0);
       setControl(skuBoostSlider, 12);
@@ -2790,7 +2856,7 @@ async function initializeChannelPromoSimulator() {
       if (applyMass) applyMass.checked = true;
       if (applyPrestige) applyPrestige.checked = false;
       updateSkuBoostState();
-      setNarrative('Cannibalization demo: discount Daily Shield SPF 40 and track unit migration from sibling sunscreen products.');
+      setNarrative('Cannibalization demo: discount Unseen Sunscreen SPF 40 and track unit migration from sibling sunscreen products.');
       updateValues();
     };
 
