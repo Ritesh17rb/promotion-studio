@@ -124,7 +124,7 @@
         <div class="hero">
           <div>
             <h1>Seasonal Promotion Optimization Studio</h1>
-            <p>Optimize promotions by SKU and channel using inventory, competitive pricing, and social demand signals to balance sales and profit through the season.</p>
+            <p>Optimize promotions by SKU and channel using customer segmentation, price elasticity, comparative pricing, and social demand signals to balance sales and profit through the season.</p>
             <div id="local-server-warning" class="alert alert-warning mt-3 mb-3 text-start" style="display: none;">
               Open this app through a local server, not by double-clicking the HTML file.
               Run <code>start-promotion-studio.bat</code> or serve the folder on <code>http://127.0.0.1:8000</code>.
@@ -149,7 +149,7 @@
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Review the last 52 weeks across all 6 products and channels, then trace sales performance against your three operating levers: own price, competitor price gap, and social buzz.</p>
+        <p class="section-subtitle">Review the last 52 weeks across all products and channels, then trace sales performance against your three operating levers: own price, competitor price gap, and social buzz.</p>
       </div>
     </div>
 
@@ -166,10 +166,20 @@
         </div>
         <div style="padding: 0 1.25rem 1.25rem;">
           <div class="row g-3 align-items-end">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
               <label class="form-label fw-semibold small text-uppercase mb-1" for="history-product-filter">Product</label>
               <select id="history-product-filter" class="form-select">
-                <option value="all">All 6 Products</option>
+                <option value="all">All Products</option>
+              </select>
+            </div>
+            <div class="col-lg-3">
+              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-channel-filter">Channel</label>
+              <select id="history-channel-filter" class="form-select">
+                <option value="all">All Channels</option>
+                <option value="target">Target</option>
+                <option value="amazon">Amazon</option>
+                <option value="sephora">Sephora</option>
+                <option value="ulta">Ulta</option>
               </select>
             </div>
             <div class="col-lg-3">
@@ -178,10 +188,11 @@
                 <option value="52" selected>Last 1 Year</option>
                 <option value="26">Last 26 Weeks</option>
                 <option value="13">Last 13 Weeks</option>
+                <option value="7">Current Season (Last 7 Weeks)</option>
                 <option value="5">Last 5 Weeks</option>
               </select>
             </div>
-            <div class="col-lg-5">
+            <div class="col-lg-3">
               <div class="small text-muted" id="history-selection-note">
                 Loading portfolio trend context...
               </div>
@@ -214,14 +225,14 @@
         </div>
         <div class="col-lg-2 col-md-4">
           <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Avg Comp Gap</div>
+            <div class="wd-kpi-label">Avg Comp Gap <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Percentage difference between our price and the average competitor price. Positive means we are priced higher than competition."></i></div>
             <div class="wd-kpi-value" id="history-gap">--</div>
             <div class="wd-kpi-change" id="history-gap-change">--</div>
           </div>
         </div>
         <div class="col-lg-2 col-md-4">
           <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Avg Social Buzz</div>
+            <div class="wd-kpi-label">Avg Social Buzz <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Brand social sentiment index from -100 (very negative) to +100 (very positive). Based on weighted sentiment analysis across TikTok, Instagram, YouTube, and Twitter. Positive values indicate favorable brand perception driving demand up; negative values indicate unfavorable perception reducing demand."></i></div>
             <div class="wd-kpi-value" id="history-social">--</div>
             <div class="wd-kpi-change" id="history-social-change">--</div>
           </div>
@@ -233,7 +244,7 @@
           <h6 class="wd-panel-title"><i class="bi bi-graph-up me-2"></i>Sales Trend vs Operating Levers</h6>
           <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
         </div>
-        <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with your price, competitor gap, and social buzz for the selected product scope.</div>
+        <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with own price, competitor gap, and social buzz for the selected products.</div>
         <div class="chart-container" style="height: 340px; padding: 0 1rem;">
           <canvas id="history-performance-chart"></canvas>
         </div>
@@ -288,6 +299,25 @@
               Showing channel-level rollups for the selected product scope.
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- AI Chat Widget for Current State -->
+      <div class="wd-panel mt-4 mb-4">
+        <div class="wd-panel-header">
+          <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask questions about current state</span></h6>
+        </div>
+        <div style="padding: 0.75rem 1.25rem;">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="What are the key trends in revenue over the last year? Which products are growing?">Key revenue trends and growing products?</button>
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="When social buzz was high but we kept prices low, what was the missed revenue opportunity?">Missed opportunity when buzz was high?</button>
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="Which channel has the strongest revenue and where are we losing to competition?">Strongest channel and competitive gaps?</button>
+          </div>
+          <div class="input-group">
+            <input type="text" class="form-control step-chat-input" data-step="2" placeholder="Ask about current state trends...">
+            <button class="btn btn-primary step-chat-send" data-step="2"><i class="bi bi-send"></i></button>
+          </div>
+          <div class="step-chat-response mt-2 small" id="step-2-chat-response" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -1321,10 +1351,23 @@
         </div>
       </div>
 
-      <!-- Executive Summary -->
+      <!-- AI-Generated Executive Summary -->
       <div class="wd-exec-summary" id="wd-exec-summary">
         <div class="wd-exec-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-        <div class="wd-exec-text" id="wd-exec-text">Analyzing last week's performance...</div>
+        <div>
+          <span class="badge bg-info-subtle text-info mb-1" style="font-size:0.65rem;">AI-Generated Summary</span>
+          <div class="wd-exec-text" id="wd-exec-text">Analyzing last week's performance...</div>
+        </div>
+      </div>
+
+      <!-- Key Takeaways (moved to top per feedback) -->
+      <div class="wd-takeaways mb-4" id="wd-takeaways">
+        <div class="wd-takeaways-header">
+          <i class="bi bi-clipboard2-pulse me-2"></i>Key Takeaways & Watch Items
+        </div>
+        <div class="wd-takeaways-body" id="wd-takeaways-body">
+          <!-- Populated by JS -->
+        </div>
       </div>
 
       <!-- Top-line KPIs -->
@@ -1410,6 +1453,9 @@
           <div class="wd-panel h-100">
             <div class="wd-panel-header">
               <h6 class="wd-panel-title"><i class="bi bi-bar-chart me-2"></i>Revenue by Channel</h6>
+              <select id="wd-revenue-product-filter" class="form-select form-select-sm" style="width:auto; min-width:160px;">
+                <option value="all">All Products</option>
+              </select>
             </div>
             <div class="chart-container" style="height: 280px;">
               <canvas id="wd-channel-revenue-chart"></canvas>
@@ -1433,13 +1479,14 @@
                     <th>Product</th>
                     <th>Channel</th>
                     <th class="text-end">Their Price</th>
-                    <th class="text-end">Our Price</th>
+                    <th class="text-end">Our Price Last Week</th>
+                    <th class="text-end">Our Price This Week</th>
+                    <th class="text-end">Our Price Change</th>
                     <th class="text-end">Gap</th>
-                    <th class="text-center">Move</th>
                   </tr>
                 </thead>
                 <tbody id="wd-competitor-body">
-                  <tr><td colspan="6" class="text-center text-muted py-3">Loading...</td></tr>
+                  <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1448,8 +1495,8 @@
         <div class="col-lg-6">
           <div class="wd-panel">
             <div class="wd-panel-header">
-              <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Social Buzz by Product</h6>
-              <span class="badge bg-primary-subtle text-primary small">Brand social index: <span id="wd-social-index">--</span></span>
+              <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Social Buzz by Product <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Brand sentiment index from -100 (very negative) to +100 (very positive). Positive sentiment drives demand up; negative sentiment reduces demand. Two bars per product show this week vs last week for comparison."></i></h6>
+              <span class="badge bg-primary-subtle text-primary small">Brand sentiment: <span id="wd-social-index">--</span></span>
             </div>
             <div id="wd-social-bars">
               <!-- Populated by JS -->
@@ -1461,13 +1508,24 @@
         </div>
       </div>
 
-      <!-- Key Takeaways -->
-      <div class="wd-takeaways" id="wd-takeaways">
-        <div class="wd-takeaways-header">
-          <i class="bi bi-clipboard2-pulse me-2"></i>Key Takeaways & Watch Items
+      <!-- Key Takeaways moved to top of section -->
+
+      <!-- AI Chat Widget -->
+      <div class="wd-panel mt-4 mb-4">
+        <div class="wd-panel-header">
+          <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask questions about this week's data</span></h6>
         </div>
-        <div class="wd-takeaways-body" id="wd-takeaways-body">
-          <!-- Populated by JS -->
+        <div style="padding: 0.75rem 1.25rem;">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="3" data-q="Why did revenue drop this week despite higher social buzz?">Why did revenue drop despite higher buzz?</button>
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="3" data-q="Which products have the biggest opportunity based on social momentum and competitor gap?">Which products have biggest opportunity?</button>
+            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="3" data-q="Should we run a promotion this week? Which SKUs and channels would benefit most?">Should we run a promo this week?</button>
+          </div>
+          <div class="input-group">
+            <input type="text" class="form-control step-chat-input" data-step="3" placeholder="Ask about this week's performance...">
+            <button class="btn btn-primary step-chat-send" data-step="3"><i class="bi bi-send"></i></button>
+          </div>
+          <div class="step-chat-response mt-2 small" id="step-3-chat-response" style="display:none;"></div>
         </div>
       </div>
 
@@ -1493,7 +1551,6 @@
         <p class="section-subtitle">Start by inspecting the underlying datasets powering the analysis, including SKU-channel performance, competitor pricing, and social buzz signals.</p>
       </div>
     </div>
-
     <div class="text-center my-4" id="load-data-section">
       <div class="glass-card loading-card">
         <h5 class="mb-3">
@@ -1526,6 +1583,24 @@
     <div id="step-2-data-viewer-container">
       <div id="step-2-data-viewer-container-content">
         <!-- Data viewer content will be injected here -->
+      </div>
+    </div>
+
+    <div class="wd-panel mt-4 mb-4">
+      <div class="wd-panel-header">
+        <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask about the data foundation</span></h6>
+      </div>
+      <div style="padding: 0.75rem 1.25rem;">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="1" data-q="Which datasets prove that competitor pricing and social sentiment are part of this analysis?">Which datasets prove competitor and sentiment inputs?</button>
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="1" data-q="Where should I look for product-by-channel history, seasonal events, and competitor price changes?">Where do I find history, events, and competitor changes?</button>
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="1" data-q="Which files power the current-state dashboard and Event Calendar later in the story?">Which files power later screens?</button>
+        </div>
+        <div class="input-group">
+          <input type="text" class="form-control step-chat-input" data-step="1" placeholder="Ask about the datasets behind the analysis...">
+          <button class="btn btn-primary step-chat-send" data-step="1"><i class="bi bi-send"></i></button>
+        </div>
+        <div class="step-chat-response mt-2 small" id="step-1-chat-response" style="display:none;"></div>
       </div>
     </div>
 
@@ -1632,10 +1707,6 @@
         <p class="section-subtitle">Analyze Mass and Prestige cohorts across acquisition, price sensitivity, loyalty, and basket value so targeting decisions reflect how customers actually behave.</p>
       </div>
     </div>
-    <div class="alert alert-light border mb-3 small">
-      <strong>Business use in this pitch:</strong> identify which cohorts are promo-responsive vs hold-price candidates, then carry that targeting into the weekly planning steps.
-    </div>
-
     <!-- Segmentation content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-6-segmentation-container">
@@ -1663,10 +1734,6 @@
         <p class="section-subtitle">Compare how different cohorts respond to your own price, competitor price actions, and social buzz before committing a promotion plan.</p>
       </div>
     </div>
-    <div class="alert alert-light border mb-3 small">
-      <strong>Business use in this pitch:</strong> validate which products and cohorts should be included or excluded in promotion campaigns before committing spend.
-    </div>
-
     <!-- Segment analysis content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-7-analysis-container">
@@ -1695,6 +1762,26 @@
     <div id="step-8-calendar-container">
       <div id="step-8-calendar-container-content">
         <!-- Event calendar content will be injected here -->
+      </div>
+    </div>
+
+    <!-- AI Chat Widget for Event Calendar -->
+    <div class="wd-panel mt-4 mb-4">
+      <div class="wd-panel-header">
+        <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask about events & promotions</span></h6>
+      </div>
+      <div style="padding: 0.75rem 1.25rem;">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="Which past promotions had negative ROI and should not be repeated?">Which promos had negative ROI?</button>
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="Show me examples where social buzz was high and we could have increased prices instead of discounting.">Missed pricing opportunities during social spikes?</button>
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="What happened during Thanksgiving and Black Friday? Did sales naturally go up without promotions?">Thanksgiving & Black Friday impact?</button>
+          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="How did competitor price drops affect our sales? Show positive and negative examples.">Competitor price change impact?</button>
+        </div>
+        <div class="input-group">
+          <input type="text" class="form-control step-chat-input" data-step="4" placeholder="Ask about events, promotions, and their impact...">
+          <button class="btn btn-primary step-chat-send" data-step="4"><i class="bi bi-send"></i></button>
+        </div>
+        <div class="step-chat-response mt-2 small" id="step-4-chat-response" style="display:none;"></div>
       </div>
     </div>
 
@@ -1774,6 +1861,8 @@
                 </div>
               </div>
 
+              <div id="dataset-story-panel" class="mb-3" style="display: none;"></div>
+
               <!-- Quick Visual Overview -->
               <div id="dataset-chart-container" class="mb-3" style="display: none;">
                 <div class="card">
@@ -1783,7 +1872,10 @@
                         <i class="bi bi-graph-up-arrow me-1"></i>
                         Quick Visual Overview
                       </h6>
-                      <span class="badge bg-primary-subtle text-primary border-0" id="dataset-chart-caption"></span>
+                      <div class="d-flex align-items-center gap-2">
+                        <div id="dataset-chart-toolbar"></div>
+                        <span class="badge bg-primary-subtle text-primary border-0" id="dataset-chart-caption"></span>
+                      </div>
                     </div>
                     <div style="height: 220px;">
                       <canvas id="dataset-chart"></canvas>
@@ -3563,7 +3655,7 @@
                   <h6 class="small text-uppercase text-muted mb-2">
                     <i class="bi bi-bullseye me-1"></i> Competitive Price Delta Trend (Our vs Competitor)
                   </h6>
-                  <div class="chart-container" style="height: 220px;">
+                  <div class="chart-container" style="height: 280px;">
                     <canvas id="event-competitive-signals-chart"></canvas>
                   </div>
                   <div id="market-signals-competitive" class="small text-muted mt-2"></div>
@@ -3665,6 +3757,16 @@
             </h6>
             <div id="event-timeline" class="p-3 rounded" style="min-height: 300px;">
               <!-- Timeline will be rendered here -->
+            </div>
+          </div>
+
+          <div class="card border-0 bg-body-tertiary mb-4">
+            <div class="card-body">
+              <h6 class="small text-uppercase text-muted mb-1">
+                <i class="bi bi-signpost-split me-1"></i> Guided Storyline Examples
+              </h6>
+              <div class="small text-muted mb-3">Use these examples to tell the exact business story Ritesh wants: competitor defense, social-led hold-price, selective promo wins, weaker promos to avoid repeating, and holiday demand spikes.</div>
+              <div id="event-storyline-examples"></div>
             </div>
           </div>
 
@@ -4174,7 +4276,7 @@
                     </span>
                     <span class="steps-table-body">
                       <strong>Current State Overview</strong>
-                      <span class="text-muted">Review the last 52 weeks across all 6 products, with drilldowns by channel, price, competitor gap, social buzz, and revenue trend.</span>
+                      <span class="text-muted">Review the last 52 weeks across all products, with drilldowns by channel, price, competitor gap, social buzz, and revenue trend.</span>
                     </span>
                     
                   </button>

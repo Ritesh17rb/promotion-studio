@@ -148,6 +148,7 @@ let rowsPerPage = 25;
 let sortColumn = null;
 let sortDirection = 'asc';
 let datasetChart = null;
+let datasetChartFilterValue = 'all';
 
 /**
  * Initialize the data viewer
@@ -252,6 +253,7 @@ async function loadDataset(datasetKey) {
   }
 
   currentDataset = { key: datasetKey, ...dataset };
+  datasetChartFilterValue = 'all';
 
   // Show loading state
   showLoading();
@@ -266,6 +268,9 @@ async function loadDataset(datasetKey) {
 
     // Render quick visual overview chart
     renderDatasetChart();
+
+    // Render dataset-specific business guidance
+    renderDatasetStoryPanel();
 
     // Enable export button
     document.getElementById('export-csv-btn').disabled = false;
@@ -597,6 +602,287 @@ function updateDatasetInfo() {
   info.style.display = 'block';
 }
 
+function formatCompactValue(value, digits = 1) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '--';
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: digits
+  });
+}
+
+function formatSignedNumber(value, digits = 1, suffix = '') {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 'N/A';
+  return `${num >= 0 ? '+' : ''}${num.toFixed(digits)}${suffix}`;
+}
+
+function getSentimentScore(row = {}) {
+  const direct = Number(row.sentiment_score);
+  if (Number.isFinite(direct)) return direct;
+
+  const socialSentiment = Number(row.social_sentiment);
+  if (Number.isFinite(socialSentiment)) {
+    if (socialSentiment >= 0 && socialSentiment <= 1) return (socialSentiment - 0.5) * 200;
+    if (socialSentiment >= -1 && socialSentiment <= 1) return socialSentiment * 100;
+  }
+
+  const brandIndex = Number(row.brand_social_index);
+  if (Number.isFinite(brandIndex)) {
+    return (brandIndex - 50) * 2;
+  }
+
+  return null;
+}
+
+function getSkuOptions(rows = [], idField = 'sku_id', nameField = 'sku_name') {
+  const options = new Map();
+  rows.forEach(row => {
+    const id = String(row[idField] || '').trim();
+    if (!id) return;
+    const name = String(row[nameField] || id).trim();
+    options.set(id, name === id ? id : `${id} - ${name}`);
+  });
+  return [...options.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([value, label]) => ({ value, label }));
+}
+
+function renderDatasetChartToolbar() {
+  const toolbar = document.getElementById('dataset-chart-toolbar');
+  if (!toolbar) return;
+
+  toolbar.innerHTML = '';
+  if (!currentDataset) return;
+
+  let options = [];
+  let label = '';
+
+  if (currentDataset.key === 'competitor_price_feed') {
+    options = getSkuOptions(currentData, 'matched_sku_id', 'matched_sku_id');
+    label = 'Product';
+  } else if (currentDataset.key === 'product_channel_history' || currentDataset.key === 'sku_channel_weekly') {
+    options = getSkuOptions(currentData, 'sku_id', 'sku_name');
+    label = 'Product';
+  }
+
+  if (!options.length) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'd-flex align-items-center gap-2';
+  wrapper.innerHTML = `
+    <label for="dataset-chart-filter" class="small text-muted mb-0">${label}</label>
+    <select id="dataset-chart-filter" class="form-select form-select-sm" style="min-width: 180px;">
+      <option value="all">All Products</option>
+      ${options.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
+    </select>
+  `;
+  toolbar.appendChild(wrapper);
+
+  const select = document.getElementById('dataset-chart-filter');
+  if (!select) return;
+  select.value = datasetChartFilterValue;
+  select.addEventListener('change', (event) => {
+    datasetChartFilterValue = event.target.value || 'all';
+    renderDatasetChart();
+    renderDatasetStoryPanel();
+  });
+}
+
+function renderDatasetStoryPanel() {
+  const panel = document.getElementById('dataset-story-panel');
+  if (!panel || !currentDataset || !currentData.length) {
+    if (panel) panel.style.display = 'none';
+    return;
+  }
+
+  const key = currentDataset.key;
+  let title = 'Why This Dataset Matters';
+  let summary = '';
+  let bullets = [];
+  let cards = [];
+
+  if (key === 'product_channel_history') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.sku_id) === String(datasetChartFilterValue));
+    const latestWeek = [...new Set(scopedRows.map(row => row.week_start).filter(Boolean))].sort().pop();
+    const latestRows = scopedRows.filter(row => row.week_start === latestWeek);
+    const totalRevenue = scopedRows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+    const channelRevenue = latestRows.reduce((acc, row) => {
+      const channel = String(row.sales_channel || 'unknown').toLowerCase();
+      acc[channel] = (acc[channel] || 0) + Number(row.revenue || 0);
+      return acc;
+    }, {});
+    const topChannel = Object.entries(channelRevenue).sort((a, b) => b[1] - a[1])[0];
+    const opportunityRows = [...latestRows]
+      .filter(row => Number(row.sentiment_score || 0) > 20 && Number(row.price_gap_vs_competitor || 0) < 0)
+      .sort((a, b) => Number(b.sentiment_score || 0) - Number(a.sentiment_score || 0));
+    const opportunity = opportunityRows[0];
+
+    title = 'Why This File Matters For The Story';
+    summary = 'This is the proof behind the current-state view. It ties revenue to own price, competitor gap, and social support before any promotion simulation starts.';
+    bullets = [
+      'Use this file to explain where demand improved because sentiment rose, where competitor gaps widened, and where pricing opportunities were missed.',
+      'If a client asks whether the dashboard is trend-based or just a point estimate, this is the historical evidence file.',
+      datasetChartFilterValue === 'all'
+        ? 'Filter to a single SKU when you want the same story at product level.'
+        : 'You are already scoped to one SKU, so the chart and table now read as product-specific evidence.'
+    ];
+    cards = [
+      { label: 'Rows In Scope', value: formatCompactValue(scopedRows.length, 0), detail: datasetChartFilterValue === 'all' ? 'All products across the rolling 52-week history' : 'Selected product across all channels' },
+      { label: 'Revenue In Scope', value: `$${formatCompactValue(totalRevenue, 0)}`, detail: 'Historical revenue available for the current-state storyline' },
+      { label: 'Latest Strongest Channel', value: topChannel ? String(topChannel[0]).toUpperCase() : 'N/A', detail: topChannel ? `$${formatCompactValue(topChannel[1], 0)} in the latest observed week` : 'No latest-week channel available' },
+      { label: 'Missed Pricing Cue', value: opportunity ? `${opportunity.sku_name}` : 'No clear case', detail: opportunity ? `Sentiment ${formatSignedNumber(getSentimentScore(opportunity), 1, ' pts')} while priced ${formatSignedNumber(Number(opportunity.price_gap_vs_competitor || 0) * 100, 1, '%')} vs competitor` : 'No latest-week case with high sentiment and below-competitor pricing' }
+    ];
+  } else if (key === 'competitor_price_feed') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.matched_sku_id) === String(datasetChartFilterValue));
+    const latestCapture = [...new Set(scopedRows.map(row => String(row.captured_at || '').slice(0, 10)).filter(Boolean))].sort().pop();
+    const latestRows = scopedRows.filter(row => String(row.captured_at || '').slice(0, 10) === latestCapture);
+    const promoFlags = scopedRows.filter(row => String(row.promo_flag).toLowerCase() === 'true').length;
+    const lowestLatest = [...latestRows].sort((a, b) => Number(a.observed_price || 0) - Number(b.observed_price || 0))[0];
+
+    title = 'Competitor Evidence';
+    summary = 'This is the proof that competitor pricing is observed, not assumed. It is the source for the competitor-defense story in the current-state and event views.';
+    bullets = [
+      'Use the product filter to isolate one SKU and show how retailer pricing differs by channel.',
+      'Promo flags show whether the competitor price was likely part of a discounting event or a steady-state price move.',
+      'This is the dataset to reference when Ritesh wants a concrete competitor undercut example.'
+    ];
+    cards = [
+      { label: 'Observed Captures', value: formatCompactValue(scopedRows.length, 0), detail: datasetChartFilterValue === 'all' ? 'All scraped competitor observations in scope' : 'Competitor captures for the selected product' },
+      { label: 'Promo-Flagged Rows', value: formatCompactValue(promoFlags, 0), detail: `${formatCompactValue(scopedRows.length ? (promoFlags / scopedRows.length) * 100 : 0, 1)}% of captures flagged as competitor promo activity` },
+      { label: 'Latest Capture Date', value: latestCapture || 'N/A', detail: 'Most recent competitor snapshot available in the explorer' },
+      { label: 'Latest Lowest Price', value: lowestLatest ? `$${formatCompactValue(lowestLatest.observed_price, 2)}` : 'N/A', detail: lowestLatest ? `${String(lowestLatest.channel || '').toUpperCase()} for ${lowestLatest.matched_sku_id}` : 'No latest observation available' }
+    ];
+  } else if (key === 'social_signals') {
+    const rows = [...currentData].sort((a, b) => String(a.week_start || '').localeCompare(String(b.week_start || '')));
+    const sortedBySentiment = [...rows]
+      .map(row => ({ ...row, score: getSentimentScore(row) }))
+      .filter(row => Number.isFinite(row.score))
+      .sort((a, b) => b.score - a.score);
+    const peak = sortedBySentiment[0];
+    const trough = sortedBySentiment[sortedBySentiment.length - 1];
+    const latest = rows[rows.length - 1];
+    const latestScore = getSentimentScore(latest);
+
+    title = 'Sentiment Evidence';
+    summary = 'This is where positive versus negative buzz comes from. Mentions alone are not enough; the sign and direction of sentiment is what matters for demand.';
+    bullets = [
+      'Use the sentiment score, not raw mention volume alone, when explaining why buzz should raise or reduce expected demand.',
+      'This is the portfolio-level listening signal. Channel- and product-level social response then shows up downstream in the SKU history files.',
+      'When the score is positive and still rising, that is the hold-price or lighter-promo story Ritesh wants to tell.'
+    ];
+    cards = [
+      { label: 'Latest Sentiment', value: Number.isFinite(latestScore) ? formatSignedNumber(latestScore, 1, ' pts') : 'N/A', detail: latest?.week_start ? `Week of ${latest.week_start}` : 'Latest available social reading' },
+      { label: 'Peak Positive Week', value: peak?.week_start || 'N/A', detail: peak ? `${formatSignedNumber(peak.score, 1, ' pts')} sentiment at the strongest week` : 'No sentiment series available' },
+      { label: 'Weakest Week', value: trough?.week_start || 'N/A', detail: trough ? `${formatSignedNumber(trough.score, 1, ' pts')} sentiment at the lowest week` : 'No weak week identified' },
+      { label: 'Peak Mention Volume', value: latest ? formatCompactValue(Math.max(...rows.map(row => Number(row.total_social_mentions || 0))), 0) : 'N/A', detail: 'Use with sentiment to separate loud negative buzz from positive momentum' }
+    ];
+  } else if (key === 'sku_channel_weekly') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.sku_id) === String(datasetChartFilterValue));
+    const byChannel = scopedRows.reduce((acc, row) => {
+      const channel = String(row.sales_channel || 'unknown').toLowerCase();
+      if (!acc[channel]) {
+        acc[channel] = { revenue: 0, units: 0, sentimentWeighted: 0, gapWeighted: 0 };
+      }
+      const units = Number(row.net_units_sold || row.own_units_sold || 0);
+      const weight = units > 0 ? units : 1;
+      acc[channel].revenue += Number(row.revenue || 0);
+      acc[channel].units += units;
+      acc[channel].sentimentWeighted += (Number(row.sentiment_score) || 0) * weight;
+      acc[channel].gapWeighted += (Number(row.price_gap_vs_competitor) || 0) * weight;
+      return acc;
+    }, {});
+    const rankedChannels = Object.entries(byChannel).sort((a, b) => b[1].revenue - a[1].revenue);
+    const bestChannel = rankedChannels[0];
+    const weakestSentiment = Object.entries(byChannel)
+      .map(([channel, metrics]) => ({ channel, sentiment: metrics.units ? metrics.sentimentWeighted / metrics.units : 0 }))
+      .sort((a, b) => a.sentiment - b.sentiment)[0];
+
+    title = 'Weekly SKU x Channel Operating Evidence';
+    summary = 'This is the operating table behind the in-season story. It combines inventory, effective price, competitor price, elasticity, units, revenue, and sentiment at SKU x channel level.';
+    bullets = [
+      'Use this file when Ritesh asks to show channel-specific social or competitor response for a product.',
+      'It is the closest dataset to the weekly operating decisions the client would review in season.',
+      'Selected-product mode is the best way to explain why one SKU should be promoted in one channel but held in another.'
+    ];
+    cards = [
+      { label: 'Rows In Scope', value: formatCompactValue(scopedRows.length, 0), detail: datasetChartFilterValue === 'all' ? 'Season rows across all SKU x channel combinations' : 'Season rows for the selected product' },
+      { label: 'Top Revenue Channel', value: bestChannel ? String(bestChannel[0]).toUpperCase() : 'N/A', detail: bestChannel ? `$${formatCompactValue(bestChannel[1].revenue, 0)} season revenue` : 'No channel revenue found' },
+      { label: 'Weakest Sentiment Channel', value: weakestSentiment ? String(weakestSentiment.channel).toUpperCase() : 'N/A', detail: weakestSentiment ? `${formatSignedNumber(weakestSentiment.sentiment, 1, ' pts')} average sentiment` : 'No sentiment view found' },
+      { label: 'Inventory-Decision Use', value: 'SKU x Channel', detail: 'This is the file later used for inventory, elasticity, and promo decision logic' }
+    ];
+  } else if (key === 'retail_events') {
+    const eventCounts = currentData.reduce((acc, row) => {
+      const type = String(row.event_type || 'Unknown');
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    const topType = Object.entries(eventCounts).sort((a, b) => b[1] - a[1])[0];
+    const datedRows = [...currentData].filter(row => row.event_start_date || row.week_start).sort((a, b) => String(a.event_start_date || a.week_start).localeCompare(String(b.event_start_date || b.week_start)));
+    const nextWindow = datedRows[0];
+
+    title = 'Event Calendar Source Data';
+    summary = 'This is the event list the Event Calendar uses later. Seasonal tentpoles, promotions, competitor shocks, and social spikes should all be visible here in raw form.';
+    bullets = [
+      'If an event appears later in the Event Calendar, the client should be able to see it here first in the source data.',
+      'Promotion type, event window, and affected SKU fields were added so event detail panels read like business records, not placeholders.',
+      'This is the file to inspect when you want to prove an event really belongs in the story.'
+    ];
+    cards = [
+      { label: 'Event Rows', value: formatCompactValue(currentData.length, 0), detail: 'Raw events available in the current explorer dataset' },
+      { label: 'Most Common Event Type', value: topType ? topType[0] : 'N/A', detail: topType ? `${formatCompactValue(topType[1], 0)} rows` : 'No event mix found' },
+      { label: 'Earliest Window', value: nextWindow ? String(nextWindow.event_start_date || nextWindow.week_start) : 'N/A', detail: nextWindow ? `${nextWindow.event_type} entry available in source data` : 'No dated event found' },
+      { label: 'Storyline Use', value: 'Promos + Competitor + Social + Tentpoles', detail: 'This is the raw proof behind the four-event story Ritesh asked to simplify to' }
+    ];
+  } else {
+    title = 'Why This Dataset Matters';
+    summary = 'This dataset contributes to the broader promotion optimization story and can be exported or searched directly from the explorer.';
+    bullets = [
+      'Use the quick visual plus the raw table to inspect what the file contains before it feeds a later screen.',
+      'The goal of Step 1 is evidence and traceability, not simulation.'
+    ];
+    cards = [
+      { label: 'Rows', value: formatCompactValue(currentData.length, 0), detail: 'Current dataset size' },
+      { label: 'Columns', value: formatCompactValue(Object.keys(currentData[0] || {}).length, 0), detail: 'Available fields in the file' },
+      { label: 'Date Coverage', value: getDateRangeFromData(currentData) || 'N/A', detail: 'Observed date window in the loaded rows' }
+    ];
+  }
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="card border-0 bg-body-tertiary">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+          <div>
+            <h6 class="small text-uppercase text-muted mb-1"><i class="bi bi-journal-text me-1"></i>${title}</h6>
+            <div class="small">${summary}</div>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          ${cards.map(card => `
+            <div class="col-lg-3 col-md-6">
+              <div class="border rounded h-100 p-3 bg-body">
+                <div class="small text-muted text-uppercase mb-1">${card.label}</div>
+                <div class="fw-semibold mb-1">${card.value}</div>
+                <div class="small text-muted">${card.detail}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <ul class="small mb-0">
+          ${bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
 /**
  * Render a small, dataset-specific chart above the table
  * Uses Chart.js (already loaded globally)
@@ -605,6 +891,7 @@ function renderDatasetChart() {
   const container = document.getElementById('dataset-chart-container');
   const captionEl = document.getElementById('dataset-chart-caption');
   const canvas = document.getElementById('dataset-chart');
+  const toolbar = document.getElementById('dataset-chart-toolbar');
 
   if (!container || !canvas || typeof Chart === 'undefined') {
     return;
@@ -612,12 +899,15 @@ function renderDatasetChart() {
 
   if (!currentDataset || !currentData || currentData.length === 0) {
     container.style.display = 'none';
+    if (toolbar) toolbar.innerHTML = '';
     if (datasetChart) {
       datasetChart.destroy();
       datasetChart = null;
     }
     return;
   }
+
+  renderDatasetChartToolbar();
 
   const ctx = canvas.getContext('2d');
 
@@ -796,25 +1086,30 @@ function renderDatasetChart() {
     };
     caption = 'Seasonal demand signal over time';
   } else if (key === 'product_channel_history') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.sku_id) === String(datasetChartFilterValue));
     const byDate = {};
 
-    currentData.forEach(row => {
+    scopedRows.forEach(row => {
       const date = row.week_start;
       if (!date) return;
       if (!byDate[date]) {
-        byDate[date] = { revenue: 0, gapWeighted: 0, socialWeighted: 0, units: 0 };
+        byDate[date] = { revenue: 0, gapWeighted: 0, socialWeighted: 0, ownPriceWeighted: 0, units: 0 };
       }
       const revenue = toNumber(row.revenue);
       const units = toNumber(row.units_sold) || 1;
       byDate[date].revenue += revenue;
       byDate[date].gapWeighted += toNumber(row.price_gap_vs_competitor) * units;
       byDate[date].socialWeighted += toNumber(row.social_buzz_score) * units;
+      byDate[date].ownPriceWeighted += toNumber(row.own_price) * units;
       byDate[date].units += units;
     });
 
     const labels = Object.keys(byDate).sort();
     const revenueSeries = labels.map(label => byDate[label].revenue);
     const socialSeries = labels.map(label => byDate[label].units > 0 ? byDate[label].socialWeighted / byDate[label].units : null);
+    const priceSeries = labels.map(label => byDate[label].units > 0 ? byDate[label].ownPriceWeighted / byDate[label].units : null);
     const gapSeries = labels.map(label => byDate[label].units > 0 ? (byDate[label].gapWeighted / byDate[label].units) * 100 : null);
 
     config = {
@@ -833,6 +1128,17 @@ function renderDatasetChart() {
           },
           {
             type: 'line',
+            label: 'Avg own price',
+            data: priceSeries,
+            borderColor: '#111827',
+            backgroundColor: 'rgba(17, 24, 39, 0.12)',
+            borderWidth: 2,
+            pointRadius: 1.5,
+            tension: 0.25,
+            yAxisID: 'y1'
+          },
+          {
+            type: 'line',
             label: 'Avg social buzz',
             data: socialSeries,
             borderColor: '#8b5cf6',
@@ -840,7 +1146,7 @@ function renderDatasetChart() {
             borderWidth: 2,
             pointRadius: 1.5,
             tension: 0.25,
-            yAxisID: 'y1'
+            yAxisID: 'y2'
           },
           {
             type: 'line',
@@ -852,7 +1158,7 @@ function renderDatasetChart() {
             borderWidth: 2,
             pointRadius: 1.5,
             tension: 0.25,
-            yAxisID: 'y2'
+            yAxisID: 'y3'
           }
         ]
       },
@@ -874,12 +1180,22 @@ function renderDatasetChart() {
             position: 'right',
             display: false,
             grid: { drawOnChartArea: false }
+          },
+          y3: {
+            position: 'right',
+            display: false,
+            grid: { drawOnChartArea: false }
           }
         }
       }
     };
-    caption = '52-week revenue, social buzz, and competitor gap trend';
+    caption = datasetChartFilterValue === 'all'
+      ? '52-week portfolio revenue, own price, social buzz, and competitor gap'
+      : '52-week selected-product revenue, own price, social buzz, and competitor gap';
   } else if (key === 'competitor_price_feed') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.matched_sku_id) === String(datasetChartFilterValue));
     const byDateChannel = {
       target: {},
       amazon: {},
@@ -887,7 +1203,7 @@ function renderDatasetChart() {
       ulta: {}
     };
 
-    currentData.forEach(row => {
+    scopedRows.forEach(row => {
       const date = String(row.captured_at || '').slice(0, 10);
       const channel = String(row.channel || '').toLowerCase();
       const price = toNumber(row.observed_price);
@@ -961,7 +1277,9 @@ function renderDatasetChart() {
         }
       }
     };
-    caption = 'Observed competitor prices by retailer over time';
+    caption = datasetChartFilterValue === 'all'
+      ? 'Observed competitor prices by retailer over time'
+      : 'Observed competitor prices for the selected product by retailer';
   } else if (key === 'social_signals') {
     const labels = currentData
       .map(row => row.week_start)
@@ -970,7 +1288,7 @@ function renderDatasetChart() {
 
     const rowsByDate = Object.fromEntries(currentData.map(row => [row.week_start, row]));
     const mentionsSeries = labels.map(label => toNumber(rowsByDate[label]?.total_social_mentions));
-    const socialIndexSeries = labels.map(label => toNumber(rowsByDate[label]?.brand_social_index));
+    const sentimentSeries = labels.map(label => getSentimentScore(rowsByDate[label]));
 
     config = {
       type: 'bar',
@@ -988,8 +1306,8 @@ function renderDatasetChart() {
           },
           {
             type: 'line',
-            label: 'Brand social index',
-            data: socialIndexSeries,
+            label: 'Sentiment score (-100 to +100)',
+            data: sentimentSeries,
             borderColor: '#1d4ed8',
             backgroundColor: 'rgba(29, 78, 216, 0.15)',
             borderWidth: 2,
@@ -1015,6 +1333,8 @@ function renderDatasetChart() {
           y1: {
             position: 'right',
             grid: { drawOnChartArea: false },
+            min: -100,
+            max: 100,
             ticks: {
               callback: (value) => Number(value).toFixed(0)
             }
@@ -1022,7 +1342,135 @@ function renderDatasetChart() {
         }
       }
     };
-    caption = 'Weekly social buzz volume and brand social index';
+    caption = 'Weekly social buzz volume with positive vs negative sentiment';
+  } else if (key === 'sku_channel_weekly') {
+    const scopedRows = datasetChartFilterValue === 'all'
+      ? currentData
+      : currentData.filter(row => String(row.sku_id) === String(datasetChartFilterValue));
+    const byChannel = {};
+    scopedRows.forEach(row => {
+      const channel = String(row.sales_channel || '').toLowerCase();
+      if (!channel) return;
+      if (!byChannel[channel]) {
+        byChannel[channel] = { revenue: 0, units: 0, gapWeighted: 0, sentimentWeighted: 0 };
+      }
+      const units = toNumber(row.net_units_sold) || toNumber(row.own_units_sold) || 1;
+      byChannel[channel].revenue += toNumber(row.revenue);
+      byChannel[channel].units += units;
+      byChannel[channel].gapWeighted += toNumber(row.price_gap_vs_competitor) * units;
+      byChannel[channel].sentimentWeighted += (getSentimentScore(row) ?? 0) * units;
+    });
+
+    const labels = Object.keys(byChannel).sort();
+    const revenueSeries = labels.map(label => byChannel[label].revenue);
+    const gapSeries = labels.map(label => byChannel[label].units > 0 ? (byChannel[label].gapWeighted / byChannel[label].units) * 100 : null);
+    const sentimentSeries = labels.map(label => byChannel[label].units > 0 ? (byChannel[label].sentimentWeighted / byChannel[label].units) : null);
+
+    config = {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Revenue',
+            data: revenueSeries,
+            backgroundColor: 'rgba(59, 130, 246, 0.35)',
+            borderColor: 'rgba(59, 130, 246, 0.65)',
+            borderWidth: 1,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Avg sentiment score',
+            data: sentimentSeries,
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124, 58, 237, 0.15)',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.2,
+            yAxisID: 'y1'
+          },
+          {
+            type: 'line',
+            label: 'Avg competitor gap %',
+            data: gapSeries,
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+            borderDash: [6, 4],
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.2,
+            yAxisID: 'y2'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' }
+        },
+        scales: {
+          y: {
+            position: 'left',
+            ticks: {
+              callback: (value) => value.toLocaleString()
+            }
+          },
+          y1: {
+            position: 'right',
+            min: -100,
+            max: 100,
+            grid: { drawOnChartArea: false }
+          },
+          y2: {
+            position: 'right',
+            display: false,
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    };
+    caption = datasetChartFilterValue === 'all'
+      ? 'Channel-level operating view: revenue, sentiment, and competitor gap'
+      : 'Selected-product channel view: revenue, sentiment, and competitor gap';
+  } else if (key === 'retail_events') {
+    const byType = {};
+    currentData.forEach(row => {
+      const type = String(row.event_type || 'Unknown');
+      byType[type] = (byType[type] || 0) + 1;
+    });
+
+    const labels = Object.keys(byType);
+    const counts = labels.map(label => byType[label]);
+
+    config = {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [
+          {
+            data: counts,
+            backgroundColor: [
+              'rgba(14, 165, 233, 0.82)',
+              'rgba(239, 68, 68, 0.82)',
+              'rgba(139, 92, 246, 0.82)',
+              'rgba(245, 158, 11, 0.82)'
+            ],
+            borderWidth: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom' }
+        }
+      }
+    };
+    caption = 'Event mix used later in the Event Calendar story';
   } else if (key === 'segment_kpis') {
     // Bar chart: top segments by customer count
     const sorted = [...currentData].sort((a, b) => {
@@ -1107,6 +1555,7 @@ function renderDatasetChart() {
 
   if (!config) {
     container.style.display = 'none';
+    if (toolbar) toolbar.innerHTML = '';
     if (datasetChart) {
       datasetChart.destroy();
       datasetChart = null;

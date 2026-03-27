@@ -34,6 +34,7 @@ let activePromoFilters = {
   channel: 'all'
 };
 let activeProductFilter = 'all';
+let activeSkuPriceFilter = 'all';
 let selectedPromoId = null;
 let eventCompetitiveSignalsChart = null;
 let eventSocialSignalsChart = null;
@@ -48,6 +49,16 @@ const CHANNEL_LABELS = {
   amazon: 'Amazon',
   dtc: 'DTC'
 };
+
+const SKU_PRICE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Products' },
+  { value: 'SUN_S1', label: 'SUN_S1 - Unseen Sunscreen SPF 40' },
+  { value: 'SUN_S2', label: 'SUN_S2 - Glowscreen SPF 40' },
+  { value: 'SUN_S3', label: 'SUN_S3 - Play Everyday Lotion SPF 50' },
+  { value: 'MOI_M1', label: 'MOI_M1 - Superscreen Daily Moisturizer' },
+  { value: 'MOI_M2', label: 'MOI_M2 - Mineral Sheerscreen SPF 30' },
+  { value: 'MOI_M3', label: 'MOI_M3 - (Re)setting Powder SPF 35' }
+];
 
 const STORY_PHASE_LABELS = {
   baseline: 'Historical Baseline',
@@ -571,6 +582,31 @@ function safeNumber(value, fallback = null) {
   return Number.isFinite(num) ? num : fallback;
 }
 
+function getEventSocialScore(row = {}) {
+  const direct = safeNumber(row.sentiment_score, null);
+  if (Number.isFinite(direct)) return direct;
+
+  const buzz = safeNumber(row.social_buzz_score, null);
+  if (Number.isFinite(buzz)) return (buzz - 50) * 2;
+
+  const sentiment = safeNumber(row.social_sentiment, null);
+  if (Number.isFinite(sentiment)) {
+    if (sentiment >= 0 && sentiment <= 1) return (sentiment - 0.5) * 200;
+    if (sentiment >= -1 && sentiment <= 1) return sentiment * 100;
+    return sentiment;
+  }
+
+  const brandIndex = safeNumber(row.brand_social_index, null);
+  if (Number.isFinite(brandIndex)) return (brandIndex - 50) * 2;
+
+  return null;
+}
+
+function formatSignedScoreText(value) {
+  if (!Number.isFinite(value)) return 'N/A';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
+}
+
 function startOfWeek(dateLike) {
   const date = new Date(dateLike);
   if (!Number.isFinite(date.getTime())) return null;
@@ -706,7 +742,7 @@ function summarizeScopedRows(rows = []) {
     acc.revenue += safeNumber(row.revenue, 0);
     acc.ownPriceWeighted += safeNumber(row.own_price, 0) * weight;
     acc.competitorPriceWeighted += safeNumber(row.competitor_price, 0) * weight;
-    acc.socialWeighted += safeNumber(row.social_buzz_score, 0) * weight;
+    acc.socialWeighted += safeNumber(getEventSocialScore(row), 0) * weight;
     acc.promoDepthWeighted += safeNumber(row.promo_depth_pct, 0) * weight;
     return acc;
   }, {
@@ -747,17 +783,40 @@ function formatSignedPointText(delta) {
   return `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
 }
 
+/**
+ * Extract a short holiday name from tentpole event notes or ID.
+ */
+function extractTentpoleHolidayName(event) {
+  if (!event || event.event_type !== 'Tentpole') return null;
+  const id = (event.event_id || '').toUpperCase();
+  const notes = (event.notes || '').toLowerCase();
+  if (id.includes('THANKSGIVING') || notes.includes('thanksgiving')) return 'Thanksgiving & Black Friday';
+  if (id.includes('CHRISTMAS') || notes.includes('christmas')) return 'Christmas Gifting';
+  if (id.includes('MEMORIAL_DAY') || notes.includes('memorial day')) return 'Memorial Day';
+  if (id.includes('LABOR_DAY') || notes.includes('labor day')) return 'Labor Day';
+  if (id.includes('PRIME_DAY') || notes.includes('prime day')) return 'Prime Day';
+  if (id.includes('HOLIDAY_SET') || notes.includes('holiday set') || notes.includes('holiday gift')) return 'Holiday Set Launch';
+  if (id.includes('SPRING_RESET') || notes.includes('spring reset') || notes.includes('spring skincare')) return 'Spring Reset';
+  if (id.includes('SUMMER_KICKOFF') || notes.includes('summer kickoff')) return 'Summer Kickoff';
+  return null;
+}
+
 function buildEventHeadline(event, promo, productInfo) {
   if (promo?.campaign_name) return promo.campaign_name;
-  if (event.event_type === 'Tentpole' && event.notes) {
-    const firstSentence = String(event.notes).split('.').find(Boolean);
-    return firstSentence ? firstSentence.trim() : 'Seasonal Tentpole';
+  if (event.event_type === 'Tentpole') {
+    const holidayName = extractTentpoleHolidayName(event);
+    if (holidayName) return holidayName;
+    if (event.notes) {
+      const firstSentence = String(event.notes).split('.').find(Boolean);
+      return firstSentence ? firstSentence.trim() : 'Seasonal Tentpole';
+    }
+    return 'Seasonal Tentpole';
   }
   if (event.event_type === 'Competitor Price Change') {
     return `${productInfo.label || 'Portfolio'} Competitor Price Move`;
   }
   if (event.event_type === 'Social Spike') {
-    return `${productInfo.label || 'Portfolio'} Social Buzz Spike`;
+    return `${productInfo.label || 'Portfolio'} Social Momentum Spike`;
   }
   if ((event.event_type || '').includes('Promo')) {
     return `${productInfo.label || 'Portfolio'} Promotion Window`;
@@ -1174,14 +1233,65 @@ async function renderMarketSignalsDashboard() {
       const clipped = clamp(normalized, 35, 95);
       return clamp(1.18 - ((clipped - 35) * 0.0075), 0.72, 1.26);
     };
-    const normalizeSocialScore = (scoreRaw) => {
-      const score = toNum(scoreRaw);
-      if (!Number.isFinite(score)) return null;
-      return score <= 1.5 && score >= -1.5 ? score * 100 : score;
-    };
+    const normalizeSocialScore = (scoreRaw, sentimentRaw) =>
+      getEventSocialScore({ brand_social_index: scoreRaw, sentiment_score: sentimentRaw });
+
+    // --- SKU/Product filter dropdown for competitive price delta chart ---
+    const compChartParent = compCanvas.parentElement;
+    let skuFilterContainer = document.getElementById('sku-price-filter-container');
+    if (!skuFilterContainer) {
+      skuFilterContainer = document.createElement('div');
+      skuFilterContainer.id = 'sku-price-filter-container';
+      skuFilterContainer.className = 'd-flex align-items-center gap-2 mb-2';
+      skuFilterContainer.innerHTML = `
+        <label for="sku-price-filter" class="form-label mb-0 small fw-semibold text-muted">Filter by Product/SKU:</label>
+        <select id="sku-price-filter" class="form-select form-select-sm" style="max-width: 320px;">
+          ${SKU_PRICE_FILTER_OPTIONS.map(opt => `<option value="${opt.value}"${opt.value === activeSkuPriceFilter ? ' selected' : ''}>${opt.label}</option>`).join('')}
+        </select>
+      `;
+      compChartParent.insertBefore(skuFilterContainer, compCanvas);
+      const skuPriceSelect = document.getElementById('sku-price-filter');
+      if (skuPriceSelect) {
+        skuPriceSelect.addEventListener('change', () => {
+          activeSkuPriceFilter = skuPriceSelect.value || 'all';
+          renderMarketSignalsDashboard();
+        });
+      }
+    }
+
+    let compLegendContainer = document.getElementById('market-signals-competitive-legend');
+    if (!compLegendContainer) {
+      compLegendContainer = document.createElement('div');
+      compLegendContainer.id = 'market-signals-competitive-legend';
+      compLegendContainer.className = 'ec-chart-legend mb-2';
+      compChartParent.insertBefore(compLegendContainer, compCanvas);
+    }
+    compLegendContainer.innerHTML = `
+      <div class="ec-legend-item">
+        <span class="ec-legend-dot" style="background:#3b82f6; --legend-color:#3b82f6;"></span>
+        <span>Supergoop Mass Price</span>
+      </div>
+      <div class="ec-legend-item">
+        <span class="ec-legend-dot ec-legend-dot-dashed" style="background:#ef4444; --legend-color:#ef4444;"></span>
+        <span>Competitor Mass Price</span>
+      </div>
+      <div class="ec-legend-item">
+        <span class="ec-legend-dot" style="background:#10b981; --legend-color:#10b981;"></span>
+        <span>Supergoop Prestige Price</span>
+      </div>
+      <div class="ec-legend-item">
+        <span class="ec-legend-dot ec-legend-dot-dashed" style="background:#f59e0b; --legend-color:#f59e0b;"></span>
+        <span>Competitor Prestige Price</span>
+      </div>
+    `;
+
+    // Filter skuWeekly data by selected SKU if applicable
+    const filteredSkuWeekly = activeSkuPriceFilter === 'all'
+      ? skuWeekly
+      : skuWeekly.filter(row => normalizeSkuId(row.sku_id) === normalizeSkuId(activeSkuPriceFilter));
 
     const ourPriceByWeek = new Map();
-    skuWeekly.forEach(row => {
+    filteredSkuWeekly.forEach(row => {
       const week = row.date;
       if (!week) return;
       if (!ourPriceByWeek.has(week)) {
@@ -1211,6 +1321,7 @@ async function renderMarketSignalsDashboard() {
     ])].sort();
 
     const compLabels = [];
+    const compWeeks = [];
     const ourMassSeries = [];
     const compMassSeries = [];
     const ourPrestigeSeries = [];
@@ -1227,6 +1338,7 @@ async function renderMarketSignalsDashboard() {
       if (!Number.isFinite(ownMass) || !Number.isFinite(ownPrestige) || !Number.isFinite(compMass) || !Number.isFinite(compPrestige)) return;
 
       compLabels.push(week.slice(5));
+      compWeeks.push(week);
       ourMassSeries.push(Number(ownMass.toFixed(2)));
       compMassSeries.push(Number(compMass.toFixed(2)));
       ourPrestigeSeries.push(Number(ownPrestige.toFixed(2)));
@@ -1236,6 +1348,10 @@ async function renderMarketSignalsDashboard() {
     if (compLabels.length) {
       if (eventCompetitiveSignalsChart) {
         eventCompetitiveSignalsChart.data.labels = compLabels;
+        eventCompetitiveSignalsChart.data.datasets[0].label = 'Supergoop Mass Price';
+        eventCompetitiveSignalsChart.data.datasets[1].label = 'Competitor Mass Price';
+        eventCompetitiveSignalsChart.data.datasets[2].label = 'Supergoop Prestige Price';
+        eventCompetitiveSignalsChart.data.datasets[3].label = 'Competitor Prestige Price';
         eventCompetitiveSignalsChart.data.datasets[0].data = ourMassSeries;
         eventCompetitiveSignalsChart.data.datasets[1].data = compMassSeries;
         eventCompetitiveSignalsChart.data.datasets[2].data = ourPrestigeSeries;
@@ -1250,10 +1366,10 @@ async function renderMarketSignalsDashboard() {
           data: {
             labels: compLabels,
             datasets: [
-              { label: 'Supergoop Mass Avg', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
-              { label: 'Competitor Mass', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
-              { label: 'Supergoop Prestige Avg', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
-              { label: 'Competitor Prestige', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
+              { label: 'Supergoop Mass Price', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
+              { label: 'Supergoop Prestige Price', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
             ]
           },
           options: {
@@ -1261,10 +1377,7 @@ async function renderMarketSignalsDashboard() {
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-              legend: {
-                position: 'bottom',
-                labels: { color: compTextColor, font: { size: 11, weight: '500' }, boxWidth: 14, padding: 16, usePointStyle: true, pointStyle: 'circle' }
-              },
+              legend: { display: false },
               tooltip: {
                 backgroundColor: compIsDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
                 titleColor: compIsDark ? '#e2e8f0' : '#1e293b',
@@ -1305,29 +1418,79 @@ async function renderMarketSignalsDashboard() {
 
       const massDeltaClass = massDeltaPct <= -1 ? 'text-success' : massDeltaPct >= 1 ? 'text-danger' : 'text-warning';
       const prestigeDeltaClass = prestigeDeltaPct <= -1 ? 'text-success' : prestigeDeltaPct >= 1 ? 'text-danger' : 'text-warning';
-      const massAvgGap = ourMassSeries.length ? (ourMassSeries.reduce((s, v) => s + v, 0) / ourMassSeries.length - compMassSeries.reduce((s, v) => s + v, 0) / compMassSeries.length).toFixed(2) : '0';
-      const prestigeAvgGap = ourPrestigeSeries.length ? (ourPrestigeSeries.reduce((s, v) => s + v, 0) / ourPrestigeSeries.length - compPrestigeSeries.reduce((s, v) => s + v, 0) / compPrestigeSeries.length).toFixed(2) : '0';
+      const massCompWoWClass = massCompWoW < 0 ? 'text-danger' : massCompWoW > 0 ? 'text-success' : 'text-warning';
+      const prestigeCompWoWClass = prestigeCompWoW < 0 ? 'text-danger' : prestigeCompWoW > 0 ? 'text-success' : 'text-warning';
+      const massAvgGapValue = ourMassSeries.length
+        ? (ourMassSeries.reduce((s, v) => s + v, 0) / ourMassSeries.length) - (compMassSeries.reduce((s, v) => s + v, 0) / compMassSeries.length)
+        : 0;
+      const prestigeAvgGapValue = ourPrestigeSeries.length
+        ? (ourPrestigeSeries.reduce((s, v) => s + v, 0) / ourPrestigeSeries.length) - (compPrestigeSeries.reduce((s, v) => s + v, 0) / compPrestigeSeries.length)
+        : 0;
+      const massAvgGapClass = massAvgGapValue <= -0.25 ? 'text-success' : massAvgGapValue >= 0.25 ? 'text-danger' : 'text-warning';
+      const prestigeAvgGapClass = prestigeAvgGapValue <= -0.25 ? 'text-success' : prestigeAvgGapValue >= 0.25 ? 'text-danger' : 'text-warning';
+      const latestCompWeek = compWeeks[latestCompIdx];
+      const latestCompWeekLabel = latestCompWeek
+        ? `Week of ${new Date(`${latestCompWeek}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+        : 'Latest reported week';
       compContainer.innerHTML = `
-        <div class="d-flex flex-wrap gap-3 mt-2">
+        <div class="ec-signal-grid mt-3">
           <div class="ec-signal-card">
-            <div class="ec-signal-card-label">Mass Price Gap</div>
+            <div class="ec-signal-card-label">Mass Gap</div>
             <div class="ec-signal-card-value ${massDeltaClass}">${massDeltaPct >= 0 ? '+' : ''}${massDeltaPct.toFixed(1)}%</div>
-            <div class="ec-signal-card-sub">$${ourMassSeries[latestCompIdx]?.toFixed(2)} vs $${compMassSeries[latestCompIdx]?.toFixed(2)}</div>
+            <div class="ec-signal-card-detail-list">
+              <div class="ec-signal-card-detail">
+                <span class="ec-signal-card-detail-label">Supergoop avg</span>
+                <strong class="ec-signal-card-detail-value">${formatCurrency(ourMassSeries[latestCompIdx])}</strong>
+              </div>
+              <div class="ec-signal-card-detail">
+                <span class="ec-signal-card-detail-label">Competitor avg</span>
+                <strong class="ec-signal-card-detail-value">${formatCurrency(compMassSeries[latestCompIdx])}</strong>
+              </div>
+            </div>
+            <div class="ec-signal-card-meta">${latestCompWeekLabel}</div>
           </div>
           <div class="ec-signal-card">
-            <div class="ec-signal-card-label">Prestige Price Gap</div>
+            <div class="ec-signal-card-label">Prestige Gap</div>
             <div class="ec-signal-card-value ${prestigeDeltaClass}">${prestigeDeltaPct >= 0 ? '+' : ''}${prestigeDeltaPct.toFixed(1)}%</div>
-            <div class="ec-signal-card-sub">$${ourPrestigeSeries[latestCompIdx]?.toFixed(2)} vs $${compPrestigeSeries[latestCompIdx]?.toFixed(2)}</div>
+            <div class="ec-signal-card-detail-list">
+              <div class="ec-signal-card-detail">
+                <span class="ec-signal-card-detail-label">Supergoop avg</span>
+                <strong class="ec-signal-card-detail-value">${formatCurrency(ourPrestigeSeries[latestCompIdx])}</strong>
+              </div>
+              <div class="ec-signal-card-detail">
+                <span class="ec-signal-card-detail-label">Competitor avg</span>
+                <strong class="ec-signal-card-detail-value">${formatCurrency(compPrestigeSeries[latestCompIdx])}</strong>
+              </div>
+            </div>
+            <div class="ec-signal-card-meta">${latestCompWeekLabel}</div>
           </div>
           <div class="ec-signal-card">
-            <div class="ec-signal-card-label">Competitor WoW Move</div>
-            <div class="ec-signal-card-value">Mass ${massCompWoW >= 0 ? '+' : ''}$${massCompWoW.toFixed(2)}</div>
-            <div class="ec-signal-card-sub">Prestige ${prestigeCompWoW >= 0 ? '+' : ''}$${prestigeCompWoW.toFixed(2)}</div>
+            <div class="ec-signal-card-label">Competitor Move Vs Prior Week</div>
+            <div class="ec-signal-card-stack">
+              <div class="ec-signal-card-line">
+                <span>Mass</span>
+                <strong class="${massCompWoWClass}">${formatSignedCurrency(massCompWoW)}</strong>
+              </div>
+              <div class="ec-signal-card-line">
+                <span>Prestige</span>
+                <strong class="${prestigeCompWoWClass}">${formatSignedCurrency(prestigeCompWoW)}</strong>
+              </div>
+            </div>
+            <div class="ec-signal-card-meta">Latest competitor feed change</div>
           </div>
           <div class="ec-signal-card">
-            <div class="ec-signal-card-label">Avg Season Gap</div>
-            <div class="ec-signal-card-value">Mass $${massAvgGap}</div>
-            <div class="ec-signal-card-sub">Prestige $${prestigeAvgGap}</div>
+            <div class="ec-signal-card-label">Season Average Gap</div>
+            <div class="ec-signal-card-stack">
+              <div class="ec-signal-card-line">
+                <span>Mass</span>
+                <strong class="${massAvgGapClass}">${formatSignedCurrency(massAvgGapValue)}</strong>
+              </div>
+              <div class="ec-signal-card-line">
+                <span>Prestige</span>
+                <strong class="${prestigeAvgGapClass}">${formatSignedCurrency(prestigeAvgGapValue)}</strong>
+              </div>
+            </div>
+            <div class="ec-signal-card-meta">${ourMassSeries.length}-week average vs competitor</div>
           </div>
         </div>
       `;
@@ -1343,7 +1506,7 @@ async function renderMarketSignalsDashboard() {
     weekLabels.forEach(week => {
       const row = socialByWeek.get(week);
       if (!row) return;
-      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment);
+      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment, row.sentiment_score);
       if (!Number.isFinite(score)) return;
       socialLabels.push(week.slice(5));
       socialScoreSeries.push(Number(score.toFixed(2)));
@@ -1366,7 +1529,7 @@ async function renderMarketSignalsDashboard() {
             labels: socialLabels,
             datasets: [
               {
-                label: 'Brand Social Index',
+                label: 'Social Sentiment',
                 data: socialScoreSeries,
                 borderColor: '#0ea5e9',
                 backgroundColor: socIsDark ? 'rgba(14,165,233,0.12)' : 'rgba(14,165,233,0.08)',
@@ -1413,7 +1576,7 @@ async function renderMarketSignalsDashboard() {
                 padding: 12,
                 callbacks: {
                   label: ctx => ctx.datasetIndex === 0
-                    ? `Social Index: ${ctx.parsed.y.toFixed(1)}`
+                    ? `Social Sentiment: ${ctx.parsed.y.toFixed(1)}`
                     : `Elasticity Mod: ${ctx.parsed.y.toFixed(3)}x`
                 }
               }
@@ -1424,9 +1587,11 @@ async function renderMarketSignalsDashboard() {
                 ticks: { color: socTextColor, font: { size: 10 }, maxRotation: 0 }
               },
               y: {
+                min: -100,
+                max: 100,
                 grid: { color: socGridColor, drawBorder: false },
-                ticks: { color: socTextColor, font: { size: 10 } },
-                title: { display: true, text: 'Brand Social Index', color: '#0ea5e9', font: { size: 11, weight: '600' } }
+                ticks: { color: socTextColor, font: { size: 10 }, stepSize: 25 },
+                title: { display: true, text: 'Social Sentiment (-100 to +100)', color: '#0ea5e9', font: { size: 11, weight: '600' } }
               },
               y1: {
                 position: 'right',
@@ -1457,9 +1622,9 @@ async function renderMarketSignalsDashboard() {
       socialContainer.innerHTML = `
         <div class="d-flex flex-wrap gap-3 mt-2">
           <div class="ec-signal-card">
-            <div class="ec-signal-card-label">Social Index</div>
-            <div class="ec-signal-card-value ${socScoreClass}">${socialScoreSeries[latestSocialIdx]?.toFixed(1) || 'N/A'}</div>
-            <div class="ec-signal-card-sub">${socialScoreWoW >= 0 ? '+' : ''}${socialScoreWoW.toFixed(1)} WoW</div>
+            <div class="ec-signal-card-label">Social Sentiment</div>
+            <div class="ec-signal-card-value ${socScoreClass}">${formatSignedScoreText(socialScoreSeries[latestSocialIdx])}</div>
+            <div class="ec-signal-card-sub">${formatSignedPointText(socialScoreWoW)} WoW</div>
           </div>
           <div class="ec-signal-card">
             <div class="ec-signal-card-label">Elasticity Modifier</div>
@@ -1504,6 +1669,7 @@ function renderEventTimeline() {
 
   if (!filteredEvents || filteredEvents.length === 0) {
     container.innerHTML = '<div class="text-center text-muted">No events match the current filters</div>';
+    renderGuidedStorylineExamples([]);
     return;
   }
 
@@ -1594,12 +1760,14 @@ function renderEventTimeline() {
 
     const productInfo = getEventProductInfo(event);
     const productTooltip = productInfo.label ? ` | Products: ${productInfo.label}` : '';
+    const holidayName = extractTentpoleHolidayName(event);
+    const tentpoleLabel = holidayName ? ` [${holidayName}]` : '';
 
     html += `
       <div class="${eventClass}"
            style="left: ${positionPercent}%;"
            data-event-id="${event.event_id}"
-           title="${event.event_type} - ${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${productTooltip}">
+           title="${event.event_type}${tentpoleLabel} - ${eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${productTooltip}">
       </div>
     `;
   });
@@ -1624,6 +1792,176 @@ function renderEventTimeline() {
       if (event) {
         showEventDetails(event);
       }
+    });
+  });
+
+  renderGuidedStorylineExamples(filteredEvents);
+}
+
+function findPreferredStoryEvent(predicate, preferredEvents = []) {
+  const primaryPool = Array.isArray(preferredEvents) ? preferredEvents : [];
+  const fallbackPool = Array.isArray(allEvents) ? allEvents : [];
+  const candidates = [...primaryPool.filter(predicate), ...fallbackPool.filter(predicate)];
+  if (!candidates.length) return null;
+  return candidates
+    .sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0];
+}
+
+function buildPromoStoryMetrics(promo) {
+  const skuResults = Array.isArray(promo?.sku_results) ? promo.sku_results : [];
+  const avgUplift = skuResults.length
+    ? skuResults.reduce((sum, row) => sum + Number(row.sales_uplift_pct || 0), 0) / skuResults.length
+    : null;
+  const downCount = skuResults.filter(row => Number(row.sales_uplift_pct || 0) < 0 || row.outcome === 'down').length;
+  const channelEntries = Object.entries(promo?.channel_results || {});
+  const bestChannel = channelEntries
+    .sort(([, a], [, b]) => Number(b.sales_uplift_pct || 0) - Number(a.sales_uplift_pct || 0))[0];
+  return {
+    avgUplift,
+    downCount,
+    roi: safeNumber(promo?.actual_roi, null),
+    revenue: safeNumber(promo?.incremental_revenue_usd, null),
+    bestChannel: bestChannel ? (CHANNEL_LABELS[bestChannel[0]] || bestChannel[0]) : null,
+    bestChannelLift: bestChannel ? safeNumber(bestChannel[1]?.sales_uplift_pct, null) : null
+  };
+}
+
+function renderGuidedStorylineExamples(filteredEvents = []) {
+  const container = document.getElementById('event-storyline-examples');
+  if (!container) return;
+
+  const visibleEvents = Array.isArray(filteredEvents) ? filteredEvents : [];
+  if (Array.isArray(filteredEvents) && filteredEvents.length === 0) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+  const getPromo = promoId => (promoId && promoMetadata ? promoMetadata[promoId] : null);
+  const competitorEvent = findPreferredStoryEvent(
+    event => event.event_type === 'Competitor Price Change',
+    visibleEvents
+  );
+  const socialEvent = findPreferredStoryEvent(
+    event => event.event_type === 'Social Spike',
+    visibleEvents
+  );
+  const holidayEvent = findPreferredStoryEvent(
+    event => event.event_type === 'Tentpole' && /thanksgiving|black friday|christmas|holiday|memorial/i.test(`${extractTentpoleHolidayName(event) || ''} ${event.notes || ''}`),
+    visibleEvents
+  ) || findPreferredStoryEvent(event => event.event_type === 'Tentpole', visibleEvents);
+
+  const competitorPromo = getPromo('PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026');
+  const socialPromo = getPromo('PROMO_TIKTOK_SPORT_GEL_HOLD_2026');
+  const prestigePromo = getPromo('PROMO_PRESTIGE_GLOW_WEEKEND_2026');
+  const weakPromo = getPromo('PROMO_WINTER_HYDRATION_PUSH_2025');
+
+  const stories = [];
+  const pushPromoStory = (config, promo, event) => {
+    if (!promo) return;
+    if (activeProductFilter !== 'all' && !event) return;
+    const metrics = buildPromoStoryMetrics(promo);
+    stories.push({
+      ...config,
+      date: promo.start_date || event?.date || '',
+      chips: [
+        Number.isFinite(metrics.roi) ? `ROI ${metrics.roi.toFixed(2)}x` : null,
+        Number.isFinite(metrics.avgUplift) ? `Avg uplift ${metrics.avgUplift >= 0 ? '+' : ''}${metrics.avgUplift.toFixed(1)}%` : null,
+        Number.isFinite(metrics.revenue) ? `Revenue ${formatSignedCurrency(metrics.revenue)}` : null,
+        metrics.bestChannel && Number.isFinite(metrics.bestChannelLift) ? `Best channel ${metrics.bestChannel} ${metrics.bestChannelLift >= 0 ? '+' : ''}${metrics.bestChannelLift.toFixed(1)}%` : null,
+        metrics.downCount ? `${metrics.downCount} SKU(s) down` : 'No down SKUs'
+      ].filter(Boolean),
+      actionLabel: 'Open Campaign Detail',
+      promoId: promo.promo_id,
+      eventId: event?.event_id || null
+    });
+  };
+
+  pushPromoStory({
+    badge: 'Competitor Move',
+    title: 'Defend only where the competitor cuts price',
+    summary: 'This is the clearest competitor-defense example in the deck. The story is not “promo everywhere”; it is defend SPF volume in Target/Amazon while accepting temporary margin pressure.',
+    implication: 'Use this when Ritesh wants to explain why selective defense is better than broad discounting.'
+  }, competitorPromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026', visibleEvents) || competitorEvent);
+
+  pushPromoStory({
+    badge: 'Social-Led Hold',
+    title: 'When social momentum is high, stay shallow on discount',
+    summary: 'This is the best example of the “buzz is up, don’t give away margin” storyline. Premium SPF held with a light 5% promo because creator momentum did the demand work.',
+    implication: 'Use this to explain the missed-opportunity logic elsewhere in the flow.'
+  }, socialPromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_TIKTOK_SPORT_GEL_HOLD_2026', visibleEvents) || socialEvent);
+
+  pushPromoStory({
+    badge: 'Selective Promo',
+    title: 'Prestige should be selective, not broad',
+    summary: 'This weekend offer concentrates discount depth on the few prestige SKUs and channels that actually respond, instead of dragging the entire portfolio into markdown.',
+    implication: 'This is the clean “good promo” example for Sephora and Ulta.'
+  }, prestigePromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_PRESTIGE_GLOW_WEEKEND_2026', visibleEvents));
+
+  pushPromoStory({
+    badge: 'Caution',
+    title: 'Mixed promo result: some lift, but not a universal win',
+    summary: 'Winter Hydration delivered volume, but it still produced a down SKU and repeat-loss risk. That is the cautionary example for why broad promo logic should be narrowed.',
+    implication: 'Use this as the “bad / mixed promo” story, not as a total failure but as a learning example.'
+  }, weakPromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_WINTER_HYDRATION_PUSH_2025', visibleEvents));
+
+  if (holidayEvent) {
+    stories.push({
+      badge: 'Tentpole',
+      title: `${extractTentpoleHolidayName(holidayEvent) || 'Holiday'} is a demand-shaping event, not just a date on the calendar`,
+      summary: holidayEvent.notes || 'Seasonal tentpoles should anchor inventory, promo readiness, and channel planning.',
+      implication: 'Use this to explain why tentpoles belong in the same evidence layer as competitor moves and social spikes.',
+      date: holidayEvent.date,
+      chips: [
+        holidayEvent.channel_group && holidayEvent.channel_group !== 'all' ? `${formatTier(holidayEvent.tier)} channels` : 'Portfolio-wide',
+        holidayEvent.validation_window ? `Window ${holidayEvent.validation_window}` : null
+      ].filter(Boolean),
+      actionLabel: 'Open Event Detail',
+      eventId: holidayEvent.event_id,
+      promoId: null
+    });
+  }
+
+  if (!stories.length) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="row g-3">
+      ${stories.slice(0, 5).map(story => `
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <span class="badge text-bg-light border">${story.badge}</span>
+                <span class="small text-muted">${story.date ? new Date(`${story.date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</span>
+              </div>
+              <h6 class="mb-2">${story.title}</h6>
+              <p class="small text-muted mb-3">${story.summary}</p>
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                ${story.chips.map(chip => `<span class="badge rounded-pill text-bg-light border">${chip}</span>`).join('')}
+              </div>
+              <div class="small text-muted mb-3">${story.implication}</div>
+              <div class="mt-auto d-flex gap-2">
+                ${story.eventId ? `<button class="btn btn-sm btn-outline-primary story-example-event" data-event-id="${story.eventId}" type="button">Open Event Detail</button>` : ''}
+                ${story.promoId ? `<button class="btn btn-sm btn-outline-secondary story-example-promo" data-promo-id="${story.promoId}" type="button">Open Campaign Detail</button>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  container.querySelectorAll('.story-example-event').forEach(button => {
+    button.addEventListener('click', () => {
+      const event = (allEvents || []).find(item => item.event_id === button.dataset.eventId);
+      if (event) showEventDetails(event);
+    });
+  });
+
+  container.querySelectorAll('.story-example-promo').forEach(button => {
+    button.addEventListener('click', () => {
+      renderPromoDrilldown(button.dataset.promoId);
     });
   });
 }
@@ -1688,7 +2026,9 @@ async function showEventDetailsLegacy(event) {
   const avgPrevSocialScore = previousSummary.social;
   const ownPriceChangePct = pctChange(avgOwnPrice, avgPrevOwnPrice);
   const competitorPriceChangePct = pctChange(avgCompetitorPrice, avgPrevCompetitorPrice);
-  const socialBuzzChangePct = pctChange(avgSocialScore, avgPrevSocialScore);
+  const socialSentimentDelta = Number.isFinite(avgSocialScore) && Number.isFinite(avgPrevSocialScore)
+    ? avgSocialScore - avgPrevSocialScore
+    : null;
   const incrementalSalesUnits = eventSalesUnits - baselineSalesUnits;
   const revenueDelta = eventRevenue - baselineRevenue;
 
@@ -2155,7 +2495,9 @@ async function showEventDetails(event) {
   const avgPrevSocialScore = previousSummary.social;
   const ownPriceChangePct = pctChange(avgOwnPrice, avgPrevOwnPrice);
   const competitorPriceChangePct = pctChange(avgCompetitorPrice, avgPrevCompetitorPrice);
-  const socialBuzzChangePct = pctChange(avgSocialScore, avgPrevSocialScore);
+  const socialSentimentDelta = Number.isFinite(avgSocialScore) && Number.isFinite(avgPrevSocialScore)
+    ? avgSocialScore - avgPrevSocialScore
+    : null;
   const incrementalSalesUnits = eventSalesUnits - baselineSalesUnits;
   const revenueDelta = eventRevenue - baselineRevenue;
 
@@ -2177,10 +2519,32 @@ async function showEventDetails(event) {
   const basisText = resolvedWeek.weekKey
     ? `${resolvedWeek.basis}: week of ${new Date(`${resolvedWeek.weekKey}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
     : 'No weekly analog available';
-  const eventPeriodText = promo?.start_date && promo?.end_date
-    ? `${new Date(promo.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to ${new Date(promo.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-    : dateStr;
+  // --- Event Window: From and To Dates ---
+  let eventPeriodText;
+  let eventWindowLabel;
+  if (event.event_start_date && event.event_end_date) {
+    const startFmt = new Date(event.event_start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endFmt = new Date(event.event_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    eventPeriodText = `${startFmt} - ${endFmt}`;
+    eventWindowLabel = `Event Window: ${startFmt} - ${endFmt}`;
+  } else if (promo?.start_date && promo?.end_date) {
+    const startFmt = new Date(promo.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const endFmt = new Date(promo.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    eventPeriodText = `${startFmt} to ${endFmt}`;
+    eventWindowLabel = `Event Window: ${startFmt} - ${endFmt}`;
+  } else if (event.week_start) {
+    const weekFmt = new Date(event.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    eventPeriodText = weekFmt;
+    eventWindowLabel = `Observed Week: ${weekFmt}`;
+  } else {
+    eventPeriodText = dateStr;
+    eventWindowLabel = `Observed Week: ${dateStr}`;
+  }
   const revenueImpactClass = incrementalRevenue >= 0 ? 'text-success' : 'text-danger';
+
+  // --- Promotion type from data ---
+  const promotionType = event.promotion_type || promo?.promotion_type || null;
+  const isFutureEvent = eventDate > CALENDAR_TODAY;
 
   // --- Event type icon & gradient ---
   const eventTypeConfig = {
@@ -2223,7 +2587,7 @@ async function showEventDetails(event) {
   const compPriceSignalClass = Number.isFinite(competitorPriceChangePct)
     ? (competitorPriceChangePct < 0 ? 'ed-signal-down' : competitorPriceChangePct > 0 ? 'ed-signal-up' : 'ed-signal-flat')
     : '';
-  const socialSignalClass = signalColorClass(socialBuzzChangePct);
+  const socialSignalClass = signalColorClass(socialSentimentDelta);
   const revenueSignalClass = incrementalRevenue >= 0 ? 'ed-signal-up' : 'ed-signal-down';
 
   // --- Campaign timeline bar helper ---
@@ -2501,13 +2865,14 @@ async function showEventDetails(event) {
         <div class="ed-hero-content">
           <div class="ed-hero-type">
             <span class="ed-type-badge">${badge.text}</span>
-            <span class="ed-status-badge ${statusMeta.className}">${statusMeta.label}</span>
+            <span class="ed-status-badge ${statusMeta.className}">${isFutureEvent ? 'Projected' : statusMeta.label}</span>
+            ${promotionType ? `<span class="ed-phase-badge" style="background: rgba(6,182,212,0.15); color: #0891b2; font-weight: 600;">${promotionType}</span>` : ''}
             ${phaseLabel ? `<span class="ed-phase-badge">${phaseLabel}</span>` : ''}
             ${event.tier !== 'all' ? `<span class="ed-tier-badge">${formatTier(event.tier)}</span>` : ''}
           </div>
           <h3 class="ed-hero-title">${headline}</h3>
           <div class="ed-hero-date">
-            <i class="bi bi-calendar3 me-1"></i>${eventPeriodText}
+            <i class="bi bi-calendar3 me-1"></i>${eventWindowLabel}
             ${promo?.duration_weeks ? `<span class="ed-duration-pill">${promo.duration_weeks}w</span>` : ''}
           </div>
         </div>
@@ -2540,6 +2905,25 @@ async function showEventDetails(event) {
           </div>
         </div>
 
+        <!-- Promotion Type -->
+        ${promotionType ? `
+        <div class="ed-fact mb-2" style="background: rgba(6,182,212,0.08); border-radius: 8px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 8px;">
+          <div class="ed-fact-icon"><i class="bi bi-tag-fill" style="color: #0891b2;"></i></div>
+          <div>
+            <div class="ed-fact-label">Promotion Type</div>
+            <div class="ed-fact-value fw-bold" style="color: #0891b2;">${promotionType}</div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Competition Price Percentage -->
+        ${Number.isFinite(competitorPriceChangePct) && competitorPriceChangePct !== 0 ? `
+        <div class="alert ${competitorPriceChangePct < 0 ? 'alert-danger' : 'alert-warning'} small mb-2 py-2">
+          <i class="bi bi-arrow-left-right me-1"></i><strong>Competition price ${competitorPriceChangePct < 0 ? 'dropped' : 'rose'} ${Math.abs(competitorPriceChangePct * 100).toFixed(1)}%</strong>
+          ${Number.isFinite(avgPrevCompetitorPrice) && Number.isFinite(avgCompetitorPrice) ? ` (${formatCurrency(avgPrevCompetitorPrice)} &rarr; ${formatCurrency(avgCompetitorPrice)})` : ''}
+        </div>
+        ` : ''}
+
         <!-- Narrative -->
         <div class="ed-narrative">
           <div class="ed-narrative-bar" style="background: ${typeConf.accent};"></div>
@@ -2551,11 +2935,12 @@ async function showEventDetails(event) {
         ${businessImplicationsHtml}
 
         <!-- KPI Metrics Grid -->
+        ${isFutureEvent ? '<div class="alert alert-info small mb-3"><i class="bi bi-clock-history me-2"></i><strong>Projected:</strong> This event is in the future. Figures below are projected based on historical patterns and seasonal analogs.</div>' : ''}
         <div class="ed-kpi-grid">
           <div class="ed-kpi ed-kpi-highlight">
-            <div class="ed-kpi-label">Revenue Impact</div>
+            <div class="ed-kpi-label">${isFutureEvent ? 'Projected Revenue Impact' : 'Revenue Impact'}</div>
             <div class="ed-kpi-value ${revenueSignalClass}">${formatSignedCurrency(incrementalRevenue)}</div>
-            <div class="ed-kpi-sub">${Number.isFinite(roiValue) ? `${roiValue.toFixed(2)}x ${isPlannedPromo ? 'modeled ROI' : 'ROI'}` : 'ROI not modeled'}</div>
+            <div class="ed-kpi-sub">${Number.isFinite(roiValue) ? `${roiValue.toFixed(2)}x ${isPlannedPromo || isFutureEvent ? 'modeled ROI' : 'ROI'}` : 'ROI not modeled'}</div>
           </div>
           <div class="ed-kpi">
             <div class="ed-kpi-label">Baseline Sales</div>
@@ -2563,19 +2948,19 @@ async function showEventDetails(event) {
             <div class="ed-kpi-sub">${formatCurrency(baselineRevenue)}</div>
           </div>
           <div class="ed-kpi">
-            <div class="ed-kpi-label">Incremental Sales</div>
+            <div class="ed-kpi-label">${isFutureEvent ? 'Projected Incremental Sales' : 'Incremental Sales'}</div>
             <div class="ed-kpi-value ${incrementalSalesUnits >= 0 ? 'ed-signal-up' : 'ed-signal-down'}">${incrementalSalesUnits >= 0 ? '+' : ''}${formatNumber(Math.round(incrementalSalesUnits))}<span class="ed-kpi-unit"> units</span></div>
             <div class="ed-kpi-sub">${formatSignedCurrency(revenueDelta)}</div>
           </div>
           <div class="ed-kpi">
-            <div class="ed-kpi-label">Total Sales</div>
+            <div class="ed-kpi-label">${isFutureEvent ? 'Projected Total Sales' : 'Total Sales'}</div>
             <div class="ed-kpi-value">${formatNumber(Math.round(eventSalesUnits))}<span class="ed-kpi-unit"> units</span></div>
             <div class="ed-kpi-sub">${formatCurrency(eventRevenue)}</div>
           </div>
           <div class="ed-kpi">
             <div class="ed-kpi-label">Event ROI</div>
             <div class="ed-kpi-value">${Number.isFinite(roiValue) ? `${roiValue.toFixed(2)}x` : 'N/A'}</div>
-            <div class="ed-kpi-sub">${Number.isFinite(roiValue) ? (isPlannedPromo ? 'Modeled' : 'Observed') : 'Organic event'}</div>
+            <div class="ed-kpi-sub">${Number.isFinite(roiValue) ? (isPlannedPromo || isFutureEvent ? 'Modeled' : 'Observed') : 'Organic event'}</div>
           </div>
         </div>
 
@@ -2595,15 +2980,15 @@ async function showEventDetails(event) {
             <div class="ed-signal-body">
               <div class="ed-signal-label">Competitor Price</div>
               <div class="ed-signal-value">${signalArrow(competitorPriceChangePct)} ${formatSignedPercentText(competitorPriceChangePct)}</div>
-              <div class="ed-signal-detail">${Number.isFinite(avgPrevCompetitorPrice) ? `${formatCurrency(avgPrevCompetitorPrice)} &rarr; ${formatCurrency(avgCompetitorPrice)}` : 'No benchmark'}</div>
+              <div class="ed-signal-detail">${isFutureEvent ? 'Based on last year\'s pattern' : (Number.isFinite(avgPrevCompetitorPrice) ? `${formatCurrency(avgPrevCompetitorPrice)} &rarr; ${formatCurrency(avgCompetitorPrice)}` : 'No benchmark')}</div>
             </div>
           </div>
           <div class="ed-signal ${socialSignalClass}">
             <div class="ed-signal-icon"><i class="bi bi-megaphone"></i></div>
             <div class="ed-signal-body">
-              <div class="ed-signal-label">Social Buzz</div>
-              <div class="ed-signal-value">${signalArrow(socialBuzzChangePct)} ${formatSignedPercentText(socialBuzzChangePct)}</div>
-              <div class="ed-signal-detail">${Number.isFinite(avgPrevSocialScore) ? `${avgPrevSocialScore.toFixed(1)} &rarr; ${avgSocialScore.toFixed(1)}` : 'No benchmark'}</div>
+              <div class="ed-signal-label">Social Sentiment</div>
+              <div class="ed-signal-value">${signalArrow(socialSentimentDelta)} ${formatSignedPointText(socialSentimentDelta)}</div>
+              <div class="ed-signal-detail">${isFutureEvent ? 'Assumed: same as current' : (Number.isFinite(avgPrevSocialScore) ? `${formatSignedScoreText(avgPrevSocialScore)} &rarr; ${formatSignedScoreText(avgSocialScore)}` : 'No benchmark')}</div>
             </div>
           </div>
         </div>
@@ -2648,8 +3033,8 @@ async function showEventDetails(event) {
     const previousOwn = safeNumber(previousRow?.own_price, null);
     const currentCompetitor = safeNumber(currentRow?.competitor_price, null);
     const previousCompetitor = safeNumber(previousRow?.competitor_price, null);
-    const currentSocial = safeNumber(currentRow?.social_buzz_score, null);
-    const previousSocial = safeNumber(previousRow?.social_buzz_score, null);
+    const currentSocial = getEventSocialScore(currentRow || {});
+    const previousSocial = getEventSocialScore(previousRow || {});
     const unitsDelta = currentUnits - previousUnits;
     const rowRevenueDelta = currentRevenue - previousRevenue;
     const ownDelta = Number.isFinite(currentOwn) && Number.isFinite(previousOwn) ? currentOwn - previousOwn : null;
@@ -2702,7 +3087,7 @@ async function showEventDetails(event) {
     const avgComp = s.compPrices.length ? s.compPrices.reduce((a, b) => a + b, 0) / s.compPrices.length : null;
     const avgSocial = s.socialScores.length ? s.socialScores.reduce((a, b) => a + b, 0) / s.socialScores.length : null;
     const avgPrevSocial = s.prevSocialScores.length ? s.prevSocialScores.reduce((a, b) => a + b, 0) / s.prevSocialScores.length : null;
-    const socialPct = pctChange(avgSocial, avgPrevSocial);
+    const socialDelta = Number.isFinite(avgSocial) && Number.isFinite(avgPrevSocial) ? avgSocial - avgPrevSocial : null;
     const priceGap = Number.isFinite(avgOwn) && Number.isFinite(avgComp) ? avgOwn - avgComp : null;
     const barWidthPrev = Math.round((s.prevRevenue / maxSkuRevenue) * 100);
     const barWidthCurr = Math.round((s.revenue / maxSkuRevenue) * 100);
@@ -2751,9 +3136,9 @@ async function showEventDetails(event) {
             <div class="ed-sku-metric-sub">&nbsp;</div>
           </div>
           <div class="ed-sku-metric">
-            <div class="ed-sku-metric-label">Social</div>
-            <div class="ed-sku-metric-value ${signalColorClass(socialPct)}">${formatSignedPercentText(socialPct)}</div>
-            <div class="ed-sku-metric-sub">${Number.isFinite(avgSocial) ? avgSocial.toFixed(1) : 'N/A'}</div>
+            <div class="ed-sku-metric-label">Sentiment</div>
+            <div class="ed-sku-metric-value ${signalColorClass(socialDelta)}">${formatSignedScoreText(avgSocial)}</div>
+            <div class="ed-sku-metric-sub">${formatSignedPointText(socialDelta)} vs baseline</div>
           </div>
         </div>
       </div>
@@ -2915,10 +3300,10 @@ async function showEventDetails(event) {
               <td>${Number.isFinite(avgCompetitorPrice) ? formatCurrency(avgCompetitorPrice) : 'N/A'}</td>
             </tr>
             <tr>
-              <td class="fw-semibold">Social Buzz</td>
-              <td>${formatSignedPercentText(socialBuzzChangePct)}</td>
-              <td>${Number.isFinite(avgPrevSocialScore) ? avgPrevSocialScore.toFixed(1) : 'N/A'}</td>
-              <td>${Number.isFinite(avgSocialScore) ? avgSocialScore.toFixed(1) : 'N/A'}</td>
+              <td class="fw-semibold">Social Sentiment</td>
+              <td>${formatSignedPointText(socialSentimentDelta)}</td>
+              <td>${formatSignedScoreText(avgPrevSocialScore)}</td>
+              <td>${formatSignedScoreText(avgSocialScore)}</td>
             </tr>
             <tr>
               <td class="fw-semibold">Baseline Sales</td>
@@ -2960,7 +3345,7 @@ async function showEventDetails(event) {
         <td>${formatCurrencyOrNA(row.currentCompetitor)}</td>
         <td>${formatCurrencyOrNA(row.previousOwn)}</td>
         <td>${formatCurrencyOrNA(row.previousCompetitor)}</td>
-        <td>${Number.isFinite(row.currentSocial) ? row.currentSocial.toFixed(1) : 'N/A'}</td>
+        <td>${formatSignedScoreText(row.currentSocial)}</td>
         <td>${row.impactLabel}</td>
         <td>${formatNumber(Math.round(row.previousUnits))} units</td>
         <td>${row.unitsDelta >= 0 ? '+' : ''}${formatNumber(Math.round(row.unitsDelta))} units</td>
@@ -2990,7 +3375,7 @@ async function showEventDetails(event) {
               <th>Competitor Price This Week</th>
               <th>Our Price Last Week</th>
               <th>Competitor Price Last Week</th>
-              <th>Social Buzz</th>
+              <th>Social Sentiment</th>
               <th>Impact of Event</th>
               <th>Baseline Sales</th>
               <th>Additional Sales</th>

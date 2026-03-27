@@ -565,27 +565,36 @@ function getToolDefinitions() {
 /**
  * Send a message to the LLM
  * @param {string} userMessage - User's question
- * @returns {Promise<void>}
+ * @returns {Promise<string|null>}
  */
-export async function sendMessage(userMessage) {
+export async function sendMessage(userMessage, options = {}) {
+  const { renderUi = true, isolatedHistory = false } = options;
   if (!dataContext) {
-    bootstrapAlert({
-      color: "warning",
-      title: "Data Not Loaded",
-      body: "Please load data first before asking questions."
-    });
-    return;
+    if (renderUi) {
+      bootstrapAlert({
+        color: "warning",
+        title: "Data Not Loaded",
+        body: "Please load data first before asking questions."
+      });
+    }
+    return null;
   }
 
+  const history = renderUi
+    ? conversationHistory
+    : (isolatedHistory ? [] : [...conversationHistory]);
+
   // Add user message to UI and history
-  appendMessage('user', userMessage);
-  conversationHistory.push({
+  if (renderUi) {
+    appendMessage('user', userMessage);
+  }
+  history.push({
     role: "user",
     content: userMessage
   });
 
   // Show loading indicator
-  const loadingId = appendMessage('assistant', '...', true);
+  const loadingId = renderUi ? appendMessage('assistant', '...', true) : null;
 
   try {
     // Get LLM config from localStorage (or show config modal if not set)
@@ -598,10 +607,12 @@ export async function sendMessage(userMessage) {
       model: getModelName(),
       messages: [
         { role: "system", content: buildSystemPrompt() },
-        ...conversationHistory
+        ...history
       ],
-      tools: getToolDefinitions(),
-      tool_choice: "auto",
+      ...(renderUi ? {
+        tools: getToolDefinitions(),
+        tool_choice: "auto"
+      } : {}),
       stream: false  // ✨ Non-streaming to avoid partial "thinking" text
     };
 
@@ -626,49 +637,63 @@ export async function sendMessage(userMessage) {
     // Handle response based on whether tools were called
     if (message.tool_calls && message.tool_calls.length > 0) {
       // Remove loading indicator (no partial text to show)
-      removeMessage(loadingId);
+      if (renderUi && loadingId) {
+        removeMessage(loadingId);
+      }
 
       // Add assistant message with tool calls to history
-      conversationHistory.push({
+      history.push({
         role: "assistant",
         content: message.content || null,
         tool_calls: message.tool_calls
       });
 
       // Execute tool calls and get STREAMING final response
-      await executeToolCalls(message.tool_calls);
+      return await executeToolCalls(message.tool_calls, { renderUi, history });
     } else {
       // No tool calls - got direct answer
       if (message.content) {
         // Update with final message
-        updateMessage(loadingId, message.content, false);
+        if (renderUi && loadingId) {
+          updateMessage(loadingId, message.content, false);
+        }
 
         // Add to history
-        conversationHistory.push({
+        history.push({
           role: "assistant",
           content: message.content
         });
+        return message.content;
       } else {
-        removeMessage(loadingId);
+        if (renderUi && loadingId) {
+          removeMessage(loadingId);
+        }
+        return null;
       }
     }
 
   } catch (error) {
     console.error('Error sending message:', error);
-    removeMessage(loadingId);
+    if (renderUi && loadingId) {
+      removeMessage(loadingId);
+    }
+    if (renderUi) {
     appendMessage('assistant', `❌ Error: ${error.message}`, false, 'error');
     bootstrapAlert({
       color: "danger",
       title: "LLM Error",
       body: error.message
     });
+    }
+    return null;
   }
 }
 
 /**
  * Execute tool calls and send results back to LLM
  */
-async function executeToolCalls(toolCalls) {
+async function executeToolCalls(toolCalls, options = {}) {
+  const { renderUi = true, history = conversationHistory } = options;
   const toolResults = [];
 
   for (const toolCall of toolCalls) {
@@ -709,10 +734,10 @@ async function executeToolCalls(toolCalls) {
   }
 
   // Add tool results to history
-  conversationHistory.push(...toolResults);
+  history.push(...toolResults);
 
   // Get LLM's final response after tool execution
-  await getContinuationResponse();
+  return await getContinuationResponse();
 }
 
 /**

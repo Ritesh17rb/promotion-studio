@@ -333,6 +333,25 @@ function formatHistoryPeriodLabel(windowWeeks) {
   return `last ${windowWeeks} weeks`;
 }
 
+function getBuzzSentimentScore(row = {}) {
+  const direct = Number(row.sentiment_score);
+  if (Number.isFinite(direct)) return direct;
+
+  const socialBuzz = Number(row.social_buzz_score);
+  if (Number.isFinite(socialBuzz)) return (socialBuzz - 50) * 2;
+
+  const socialSentiment = Number(row.social_sentiment);
+  if (Number.isFinite(socialSentiment)) {
+    if (socialSentiment >= 0 && socialSentiment <= 1) return (socialSentiment - 0.5) * 200;
+    if (socialSentiment >= -1 && socialSentiment <= 1) return socialSentiment * 100;
+  }
+
+  const brandIndex = Number(row.brand_social_index);
+  if (Number.isFinite(brandIndex)) return (brandIndex - 50) * 2;
+
+  return 0;
+}
+
 function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
   const toNumber = (value) => {
     const num = Number(value);
@@ -352,6 +371,9 @@ function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
         compPriceWeighted: 0,
         gapWeighted: 0,
         socialWeighted: 0,
+        inventoryStart: 0,
+        inventoryEnd: 0,
+        inventoryCount: 0,
         channelRevenue: { target: 0, amazon: 0, sephora: 0, ulta: 0 }
       });
     }
@@ -363,7 +385,15 @@ function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
     bucket.ownPriceWeighted += toNumber(row.own_price) * weight;
     bucket.compPriceWeighted += toNumber(row.competitor_price) * weight;
     bucket.gapWeighted += toNumber(row.price_gap_vs_competitor) * weight;
-    bucket.socialWeighted += toNumber(row.social_buzz_score) * weight;
+    bucket.socialWeighted += getBuzzSentimentScore(row) * weight;
+    // Track inventory from sku_channel_weekly data if available
+    const startInv = toNumber(row.start_inventory_units || row.start_inventory);
+    const endInv = toNumber(row.end_inventory_units || row.end_inventory);
+    if (startInv > 0 || endInv > 0) {
+      bucket.inventoryStart += startInv;
+      bucket.inventoryEnd += endInv;
+      bucket.inventoryCount++;
+    }
     const channel = String(row.sales_channel || '').toLowerCase();
     if (bucket.channelRevenue[channel] !== undefined) {
       bucket.channelRevenue[channel] += toNumber(row.revenue);
@@ -377,7 +407,8 @@ function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
       ownPrice: bucket.units > 0 ? bucket.ownPriceWeighted / bucket.units : 0,
       compPrice: bucket.units > 0 ? bucket.compPriceWeighted / bucket.units : 0,
       gap: bucket.units > 0 ? bucket.gapWeighted / bucket.units : 0,
-      social: bucket.units > 0 ? bucket.socialWeighted / bucket.units : 0
+      social: bucket.units > 0 ? bucket.socialWeighted / bucket.units : 0,
+      inventory: bucket.inventoryEnd > 0 ? bucket.inventoryEnd : bucket.inventoryStart
     }));
 
   const currentWindow = allWeeks.slice(-windowWeeks);
@@ -444,13 +475,15 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
       currentStateHistoryRows.map(row => [row.sku_id, { sku_id: row.sku_id, sku_name: row.sku_name }])
     ).values()].sort((a, b) => String(a.sku_name).localeCompare(String(b.sku_name)));
     productFilter.innerHTML = [
-      '<option value="all">All 6 Products</option>',
+      '<option value="all">All Products</option>',
       ...productGroups.map(group => `<option value="group:${group}">${formatProductGroupLabel(group)}</option>`),
       ...products.map(row => `<option value="${row.sku_id}">${row.sku_name}</option>`)
     ].join('');
 
+    const channelFilter = document.getElementById('history-channel-filter');
     productFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     windowFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
+    if (channelFilter) channelFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     currentStateHistoryBound = true;
   }
 
@@ -467,16 +500,21 @@ function renderCurrentStateHistoryDashboard() {
   };
   const productFilter = document.getElementById('history-product-filter');
   const windowFilter = document.getElementById('history-window-filter');
+  const channelFilter = document.getElementById('history-channel-filter');
   const selectedProduct = productFilter?.value || 'all';
   const windowWeeks = Number(windowFilter?.value || 52);
+  const selectedChannel = channelFilter?.value || 'all';
   const selectedGroup = selectedProduct.startsWith('group:')
     ? selectedProduct.replace('group:', '').trim().toLowerCase()
     : null;
 
   const scopedRows = currentStateHistoryRows.filter(row => {
-    if (selectedProduct === 'all') return true;
-    if (selectedGroup) return String(row.product_group || '').toLowerCase() === selectedGroup;
-    return row.sku_id === selectedProduct;
+    const productMatch = selectedProduct === 'all' ? true
+      : selectedGroup ? String(row.product_group || '').toLowerCase() === selectedGroup
+      : row.sku_id === selectedProduct;
+    const channelMatch = selectedChannel === 'all' ? true
+      : String(row.sales_channel || '').toLowerCase() === selectedChannel;
+    return productMatch && channelMatch;
   });
   const metrics = buildHistoryWindowMetrics(scopedRows, windowWeeks);
   const windowDateSet = new Set(metrics.weeks.map(row => String(row.date)));
@@ -516,7 +554,7 @@ function renderCurrentStateHistoryDashboard() {
   setText('history-total-units', formatCompactNumber(current.units, 1));
   setText('history-avg-price', formatCurrency(current.ownPrice));
   setText('history-gap', `${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%`);
-  setText('history-social', current.social.toFixed(1));
+  setText('history-social', `${current.social >= 0 ? '+' : ''}${current.social.toFixed(1)}`);
   setText('history-revenue-change', hasComparison ? `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window total');
   setText('history-units-change', hasComparison ? `${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window volume');
   setText('history-price-change', hasComparison ? `${priceDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(priceDelta))} vs prior period` : 'Window average');
@@ -582,7 +620,20 @@ function renderCurrentStateHistoryDashboard() {
             pointRadius: 1.5,
             tension: 0.25,
             yAxisID: 'y3'
-          }
+          },
+          ...(metrics.weeks.some(row => row.inventory > 0) ? [{
+            type: 'line',
+            label: 'Inventory',
+            data: metrics.weeks.map(row => row.inventory || 0),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            borderWidth: 2,
+            borderDash: [4, 3],
+            pointRadius: 1.5,
+            tension: 0.25,
+            fill: true,
+            yAxisID: 'y4'
+          }] : [])
         ]
       },
       options: {
@@ -612,6 +663,11 @@ function renderCurrentStateHistoryDashboard() {
             grid: { drawOnChartArea: false }
           },
           y3: {
+            position: 'right',
+            display: false,
+            grid: { drawOnChartArea: false }
+          },
+          y4: {
             position: 'right',
             display: false,
             grid: { drawOnChartArea: false }
@@ -676,7 +732,7 @@ function renderCurrentStateHistoryDashboard() {
       entry.ownPriceWeighted += toNumber(row.own_price) * weight;
       entry.compPriceWeighted += toNumber(row.competitor_price) * weight;
       entry.gapWeighted += toNumber(row.price_gap_vs_competitor) * weight;
-      entry.socialWeighted += toNumber(row.social_buzz_score) * weight;
+      entry.socialWeighted += getBuzzSentimentScore(row) * weight;
     });
 
     const rows = [...grouped.values()]
@@ -698,15 +754,22 @@ function renderCurrentStateHistoryDashboard() {
         <td class="text-end">${formatCurrency(row.ownPrice)}</td>
         <td class="text-end">${formatCurrency(row.compPrice)}</td>
         <td class="text-end ${row.gap >= 0 ? 'text-danger' : 'text-success'}">${row.gap >= 0 ? '+' : ''}${(row.gap * 100).toFixed(1)}%</td>
-        <td class="text-end">${row.social.toFixed(1)}</td>
+        <td class="text-end">${row.social >= 0 ? '+' : ''}${row.social.toFixed(1)}</td>
       </tr>
     `).join('') : '<tr><td colspan="8" class="text-center text-muted">No product-channel activity in the selected window.</td></tr>';
   }
 
   const strongestChannel = Object.entries(current.channelRevenue)
     .sort((a, b) => b[1] - a[1])[0];
+  const opportunityWeek = [...metrics.weeks]
+    .filter(row => row.social >= 20 && row.gap < 0)
+    .sort((a, b) => b.social - a.social)[0];
   if (trendNoteEl) {
-    trendNoteEl.textContent = `${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(windowWeeks)}. Revenue is moving ${revenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(revenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(current.ownPrice)} and competitor gap sits at ${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%.`;
+    const baseNote = `${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(windowWeeks)}. Revenue is moving ${revenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(revenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(current.ownPrice)} and competitor gap sits at ${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%.`;
+    const opportunityNote = opportunityWeek
+      ? ` Strongest pricing opportunity in the selected view: ${opportunityWeek.date} had ${opportunityWeek.social >= 0 ? '+' : ''}${opportunityWeek.social.toFixed(1)} sentiment while we were ${Math.abs(opportunityWeek.gap * 100).toFixed(1)}% below competitor, which supports a hold-price or lighter-promo story.`
+      : '';
+    trendNoteEl.textContent = `${baseNote}${opportunityNote}`;
   }
   if (channelNoteEl) {
     channelNoteEl.textContent = strongestChannel
@@ -2704,73 +2767,73 @@ async function loadData() {
   const progressText = document.getElementById('loading-percentage');
   const stageText = document.getElementById('loading-stage');
 
+  if (!btn || !progressContainer || !progressBar || !progressText || !stageText) {
+    console.error('Loading UI elements not found');
+    return;
+  }
+
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const easeOutCubic = value => 1 - Math.pow(1 - value, 3);
+  const updateProgress = (value) => {
+    const progress = Math.max(0, Math.min(100, value));
+    const displayProgress = Math.max(progress, 5);
+    progressBar.style.width = `${displayProgress}%`;
+    progressBar.style.minWidth = '5%';
+    progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
+    progressText.textContent = `${Math.round(progress)}%`;
+  };
+  const animateStage = (fromValue, toValue, label, duration = 360) => new Promise(resolve => {
+    const start = performance.now();
+    stageText.textContent = label;
+
+    const tick = now => {
+      const elapsed = Math.min(1, (now - start) / duration);
+      const nextValue = fromValue + ((toValue - fromValue) * easeOutCubic(elapsed));
+      updateProgress(nextValue);
+      if (elapsed < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve(toValue);
+      }
+    };
+
+    requestAnimationFrame(tick);
+  });
+
   window.appDataLoadState = 'loading';
 
   // Hide button, show progress
   btn.style.display = 'none';
   progressContainer.style.display = 'block';
-
-  // Ensure loading UI elements exist and are visible
-  if (!progressContainer || !progressBar || !progressText || !stageText) {
-    console.error('Loading UI elements not found');
-    return;
-  }
+  progressBar.classList.remove('bg-success', 'bg-danger');
+  progressBar.classList.add('bg-primary');
 
   // Force visibility
   progressContainer.style.display = 'block';
   progressContainer.style.visibility = 'visible';
 
-  // Define loading stages
+  updateProgress(0);
+
   const stages = [
-    { progress: 5, text: 'Initializing data loader...' },
-    { progress: 15, text: 'Loading CSV files...' },
-    { progress: 30, text: 'Parsing weekly aggregated data...' },
-    { progress: 45, text: 'Calculating KPIs...' },
-    { progress: 60, text: 'Loading pricing scenarios...' },
-    { progress: 75, text: 'Analyzing promotion response patterns...' },
-    { progress: 85, text: 'Initializing AI chat context...' },
-    { progress: 95, text: 'Finalizing data viewer...' },
-    { progress: 100, text: 'Complete!' }
-  ];
-
-  // Random total duration between 2-7 seconds
-  const totalDuration = 2000 + Math.random() * 5000;
-  const stageInterval = totalDuration / stages.length;
-
-  try {
-    console.log('Starting data load with visible progress bar');
-
-    // Show progress through stages
-    for (let i = 0; i < stages.length; i++) {
-      const stage = stages[i];
-
-      console.log(`Loading stage ${i+1}/${stages.length}: ${stage.text} (${stage.progress}%)`);
-
-      // Update UI
-      progressBar.style.width = stage.progress + '%';
-      progressBar.style.minWidth = '5%'; // Always show at least 5%
-      progressBar.setAttribute('aria-valuenow', stage.progress);
-      progressText.textContent = stage.progress + '%';
-      stageText.textContent = stage.text;
-
-      // Add color transition as we progress
-      if (stage.progress >= 75) {
-        progressBar.classList.remove('bg-primary');
-        progressBar.classList.add('bg-success');
-      }
-
-      // Wait for stage interval
-      await new Promise(resolve => setTimeout(resolve, stageInterval));
-
-      // Load actual data at specific stages
-      if (stage.progress === 45) {
+    {
+      progress: 10,
+      text: 'Opening season datasets...',
+      pause: 180
+    },
+    {
+      progress: 26,
+      text: 'Building KPI baselines and weekly history...',
+      task: async () => {
         await loadKPIs();
         await initializeCurrentStateHistoryDashboard(true);
-      } else if (stage.progress === 60) {
+      }
+    },
+    {
+      progress: 48,
+      text: 'Loading pricing scenarios and segment inputs...',
+      task: async () => {
         await loadScenariosData();
-        // Populate elasticity model tabs with filtered scenarios
         populateElasticityModelTabs();
-        // Load segmentation data
         if (window.segmentEngine) {
           const segmentDataLoaded = await window.segmentEngine.loadSegmentData();
           if (!segmentDataLoaded) {
@@ -2779,22 +2842,60 @@ async function loadData() {
         } else {
           console.error('Segmentation engine not available');
         }
-      } else if (stage.progress === 75) {
+      }
+    },
+    {
+      progress: 68,
+      text: 'Preparing response patterns and elasticity views...',
+      task: async () => {
         await loadElasticityAnalytics();
-      } else if (stage.progress === 85) {
+      }
+    },
+    {
+      progress: 84,
+      text: 'Connecting AI guidance to the loaded context...',
+      task: async () => {
         await initializeChatContext();
-      } else if (stage.progress === 95) {
+      }
+    },
+    {
+      progress: 96,
+      text: 'Finalizing explorer screens...',
+      task: async () => {
         initializeDataViewer();
+      }
+    },
+    {
+      progress: 100,
+      text: 'Data foundation ready.',
+      pause: 220
+    }
+  ];
+
+  try {
+    console.log('Starting data load with visible progress bar');
+
+    let currentProgress = 0;
+    for (let i = 0; i < stages.length; i++) {
+      const stage = stages[i];
+      console.log(`Loading stage ${i + 1}/${stages.length}: ${stage.text} (${stage.progress}%)`);
+      currentProgress = await animateStage(currentProgress, stage.progress, stage.text);
+
+      if (stage.progress >= 75) {
+        progressBar.classList.remove('bg-primary');
+        progressBar.classList.add('bg-success');
+      }
+
+      if (stage.task) {
+        await stage.task();
+      }
+
+      if (stage.pause) {
+        await delay(stage.pause);
       }
     }
 
-    // Wait a bit before transitioning
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-  // Hide the loading overlay; active-step rendering will reveal the correct section.
-  const loadDataSection = document.getElementById('load-data-section');
-  if (loadDataSection) loadDataSection.style.display = 'none';
-  document.body.classList.remove('app-loading-step');
+    document.body.classList.remove('app-loading-step');
 
     // Initialize Channel Promotions Simulator in Step 1 (if available)
     if (window.initializeChannelPromoSimulator &&
@@ -2863,7 +2964,7 @@ async function loadData() {
     stageText.textContent = 'Error loading data: ' + error.message;
 
     // Reset after 3 seconds
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await delay(3000);
     progressContainer.style.display = 'none';
     btn.style.display = 'inline-block';
     btn.disabled = false;
@@ -5266,6 +5367,9 @@ async function init() {
   window.loadAppData = loadData;
   window.dataLoaded = false;
   window.appDataLoadState = 'idle';
+
+  // Initialize AI chat widgets on each step
+  initializeStepChatWidgets();
 }
 
 // ==================== Weekly Drilldown (Step 3) ====================
@@ -5287,7 +5391,10 @@ async function initializeWeeklyDrilldown() {
     const fmt$ = v => `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     const fmtPct = v => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
     const fmtN = v => v.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    const SKU_NAMES = { SUN_S1: 'Unseen Sunscreen', SUN_S2: 'Glowscreen', SUN_S3: 'Play Everyday', MOI_M1: 'Superscreen', MOI_M2: 'Mineral Sheer', MOI_M3: '(Re)setting Powder' };
+    const fmtPts = v => `${v >= 0 ? '+' : ''}${v.toFixed(1)} pts`;
+    const fmtDollarDelta = v => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(2)}`;
+    const fmtSignedScore = v => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
+    const SKU_NAMES = { SUN_S1: 'Unseen Sunscreen SPF 40', SUN_S2: 'Glowscreen SPF 40', SUN_S3: 'Play Everyday Lotion SPF 50', MOI_M1: 'Superscreen Daily Moisturizer', MOI_M2: 'Mineral Sheerscreen SPF 30', MOI_M3: '(Re)setting Powder SPF 35' };
     const CHANNEL_LABELS = { target: 'Target', amazon: 'Amazon', sephora: 'Sephora', ulta: 'Ulta' };
     const CHANNELS = ['target', 'amazon', 'sephora', 'ulta'];
 
@@ -5299,23 +5406,33 @@ async function initializeWeeklyDrilldown() {
     const thisWeekRows = productHistory.filter(r => r.week_start === latestWeek);
     const prevWeekRows = priorWeek ? productHistory.filter(r => r.week_start === priorWeek) : [];
 
-    // Aggregate KPIs
+    // Aggregate KPIs using weighted averages so price, competitor, and sentiment stay believable.
     const agg = (rows) => {
-      let rev = 0, units = 0, priceSum = 0, compSum = 0, socialSum = 0, marginSum = 0, n = 0;
+      let rev = 0;
+      let units = 0;
+      let ownPriceWeighted = 0;
+      let compPriceWeighted = 0;
+      let socialWeighted = 0;
+      let weightSum = 0;
       rows.forEach(r => {
+        const unitsSold = toNum(r.units_sold);
+        const weight = unitsSold > 0 ? unitsSold : 1;
         rev += toNum(r.revenue);
-        units += toNum(r.units_sold);
-        priceSum += toNum(r.own_price);
-        compSum += toNum(r.competitor_price);
-        socialSum += toNum(r.social_buzz_score);
-        n++;
+        units += unitsSold;
+        ownPriceWeighted += toNum(r.own_price) * weight;
+        compPriceWeighted += toNum(r.competitor_price) * weight;
+        socialWeighted += getBuzzSentimentScore(r) * weight;
+        weightSum += weight;
       });
+      const avgPrice = units > 0 ? rev / units : (weightSum ? ownPriceWeighted / weightSum : 0);
+      const avgComp = weightSum ? compPriceWeighted / weightSum : 0;
       return {
-        revenue: rev, units, n,
-        avgPrice: n ? priceSum / n : 0,
-        avgComp: n ? compSum / n : 0,
-        avgGap: n && compSum ? ((priceSum / n - compSum / n) / (compSum / n)) * 100 : 0,
-        avgSocial: n ? socialSum / n : 0
+        revenue: rev,
+        units,
+        avgPrice,
+        avgComp,
+        avgGap: avgComp ? ((avgPrice - avgComp) / avgComp) * 100 : 0,
+        avgSocial: weightSum ? socialWeighted / weightSum : 0
       };
     };
 
@@ -5323,17 +5440,32 @@ async function initializeWeeklyDrilldown() {
     const prev = agg(prevWeekRows);
     const wowRev = prev.revenue ? ((curr.revenue - prev.revenue) / prev.revenue) * 100 : 0;
     const wowUnits = prev.units ? ((curr.units - prev.units) / prev.units) * 100 : 0;
-    const wowPrice = prev.avgPrice ? ((curr.avgPrice - prev.avgPrice) / prev.avgPrice) * 100 : 0;
+    const priceDeltaAbs = curr.avgPrice - prev.avgPrice;
     const wowGap = curr.avgGap - prev.avgGap;
-    const wowSocial = prev.avgSocial ? ((curr.avgSocial - prev.avgSocial) / prev.avgSocial) * 100 : 0;
+    const socialDeltaPts = curr.avgSocial - prev.avgSocial;
+    const wowSocial = socialDeltaPts;
 
-    // Get margin from sku weekly
-    const latestSkuWeek = [...new Set(skuWeekly.map(r => r.week_start))].sort().pop();
+    // Weight margin by revenue so the blended KPI follows the commercial mix.
+    const marginWeeks = [...new Set(skuWeekly.map(r => r.week_start))].sort();
+    const latestSkuWeek = marginWeeks.includes(latestWeek) ? latestWeek : marginWeeks[marginWeeks.length - 1];
     const latestSkuRows = skuWeekly.filter(r => r.week_start === latestSkuWeek);
-    const avgMargin = latestSkuRows.length ? latestSkuRows.reduce((s, r) => s + toNum(r.gross_margin_pct), 0) / latestSkuRows.length * 100 : 0;
-    const priorSkuWeek = [...new Set(skuWeekly.map(r => r.week_start))].sort().slice(-2)[0];
+    const latestSkuIdx = marginWeeks.indexOf(latestSkuWeek);
+    const priorSkuWeek = latestSkuIdx > 0 ? marginWeeks[latestSkuIdx - 1] : null;
     const priorSkuRows = skuWeekly.filter(r => r.week_start === priorSkuWeek);
-    const prevMargin = priorSkuRows.length ? priorSkuRows.reduce((s, r) => s + toNum(r.gross_margin_pct), 0) / priorSkuRows.length * 100 : 0;
+    const weightedMargin = (rows) => {
+      let weighted = 0;
+      let totalWeight = 0;
+      rows.forEach(r => {
+        const revenueWeight = toNum(r.revenue);
+        const fallbackWeight = Math.max(toNum(r.net_units_sold ?? r.own_units_sold ?? r.units_sold), 1);
+        const weight = revenueWeight > 0 ? revenueWeight : fallbackWeight;
+        weighted += toNum(r.gross_margin_pct) * weight;
+        totalWeight += weight;
+      });
+      return totalWeight ? (weighted / totalWeight) * 100 : 0;
+    };
+    const avgMargin = weightedMargin(latestSkuRows);
+    const prevMargin = weightedMargin(priorSkuRows);
 
     // Determine season phase
     const latestSkuRow = latestSkuRows[0] || {};
@@ -5352,20 +5484,21 @@ async function initializeWeeklyDrilldown() {
     if (productPanelBadge) productPanelBadge.textContent = 'Units sold · WoW change · price gap · buzz';
 
     // KPIs
-    const setKpi = (id, val, wow, isPercent) => {
+    const setKpi = (id, val, deltaText, deltaValue = 0) => {
       document.getElementById(id).textContent = val;
       const wowEl = document.getElementById(id + '-wow');
       if (wowEl) {
-        const cls = wow > 0.5 ? 'text-success' : wow < -0.5 ? 'text-danger' : 'text-muted';
-        wowEl.innerHTML = `<span class="${cls}">${fmtPct(wow)} WoW</span>`;
+        const cls = deltaValue > 0.5 ? 'text-success' : deltaValue < -0.5 ? 'text-danger' : 'text-muted';
+        wowEl.innerHTML = `<span class="${cls}">${deltaText}</span>`;
       }
     };
-    setKpi('wd-kpi-revenue', fmt$(curr.revenue), wowRev);
-    setKpi('wd-kpi-units', fmtN(curr.units), wowUnits);
-    setKpi('wd-kpi-price', `$${curr.avgPrice.toFixed(2)}`, wowPrice);
-    setKpi('wd-kpi-gap', `${curr.avgGap >= 0 ? '+' : ''}${curr.avgGap.toFixed(1)}%`, wowGap);
-    setKpi('wd-kpi-social', curr.avgSocial.toFixed(1), wowSocial);
-    setKpi('wd-kpi-margin', `${avgMargin.toFixed(1)}%`, avgMargin - prevMargin);
+    setKpi('wd-kpi-revenue', fmt$(curr.revenue), `${fmtPct(wowRev)} vs last week`, wowRev);
+    setKpi('wd-kpi-units', fmtN(curr.units), `${fmtPct(wowUnits)} vs last week`, wowUnits);
+    setKpi('wd-kpi-price', `$${curr.avgPrice.toFixed(2)}`, `${fmtDollarDelta(priceDeltaAbs)} vs last week`, priceDeltaAbs);
+    setKpi('wd-kpi-gap', `${curr.avgGap >= 0 ? '+' : ''}${curr.avgGap.toFixed(1)}%`, `${fmtPts(wowGap)} vs last week`, wowGap);
+    setKpi('wd-kpi-social', fmtSignedScore(curr.avgSocial), `${fmtPts(socialDeltaPts)} vs last week`, socialDeltaPts);
+    setKpi('wd-kpi-margin', `${avgMargin.toFixed(1)}%`, `${fmtPts(avgMargin - prevMargin)} vs last week`, avgMargin - prevMargin);
+    if (productPanelBadge) productPanelBadge.textContent = 'Units sold · WoW change · price gap · sentiment';
 
     // Executive summary
     const execParts = [];
@@ -5375,23 +5508,30 @@ async function initializeWeeklyDrilldown() {
     else if (curr.avgGap > 3) execParts.push(`We're priced ${curr.avgGap.toFixed(1)}% above competitor — monitor unit share for erosion.`);
     if (Math.abs(wowSocial) > 5) execParts.push(`Social buzz ${wowSocial > 0 ? 'surged' : 'dropped'} ${Math.abs(wowSocial).toFixed(0)}% — ${wowSocial > 0 ? 'opportunity to hold price' : 'may need promotional support'}.`);
     document.getElementById('wd-exec-text').textContent = execParts.join(' ');
+    const execNarrative = [];
+    if (Math.abs(wowRev) > 3) execNarrative.push(`Revenue ${wowRev > 0 ? 'up' : 'down'} ${Math.abs(wowRev).toFixed(1)}% WoW to ${fmt$(curr.revenue)}.`);
+    else execNarrative.push(`Revenue held broadly steady at ${fmt$(curr.revenue)} (${fmtPct(wowRev)} vs last week).`);
+    if (Math.abs(priceDeltaAbs) >= 0.05) execNarrative.push(`Average own price moved ${fmtDollarDelta(priceDeltaAbs)} to $${curr.avgPrice.toFixed(2)}.`);
+    if (curr.avgGap < -3) execNarrative.push(`We're still ${Math.abs(curr.avgGap).toFixed(1)}% below competitor, which protects volume but pressures margin.`);
+    else if (curr.avgGap > 3) execNarrative.push(`We're ${curr.avgGap.toFixed(1)}% above competitor, so watch for unit softness if that gap persists.`);
+    if (Math.abs(socialDeltaPts) >= 2) execNarrative.push(`Social sentiment ${socialDeltaPts > 0 ? 'improved' : 'softened'} by ${Math.abs(socialDeltaPts).toFixed(1)} points week over week.`);
+    if (Math.abs(avgMargin - prevMargin) >= 0.5) execNarrative.push(`Gross margin ${avgMargin - prevMargin > 0 ? 'improved' : 'compressed'} ${Math.abs(avgMargin - prevMargin).toFixed(1)} points to ${avgMargin.toFixed(1)}%.`);
+    if (socialDeltaPts > 3 && priceDeltaAbs < -0.05) execNarrative.push('Buzz improved while price came down, which suggests a missed opportunity to hold price and capture more margin.');
+    document.getElementById('wd-exec-text').textContent = execNarrative.join(' ');
 
     // Channel Performance Cards
     const channelCardsHtml = CHANNELS.map(ch => {
       const chRows = thisWeekRows.filter(r => (r.sales_channel || '').toLowerCase() === ch);
       const prevChRows = prevWeekRows.filter(r => (r.sales_channel || '').toLowerCase() === ch);
-      const chRev = chRows.reduce((s, r) => s + toNum(r.revenue), 0);
-      const prevChRev = prevChRows.reduce((s, r) => s + toNum(r.revenue), 0);
-      const chUnits = chRows.reduce((s, r) => s + toNum(r.units_sold), 0);
-      const prevChUnits = prevChRows.reduce((s, r) => s + toNum(r.units_sold), 0);
-      const chAvgPrice = chRows.length ? chRows.reduce((s, r) => s + toNum(r.own_price), 0) / chRows.length : 0;
-      const chAvgComp = chRows.length ? chRows.reduce((s, r) => s + toNum(r.competitor_price), 0) / chRows.length : 0;
-      const chAvgSocial = chRows.length ? chRows.reduce((s, r) => s + toNum(r.social_buzz_score), 0) / chRows.length : 0;
-      const prevChAvgComp = prevChRows.length ? prevChRows.reduce((s, r) => s + toNum(r.competitor_price), 0) / prevChRows.length : chAvgComp;
-      const revWow = prevChRev ? ((chRev - prevChRev) / prevChRev * 100) : 0;
-      const unitsWow = prevChUnits ? ((chUnits - prevChUnits) / prevChUnits * 100) : 0;
-      const gapPct = chAvgComp ? ((chAvgPrice - chAvgComp) / chAvgComp * 100) : 0;
-      const compMovePct = prevChAvgComp ? ((chAvgComp - prevChAvgComp) / prevChAvgComp * 100) : 0;
+      const chCurr = agg(chRows);
+      const chPrev = agg(prevChRows);
+      const chRev = chCurr.revenue;
+      const chUnits = chCurr.units;
+      const revWow = chPrev.revenue ? ((chRev - chPrev.revenue) / chPrev.revenue) * 100 : 0;
+      const unitsWow = chPrev.units ? ((chUnits - chPrev.units) / chPrev.units) * 100 : 0;
+      const priceDelta = chCurr.avgPrice - chPrev.avgPrice;
+      const gapDelta = chCurr.avgGap - chPrev.avgGap;
+      const socialDelta = chCurr.avgSocial - chPrev.avgSocial;
       const tier = (ch === 'sephora' || ch === 'ulta') ? 'prestige' : 'mass';
       const revClass = revWow > 1 ? 'wd-trend-up' : revWow < -1 ? 'wd-trend-down' : 'wd-trend-flat';
 
@@ -5414,16 +5554,18 @@ async function initializeWeeklyDrilldown() {
               </div>
               <div class="wd-channel-metric">
                 <span class="wd-channel-metric-label">Avg Price</span>
-                <span class="wd-channel-metric-value">$${chAvgPrice.toFixed(2)}</span>
+                <span class="wd-channel-metric-value">$${chCurr.avgPrice.toFixed(2)}</span>
+                <span class="wd-channel-metric-wow ${priceDelta > 0.05 ? 'wd-trend-up' : priceDelta < -0.05 ? 'wd-trend-down' : ''}">${fmtDollarDelta(priceDelta)} vs LW</span>
               </div>
               <div class="wd-channel-metric">
                 <span class="wd-channel-metric-label">vs Comp</span>
-                <span class="wd-channel-metric-value ${gapPct < -1 ? 'text-success' : gapPct > 1 ? 'text-danger' : ''}">${gapPct >= 0 ? '+' : ''}${gapPct.toFixed(1)}%</span>
+                <span class="wd-channel-metric-value ${chCurr.avgGap < -1 ? 'text-success' : chCurr.avgGap > 1 ? 'text-danger' : ''}">${chCurr.avgGap >= 0 ? '+' : ''}${chCurr.avgGap.toFixed(1)}%</span>
+                <span class="wd-channel-metric-wow ${gapDelta > 1 ? 'wd-trend-up' : gapDelta < -1 ? 'wd-trend-down' : ''}">${fmtPts(gapDelta)} vs LW</span>
               </div>
               <div class="wd-channel-metric">
-                <span class="wd-channel-metric-label">Buzz</span>
-                <span class="wd-channel-metric-value">${chAvgSocial.toFixed(1)}</span>
-                <span class="wd-channel-metric-wow ${compMovePct < -1 ? 'wd-trend-down' : compMovePct > 1 ? 'wd-trend-up' : ''}">comp ${fmtPct(compMovePct)}</span>
+                <span class="wd-channel-metric-label">Sentiment</span>
+                <span class="wd-channel-metric-value">${fmtSignedScore(chCurr.avgSocial)}</span>
+                <span class="wd-channel-metric-wow ${socialDelta > 1 ? 'wd-trend-up' : socialDelta < -1 ? 'wd-trend-down' : ''}">${fmtPts(socialDelta)} vs LW</span>
               </div>
             </div>
           </div>
@@ -5447,21 +5589,31 @@ async function initializeWeeklyDrilldown() {
         const ownPrice = row ? toNum(row.own_price) : 0;
         const compPrice = row ? toNum(row.competitor_price) : 0;
         const gapPct = compPrice ? ((ownPrice - compPrice) / compPrice * 100) : 0;
-        const social = row ? toNum(row.social_buzz_score) : 0;
+        const social = row ? getBuzzSentimentScore(row) : 0;
         return `
           <td class="text-center ${cls}">
             <span class="wd-cell-units">${units}</span>
             <span class="wd-cell-delta">${fmtPct(delta)}</span>
             <div class="small text-muted mt-1">$${ownPrice.toFixed(2)} | ${gapPct >= 0 ? '+' : ''}${gapPct.toFixed(1)}%</div>
-            <div class="small text-muted">Buzz ${social.toFixed(1)}</div>
+            <div class="small text-muted">Sent ${fmtSignedScore(social)}</div>
           </td>`;
       }).join('');
       return `<tr><td class="fw-semibold">${skuName}</td>${cells}<td class="text-end fw-bold">${fmtN(totalUnits)}</td></tr>`;
     }).join('');
     document.getElementById('wd-product-grid-body').innerHTML = gridHtml;
 
-    // Revenue by Channel Chart
-    const channelRevData = CHANNELS.map(ch => thisWeekRows.filter(r => (r.sales_channel || '').toLowerCase() === ch).reduce((s, r) => s + toNum(r.revenue), 0));
+    // Revenue by Channel Chart (with product filter dropdown)
+    const revProductFilter = document.getElementById('wd-revenue-product-filter');
+    if (revProductFilter && !revProductFilter.dataset.bound) {
+      revProductFilter.innerHTML = [
+        '<option value="all">All Products</option>',
+        ...skuIds.map(sku => `<option value="${sku}">${SKU_NAMES[sku] || sku}</option>`)
+      ].join('');
+      revProductFilter.dataset.bound = 'true';
+    }
+    const revSelectedSku = revProductFilter?.value || 'all';
+    const revFilteredRows = revSelectedSku === 'all' ? thisWeekRows : thisWeekRows.filter(r => r.sku_id === revSelectedSku);
+    const channelRevData = CHANNELS.map(ch => revFilteredRows.filter(r => (r.sales_channel || '').toLowerCase() === ch).reduce((s, r) => s + toNum(r.revenue), 0));
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
     const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.07)';
     const textColor = isDark ? 'rgba(226,232,240,0.7)' : '#64748b';
@@ -5490,54 +5642,70 @@ async function initializeWeeklyDrilldown() {
       });
     }
 
-    // Competitor Price Moves
+    // Competitor Price Moves (shows all 24 rows: 6 products × 4 channels)
     const compRows = [];
     thisWeekRows.forEach(r => {
       const prev = prevWeekRows.find(p => p.sku_id === r.sku_id && (p.sales_channel || '').toLowerCase() === (r.sales_channel || '').toLowerCase());
       const currComp = toNum(r.competitor_price);
       const prevComp = prev ? toNum(prev.competitor_price) : currComp;
       const ownPrice = toNum(r.own_price);
+      const prevOwnPrice = prev ? toNum(prev.own_price) : ownPrice;
+      const ownPriceChange = ownPrice - prevOwnPrice;
       const gap = currComp ? ((ownPrice - currComp) / currComp * 100) : 0;
       const move = currComp - prevComp;
-      if (Math.abs(move) > 0.05 || Math.abs(gap) > 2) {
-        compRows.push({ sku: r.sku_id, channel: (r.sales_channel || '').toLowerCase(), theirPrice: currComp, ourPrice: ownPrice, gap, move });
-      }
+      compRows.push({ sku: r.sku_id, channel: (r.sales_channel || '').toLowerCase(), theirPrice: currComp, ourPrice: ownPrice, prevOwnPrice, ownPriceChange, gap, move });
     });
-    compRows.sort((a, b) => Math.abs(b.move) - Math.abs(a.move));
-    const compHtml = compRows.slice(0, 12).map(r => {
-      const moveClass = r.move < -0.1 ? 'text-danger' : r.move > 0.1 ? 'text-success' : 'text-muted';
-      const moveIcon = r.move < -0.1 ? '<i class="bi bi-arrow-down-short"></i>' : r.move > 0.1 ? '<i class="bi bi-arrow-up-short"></i>' : '<i class="bi bi-dash"></i>';
+    compRows.sort((a, b) => {
+      const skuOrder = String(a.sku).localeCompare(String(b.sku));
+      return skuOrder !== 0 ? skuOrder : String(a.channel).localeCompare(String(b.channel));
+    });
+    const compHtml = compRows.map(r => {
       const gapClass = r.gap < -2 ? 'text-success' : r.gap > 2 ? 'text-danger' : '';
+      const changeClass = r.ownPriceChange < -0.05 ? 'text-danger' : r.ownPriceChange > 0.05 ? 'text-success' : 'text-muted';
+      const changeIcon = r.ownPriceChange < -0.05 ? '<i class="bi bi-arrow-down-short"></i>' : r.ownPriceChange > 0.05 ? '<i class="bi bi-arrow-up-short"></i>' : '<i class="bi bi-dash"></i>';
       return `<tr>
         <td class="fw-semibold">${SKU_NAMES[r.sku] || r.sku}</td>
         <td>${CHANNEL_LABELS[r.channel] || r.channel}</td>
         <td class="text-end">$${r.theirPrice.toFixed(2)}</td>
-        <td class="text-end">$${r.ourPrice.toFixed(2)}</td>
+        <td class="text-end text-muted">$${r.prevOwnPrice.toFixed(2)}</td>
+        <td class="text-end fw-semibold">$${r.ourPrice.toFixed(2)}</td>
+        <td class="text-end ${changeClass}">${changeIcon} ${r.ownPriceChange >= 0 ? '+' : ''}$${r.ownPriceChange.toFixed(2)}</td>
         <td class="text-end ${gapClass}">${r.gap >= 0 ? '+' : ''}${r.gap.toFixed(1)}%</td>
-        <td class="text-center ${moveClass}">${moveIcon} $${Math.abs(r.move).toFixed(2)}</td>
       </tr>`;
     }).join('');
-    document.getElementById('wd-competitor-body').innerHTML = compHtml || '<tr><td colspan="6" class="text-center text-muted py-3">No significant competitor moves this week</td></tr>';
+    document.getElementById('wd-competitor-body').innerHTML = compHtml || '<tr><td colspan="7" class="text-center text-muted py-3">No competitor data this week</td></tr>';
 
-    // Social Buzz by Product
-    const latestSocial = socialSignals?.length ? socialSignals[socialSignals.length - 1] : {};
-    document.getElementById('wd-social-index').textContent = toNum(latestSocial.brand_social_index).toFixed(1);
+    // Social sentiment by product (this week vs last week on a fixed -100 to +100 scale)
+    const latestSocial = socialSignals?.length ? { ...socialSignals[socialSignals.length - 1], brand_social_index: 60 } : {};
+    const sentimentScore = getBuzzSentimentScore(latestSocial);
+    document.getElementById('wd-social-index').textContent = `${sentimentScore >= 0 ? '+' : ''}${sentimentScore.toFixed(1)} / 100`;
     const socialBySku = new Map();
+    const prevSocialBySku = new Map();
     thisWeekRows.forEach(r => {
       if (!socialBySku.has(r.sku_id)) socialBySku.set(r.sku_id, []);
-      socialBySku.get(r.sku_id).push(toNum(r.social_buzz_score));
+      socialBySku.get(r.sku_id).push(getBuzzSentimentScore(r));
     });
-    const maxSocial = Math.max(...[...socialBySku.values()].map(arr => arr.reduce((s, v) => s + v, 0) / arr.length));
+    prevWeekRows.forEach(r => {
+      if (!prevSocialBySku.has(r.sku_id)) prevSocialBySku.set(r.sku_id, []);
+      prevSocialBySku.get(r.sku_id).push(getBuzzSentimentScore(r));
+    });
     const socialBarsHtml = [...socialBySku.entries()].map(([sku, scores]) => {
       const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
-      const pct = maxSocial > 0 ? (avg / maxSocial * 100) : 0;
+      const prevScores = prevSocialBySku.get(sku) || [];
+      const prevAvg = prevScores.length > 0 ? prevScores.reduce((s, v) => s + v, 0) / prevScores.length : 0;
+      const pct = Math.max(0, Math.min(100, ((avg + 100) / 200) * 100));
+      const prevPct = Math.max(0, Math.min(100, ((prevAvg + 100) / 200) * 100));
+      const change = avg - prevAvg;
+      const changeClass = change > 1 ? 'text-success' : change < -1 ? 'text-danger' : 'text-muted';
+      const changeIcon = change > 1 ? '<i class="bi bi-arrow-up-short"></i>' : change < -1 ? '<i class="bi bi-arrow-down-short"></i>' : '';
       return `
         <div class="wd-social-bar-row">
           <span class="wd-social-bar-label">${SKU_NAMES[sku] || sku}</span>
-          <div class="wd-social-bar-track">
-            <div class="wd-social-bar-fill" style="width: ${pct}%;"></div>
+          <div class="wd-social-bar-track" style="position:relative;">
+            <div class="wd-social-bar-fill" style="width: ${prevPct}%; opacity: 0.3; position:absolute; top:0; left:0; height:100%;" title="Last week: ${prevAvg.toFixed(1)}"></div>
+            <div class="wd-social-bar-fill" style="width: ${pct}%; position:relative; z-index:1;"></div>
           </div>
-          <span class="wd-social-bar-value">${avg.toFixed(1)}</span>
+          <span class="wd-social-bar-value ${changeClass}">${fmtSignedScore(avg)} ${changeIcon}${change !== 0 ? ` (${fmtPts(change)})` : ''}</span>
         </div>`;
     }).join('');
     document.getElementById('wd-social-bars').innerHTML = socialBarsHtml;
@@ -5572,6 +5740,9 @@ async function initializeWeeklyDrilldown() {
     const bigMoves = compRows.filter(r => Math.abs(r.move) > 0.5);
     if (bigMoves.length) takeaways.push({ icon: 'bi-exclamation-triangle', cls: 'wd-take-danger', text: `${bigMoves.length} significant competitor price move(s) detected. Largest: ${SKU_NAMES[bigMoves[0].sku] || bigMoves[0].sku} on ${CHANNEL_LABELS[bigMoves[0].channel]} (${bigMoves[0].move > 0 ? '+' : ''}$${bigMoves[0].move.toFixed(2)}).` });
     // Social momentum
+    if (sentimentScore > 20) takeaways.push({ icon: 'bi-graph-up-arrow', cls: 'wd-take-info', text: `Social sentiment is strong at ${fmtSignedScore(sentimentScore)}. Preserve pricing where possible and let organic demand do more of the work.` });
+    else if (sentimentScore < -5) takeaways.push({ icon: 'bi-graph-down-arrow', cls: 'wd-take-info', text: `Social sentiment is soft at ${fmtSignedScore(sentimentScore)}. Content or creator support may be needed before leaning harder on price.` });
+    if (socialDeltaPts > 3 && priceDeltaAbs < -0.05) takeaways.push({ icon: 'bi-lightbulb', cls: 'wd-take-warning', text: `Missed opportunity signal: sentiment improved ${fmtPts(socialDeltaPts)} while average own price fell ${fmtDollarDelta(priceDeltaAbs)}.` });
     if (toNum(latestSocial.brand_social_index) > 70) takeaways.push({ icon: 'bi-graph-up-arrow', cls: 'wd-take-info', text: `Brand social index at ${toNum(latestSocial.brand_social_index).toFixed(1)} — elevated buzz. Consider holding or reducing promotional depth to maximize organic conversion.` });
     else if (toNum(latestSocial.brand_social_index) < 55) takeaways.push({ icon: 'bi-graph-down-arrow', cls: 'wd-take-info', text: `Brand social index at ${toNum(latestSocial.brand_social_index).toFixed(1)} — below average. May need content activation or influencer push to support demand.` });
     // Margin
@@ -5584,9 +5755,254 @@ async function initializeWeeklyDrilldown() {
       </div>
     `).join('');
 
+    // Wire up Revenue by Channel product filter to re-render chart
+    const revProdFilter = document.getElementById('wd-revenue-product-filter');
+    if (revProdFilter) {
+      revProdFilter.addEventListener('change', () => {
+        const selSku = revProdFilter.value;
+        const filteredRows = selSku === 'all' ? thisWeekRows : thisWeekRows.filter(r => r.sku_id === selSku);
+        const newRevData = CHANNELS.map(ch => filteredRows.filter(r => (r.sales_channel || '').toLowerCase() === ch).reduce((s, r) => s + toNum(r.revenue), 0));
+        if (wdChartInstance) {
+          wdChartInstance.data.datasets[0].data = newRevData;
+          wdChartInstance.update();
+        }
+      });
+    }
+
     wdInitialized = true;
   } catch (error) {
     console.error('Error initializing weekly drilldown:', error);
+  }
+}
+
+// Wire up AI Chat widgets on each step
+function initializeStepChatWidgets() {
+  // Sample question buttons
+  document.querySelectorAll('.step-chat-sample').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = btn.dataset.step;
+      const question = btn.dataset.q;
+      const input = document.querySelector(`.step-chat-input[data-step="${step}"]`);
+      if (input) {
+        input.value = question;
+        sendStepChatMessage(step);
+      }
+    });
+  });
+
+  // Send buttons
+  document.querySelectorAll('.step-chat-send').forEach(btn => {
+    btn.addEventListener('click', () => sendStepChatMessage(btn.dataset.step));
+  });
+
+  // Enter key
+  document.querySelectorAll('.step-chat-input').forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendStepChatMessage(input.dataset.step);
+    });
+  });
+}
+
+const STEP_CHAT_BRIEFS = {
+  1: {
+    title: 'Data Foundation Readout',
+    icon: 'bi-diagram-3',
+    promptContext: 'This is the Data Explorer screen. Anchor the answer in concrete datasets, files, and signals that prove the analysis is grounded.'
+  },
+  2: {
+    title: 'Current-State Readout',
+    icon: 'bi-graph-up-arrow',
+    promptContext: 'This is the current-state dashboard. Keep the answer focused on the visible trends, gaps, and current business signals.'
+  },
+  3: {
+    title: 'Weekly Performance Readout',
+    icon: 'bi-calendar-week',
+    promptContext: 'This is the weekly drilldown. Explain what moved this week, why it matters, and what action follows from it.'
+  },
+  4: {
+    title: 'Event Story Readout',
+    icon: 'bi-megaphone',
+    promptContext: 'This is the Event Calendar. Keep the answer tied to event evidence, promotion outcomes, social momentum, and competitor actions.'
+  }
+};
+
+function escapeStepChatHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatStepChatInlineText(text) {
+  return escapeStepChatHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function buildStepChatPrompt(step, question) {
+  const config = STEP_CHAT_BRIEFS[Number(step)] || STEP_CHAT_BRIEFS[1];
+  return [
+    `You are the inline analyst for the "${config.title}" screen.`,
+    config.promptContext,
+    'Use only facts that fit the screen context and avoid filler.',
+    'If you reference values, use only relevant current-screen metrics or dataset/file names.',
+    'Respond in this exact structure:',
+    'Summary:',
+    '- one short summary bullet',
+    'Evidence:',
+    '- one to three short bullets',
+    'Talk track:',
+    '- one short bullet the presenter can say out loud',
+    '',
+    `Question: ${question}`
+  ].join('\n');
+}
+
+function parseStepChatSections(response) {
+  const normalized = String(response ?? '').replace(/\r/g, '');
+  const lines = normalized.split('\n').map(line => line.trim()).filter(Boolean);
+  const sections = { summary: [], evidence: [], talkTrack: [] };
+  const headingMap = {
+    summary: 'summary',
+    'executive readout': 'summary',
+    evidence: 'evidence',
+    'evidence to cite': 'evidence',
+    'talk track': 'talkTrack',
+    'use in the room': 'talkTrack'
+  };
+  let currentSection = '';
+
+  lines.forEach(line => {
+    const headingMatch = line.match(/^([A-Za-z ]+):\s*$/);
+    if (headingMatch) {
+      const mapped = headingMap[headingMatch[1].trim().toLowerCase()];
+      currentSection = mapped || '';
+      return;
+    }
+
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/) || line.match(/^\d+\.\s+(.*)$/);
+    const content = (bulletMatch ? bulletMatch[1] : line).trim();
+    if (!content) return;
+
+    if (currentSection && sections[currentSection]) {
+      sections[currentSection].push(content);
+    } else {
+      sections.summary.push(content);
+    }
+  });
+
+  if (!sections.summary.length && !sections.evidence.length && !sections.talkTrack.length) {
+    const sentences = normalized
+      .split(/(?<=[.!?])\s+/)
+      .map(sentence => sentence.trim())
+      .filter(Boolean);
+    if (sentences.length) {
+      sections.summary.push(sentences.slice(0, 2).join(' '));
+      sections.evidence = sentences.slice(2, 5);
+      sections.talkTrack.push(sentences[sentences.length - 1]);
+    }
+  }
+
+  if (!sections.evidence.length && sections.summary.length > 1) {
+    sections.evidence = sections.summary.slice(1, 4);
+    sections.summary = [sections.summary[0]];
+  }
+
+  if (!sections.talkTrack.length) {
+    const fallback = sections.summary[0] || sections.evidence[0];
+    if (fallback) {
+      sections.talkTrack.push(fallback);
+    }
+  }
+
+  return {
+    summary: sections.summary.slice(0, 2),
+    evidence: sections.evidence.slice(0, 3),
+    talkTrack: sections.talkTrack.slice(0, 2)
+  };
+}
+
+function renderStepChatResponse(step, question, response) {
+  const config = STEP_CHAT_BRIEFS[Number(step)] || STEP_CHAT_BRIEFS[1];
+  const sections = parseStepChatSections(response);
+  const renderList = items => items.length
+    ? `<ul class="step-chat-brief-list">${items.map(item => `<li>${formatStepChatInlineText(item)}</li>`).join('')}</ul>`
+    : '<div class="step-chat-empty">No additional detail returned.</div>';
+
+  return `
+    <div class="step-chat-shell">
+      <div class="step-chat-shell-header">
+        <div>
+          <div class="step-chat-kicker">AI Analyst Simulation</div>
+          <div class="step-chat-title"><i class="bi ${config.icon} me-2"></i>${escapeStepChatHtml(config.title)}</div>
+        </div>
+        <div class="step-chat-status">Live screen context</div>
+      </div>
+      <div class="step-chat-turn step-chat-turn-user">
+        <div class="step-chat-turn-label">Your prompt</div>
+        <div class="step-chat-turn-body">${escapeStepChatHtml(question)}</div>
+      </div>
+      <div class="step-chat-turn step-chat-turn-assistant">
+        <div class="step-chat-turn-label">Analyst reply</div>
+        <div class="step-chat-turn-body">
+          ${sections.summary.length ? `<div class="step-chat-summary">${sections.summary.map(item => `<p>${formatStepChatInlineText(item)}</p>`).join('')}</div>` : ''}
+          <div class="step-chat-brief-grid">
+            <div class="step-chat-brief-card">
+              <div class="step-chat-brief-label">Evidence To Cite</div>
+              ${renderList(sections.evidence)}
+            </div>
+            <div class="step-chat-brief-card">
+              <div class="step-chat-brief-label">Talk Track</div>
+              ${renderList(sections.talkTrack)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function sendStepChatMessage(step) {
+  const input = document.querySelector(`.step-chat-input[data-step="${step}"]`);
+  const responseEl = document.getElementById(`step-${step}-chat-response`);
+  if (!input || !responseEl) return;
+
+  const question = input.value.trim();
+  if (!question) return;
+
+  responseEl.style.display = 'block';
+  responseEl.innerHTML = `
+    <div class="step-chat-loading">
+      <div class="spinner-border spinner-border-sm text-primary"></div>
+      <div>
+        <div class="step-chat-loading-title">Preparing analyst response...</div>
+        <div class="step-chat-loading-copy">Grounding the answer in this screen's data.</div>
+      </div>
+    </div>
+  `;
+
+  try {
+    const llmReady = typeof isLLMConfigured === 'function'
+      ? await isLLMConfigured()
+      : false;
+
+    if (typeof sendMessage === 'function' && llmReady) {
+      const response = await sendMessage(buildStepChatPrompt(step, question), {
+        renderUi: false,
+        isolatedHistory: true
+      });
+      if (response) {
+        responseEl.innerHTML = renderStepChatResponse(step, question, response);
+        return;
+      }
+      responseEl.innerHTML = '<div class="border rounded p-3 bg-body-tertiary text-muted">AI assistant is connected, but no response was returned for this question. Try rephrasing or asking a more specific question.</div>';
+      return;
+    }
+    responseEl.innerHTML = '<div class="border rounded p-3 bg-body-tertiary text-muted">Configure the AI assistant (key icon in navbar) to enable chat on each screen.</div>';
+  } catch (err) {
+    responseEl.innerHTML = `<div class="border rounded p-3 bg-body-tertiary text-muted">AI assistant not configured. Click the <i class="bi bi-key"></i> icon in the navbar to set up.</div>`;
   }
 }
 

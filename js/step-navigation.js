@@ -207,16 +207,20 @@ function showStepContent(step) {
       }
 
       if (step1AppDataState === 'loaded') {
-        if (step1LoadSection) step1LoadSection.style.display = 'none';
+        if (step1LoadSection) {
+          step1LoadSection.style.display = '';
+          step1LoadSection.style.visibility = '';
+          step1LoadSection.style.opacity = '';
+        }
         if (dataViewerSection) dataViewerSection.style.display = 'block';
         break;
       }
 
       if (dataViewerSection) dataViewerSection.style.display = 'none';
       if (step1LoadSection) {
-        step1LoadSection.style.display = 'block';
-        step1LoadSection.style.visibility = 'visible';
-        step1LoadSection.style.opacity = '1';
+        step1LoadSection.style.display = '';
+        step1LoadSection.style.visibility = '';
+        step1LoadSection.style.opacity = '';
       }
       document.body.classList.add('app-loading-step');
       if (step1LoadingProgress) {
