@@ -14,6 +14,12 @@ import {
   loadCompetitorPriceFeed,
   loadProductChannelHistory
 } from './data-loader.js';
+import {
+  loadProductCatalog,
+  buildProductCatalogMap,
+  buildProductOptions,
+  getCatalogLabel
+} from './product-catalog.js';
 import { formatCurrency, formatPercent, formatNumber } from './utils.js';
 
 // Global state
@@ -23,6 +29,8 @@ let validationWindows = {};
 let skuCatalog = new Map();
 let competitorFeed = [];
 let productHistoryRows = [];
+let productCatalog = [];
+let productCatalogMap = new Map();
 let activeFilters = {
   priceChange: true,
   competitorPriceChange: true,
@@ -49,16 +57,6 @@ const CHANNEL_LABELS = {
   amazon: 'Amazon',
   dtc: 'DTC'
 };
-
-const SKU_PRICE_FILTER_OPTIONS = [
-  { value: 'all', label: 'All Products' },
-  { value: 'SUN_S1', label: 'SUN_S1 - Unseen Sunscreen SPF 40' },
-  { value: 'SUN_S2', label: 'SUN_S2 - Glowscreen SPF 40' },
-  { value: 'SUN_S3', label: 'SUN_S3 - Play Everyday Lotion SPF 50' },
-  { value: 'MOI_M1', label: 'MOI_M1 - Superscreen Daily Moisturizer' },
-  { value: 'MOI_M2', label: 'MOI_M2 - Mineral Sheerscreen SPF 30' },
-  { value: 'MOI_M3', label: 'MOI_M3 - (Re)setting Powder SPF 35' }
-];
 
 const STORY_PHASE_LABELS = {
   baseline: 'Historical Baseline',
@@ -562,6 +560,8 @@ function hydrateSkuCatalog(rows) {
 function getSkuName(skuId, fallbackName = null) {
   const normalized = normalizeSkuId(skuId);
   if (fallbackName) return String(fallbackName);
+  const catalogName = getCatalogLabel(productCatalogMap, normalized, '');
+  if (catalogName) return catalogName;
   if (skuCatalog.has(normalized)) return skuCatalog.get(normalized).sku_name;
   return normalized || '-';
 }
@@ -1056,14 +1056,16 @@ export async function initializeEventCalendar() {
   try {
     // Load all data
     let skuWeeklyData = [];
-    [allEvents, promoMetadata, validationWindows, skuWeeklyData, competitorFeed, productHistoryRows] = await Promise.all([
+    [allEvents, promoMetadata, validationWindows, skuWeeklyData, competitorFeed, productHistoryRows, productCatalog] = await Promise.all([
       loadEventCalendar(),
       loadPromoMetadata(),
       loadValidationWindows(),
       loadSkuWeeklyData(),
       loadCompetitorPriceFeed(),
-      loadProductChannelHistory()
+      loadProductChannelHistory(),
+      loadProductCatalog()
     ]);
+    productCatalogMap = buildProductCatalogMap(productCatalog);
     allEvents = augmentEvents(allEvents);
     hydrateSkuCatalog(skuWeeklyData || []);
 
@@ -1246,7 +1248,7 @@ async function renderMarketSignalsDashboard() {
       skuFilterContainer.innerHTML = `
         <label for="sku-price-filter" class="form-label mb-0 small fw-semibold text-muted">Filter by Product/SKU:</label>
         <select id="sku-price-filter" class="form-select form-select-sm" style="max-width: 320px;">
-          ${SKU_PRICE_FILTER_OPTIONS.map(opt => `<option value="${opt.value}"${opt.value === activeSkuPriceFilter ? ' selected' : ''}>${opt.label}</option>`).join('')}
+          ${buildProductOptions(productCatalog, { includeAll: true, includeSku: true }).map(opt => `<option value="${opt.value}"${opt.value === activeSkuPriceFilter ? ' selected' : ''}>${opt.label}</option>`).join('')}
         </select>
       `;
       compChartParent.insertBefore(skuFilterContainer, compCanvas);
@@ -1850,7 +1852,7 @@ function renderGuidedStorylineExamples(filteredEvents = []) {
   ) || findPreferredStoryEvent(event => event.event_type === 'Tentpole', visibleEvents);
 
   const competitorPromo = getPromo('PROMO_MEMORIAL_DAY_MASS_DEFENSE_2026');
-  const socialPromo = getPromo('PROMO_TIKTOK_SPORT_GEL_HOLD_2026');
+  const socialPromo = getPromo('PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026');
   const prestigePromo = getPromo('PROMO_PRESTIGE_GLOW_WEEKEND_2026');
   const weakPromo = getPromo('PROMO_WINTER_HYDRATION_PUSH_2025');
 
@@ -1887,7 +1889,7 @@ function renderGuidedStorylineExamples(filteredEvents = []) {
     title: 'When social momentum is high, stay shallow on discount',
     summary: 'This is the best example of the “buzz is up, don’t give away margin” storyline. Premium SPF held with a light 5% promo because creator momentum did the demand work.',
     implication: 'Use this to explain the missed-opportunity logic elsewhere in the flow.'
-  }, socialPromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_TIKTOK_SPORT_GEL_HOLD_2026', visibleEvents) || socialEvent);
+  }, socialPromo, findPreferredStoryEvent(event => event.promo_id === 'PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026', visibleEvents) || socialEvent);
 
   pushPromoStory({
     badge: 'Selective Promo',

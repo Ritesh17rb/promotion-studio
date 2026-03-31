@@ -49,21 +49,21 @@
     "sku_results": [
       {
         "sku_id": "MOI_M1",
-        "sku_name": "Hydra Daily Lotion",
+        "sku_name": "Superscreen Hydrating Daily Cream SPF 40",
         "sales_uplift_pct": 14.9,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M2",
-        "sku_name": "Barrier Repair Cream",
+        "sku_name": "Mineral Sheerscreen SPF 30",
         "sales_uplift_pct": 11.2,
         "channel": "amazon",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M3",
-        "sku_name": "Night Recovery Balm",
+        "sku_name": "(Re)setting 100% Mineral Powder SPF 35",
         "sales_uplift_pct": -1.8,
         "channel": "ulta",
         "outcome": "down"
@@ -148,21 +148,21 @@
     "sku_results": [
       {
         "sku_id": "SUN_S1",
-        "sku_name": "Daily Shield SPF 40",
+        "sku_name": "Unseen Sunscreen SPF 50",
         "sales_uplift_pct": 12.6,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S2",
-        "sku_name": "Invisible Mist SPF 50",
+        "sku_name": "Glowscreen SPF 40",
         "sales_uplift_pct": 9.8,
         "channel": "amazon",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M1",
-        "sku_name": "Hydra Daily Lotion",
+        "sku_name": "Superscreen Hydrating Daily Cream SPF 40",
         "sales_uplift_pct": 5.4,
         "channel": "target",
         "outcome": "up"
@@ -245,35 +245,35 @@
     "sku_results": [
       {
         "sku_id": "SUN_S1",
-        "sku_name": "Daily Shield SPF 40",
+        "sku_name": "Unseen Sunscreen SPF 50",
         "sales_uplift_pct": 23.4,
         "channel": "amazon",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S2",
-        "sku_name": "Invisible Mist SPF 50",
+        "sku_name": "Glowscreen SPF 40",
         "sales_uplift_pct": 16.1,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M1",
-        "sku_name": "Hydra Daily Lotion",
+        "sku_name": "Superscreen Hydrating Daily Cream SPF 40",
         "sales_uplift_pct": 11.8,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M2",
-        "sku_name": "Barrier Repair Cream",
+        "sku_name": "Mineral Sheerscreen SPF 30",
         "sales_uplift_pct": -2.9,
         "channel": "amazon",
         "outcome": "down"
       },
       {
         "sku_id": "MOI_M3",
-        "sku_name": "Night Recovery Balm",
+        "sku_name": "(Re)setting 100% Mineral Powder SPF 35",
         "sales_uplift_pct": -5.6,
         "channel": "target",
         "outcome": "down"
@@ -309,9 +309,9 @@
       "ltv_cac_ratio": 2.01
     }
   },
-  "PROMO_TIKTOK_SPORT_GEL_HOLD_2026": {
-    "promo_id": "PROMO_TIKTOK_SPORT_GEL_HOLD_2026",
-    "campaign_name": "TikTok Sport Gel Momentum Hold",
+  "PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026": {
+    "promo_id": "PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026",
+    "campaign_name": "TikTok SPF Momentum Hold",
     "story_phase": "pivot",
     "story_summary": "A social spike reduced effective elasticity for premium SPF, so we shifted to selective pricing and creator-led messaging.",
     "start_date": "2026-03-16",
@@ -357,21 +357,21 @@
     "sku_results": [
       {
         "sku_id": "SUN_S3",
-        "sku_name": "Sport Gel SPF 60",
+        "sku_name": "Every. Single. Face. Watery Lotion SPF 50",
         "sales_uplift_pct": 15.7,
         "channel": "sephora",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S2",
-        "sku_name": "Invisible Mist SPF 50",
+        "sku_name": "Glowscreen SPF 40",
         "sales_uplift_pct": 7.9,
         "channel": "ulta",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M2",
-        "sku_name": "Barrier Repair Cream",
+        "sku_name": "Mineral Sheerscreen SPF 30",
         "sales_uplift_pct": 3.1,
         "channel": "ulta",
         "outcome": "up"
@@ -455,21 +455,21 @@
     "sku_results": [
       {
         "sku_id": "SUN_S2",
-        "sku_name": "Invisible Mist SPF 50",
+        "sku_name": "Glowscreen SPF 40",
         "sales_uplift_pct": 11.4,
         "channel": "sephora",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S3",
-        "sku_name": "Sport Gel SPF 60",
+        "sku_name": "Every. Single. Face. Watery Lotion SPF 50",
         "sales_uplift_pct": 8.1,
         "channel": "ulta",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M2",
-        "sku_name": "Barrier Repair Cream",
+        "sku_name": "Mineral Sheerscreen SPF 30",
         "sales_uplift_pct": 4.7,
         "channel": "ulta",
         "outcome": "up"
@@ -557,35 +557,35 @@
     "sku_results": [
       {
         "sku_id": "SUN_S1",
-        "sku_name": "Daily Shield SPF 40",
+        "sku_name": "Unseen Sunscreen SPF 50",
         "sales_uplift_pct": 18.2,
         "channel": "amazon",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S2",
-        "sku_name": "Invisible Mist SPF 50",
+        "sku_name": "Glowscreen SPF 40",
         "sales_uplift_pct": 16.5,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "SUN_S3",
-        "sku_name": "Sport Gel SPF 60",
+        "sku_name": "Every. Single. Face. Watery Lotion SPF 50",
         "sales_uplift_pct": 11.4,
         "channel": "sephora",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M1",
-        "sku_name": "Hydra Daily Lotion",
+        "sku_name": "Superscreen Hydrating Daily Cream SPF 40",
         "sales_uplift_pct": 8.9,
         "channel": "target",
         "outcome": "up"
       },
       {
         "sku_id": "MOI_M2",
-        "sku_name": "Barrier Repair Cream",
+        "sku_name": "Mineral Sheerscreen SPF 30",
         "sales_uplift_pct": 5.8,
         "channel": "ulta",
         "outcome": "up"

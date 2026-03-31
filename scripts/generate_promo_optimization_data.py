@@ -173,13 +173,106 @@ class SkuDef:
 
 
 SKUS = [
-    SkuDef("SUN_S1", "Unseen Sunscreen SPF 40", "sunscreen", 34.0, 38.0, -2.35, -1.55, 145, 110, 3200, 2400),
+    SkuDef("SUN_S1", "Unseen Sunscreen SPF 50", "sunscreen", 34.0, 38.0, -2.35, -1.55, 145, 110, 3200, 2400),
     SkuDef("SUN_S2", "Glowscreen SPF 40", "sunscreen", 36.0, 38.0, -2.15, -1.42, 125, 95, 2800, 2100),
-    SkuDef("SUN_S3", "Play Everyday Lotion SPF 50", "sunscreen", 22.0, 32.0, -1.95, -1.25, 185, 105, 4200, 2000),
-    SkuDef("MOI_M1", "Superscreen Daily Moisturizer", "moisturizer", 28.0, 38.0, -2.1, -1.4, 110, 85, 2600, 1900),
-    SkuDef("MOI_M2", "Mineral Sheerscreen SPF 30", "moisturizer", 32.0, 38.0, -1.92, -1.3, 90, 75, 2200, 1700),
-    SkuDef("MOI_M3", "(Re)setting Powder SPF 35", "moisturizer", 26.0, 34.0, -1.75, -1.18, 95, 68, 1800, 1400),
+    SkuDef("SUN_S3", "Every. Single. Face. Watery Lotion SPF 50", "sunscreen", 32.0, 34.0, -1.95, -1.25, 145, 92, 3400, 2200),
+    SkuDef("MOI_M1", "Superscreen Hydrating Daily Cream SPF 40", "moisturizer", 39.0, 47.0, -2.1, -1.4, 88, 70, 2200, 1600),
+    SkuDef("MOI_M2", "Mineral Sheerscreen SPF 30", "moisturizer", 32.0, 40.0, -1.92, -1.3, 90, 75, 2200, 1700),
+    SkuDef("MOI_M3", "(Re)setting 100% Mineral Powder SPF 35", "moisturizer", 28.0, 35.0, -1.75, -1.18, 82, 62, 1700, 1300),
 ]
+
+SKU_NAME_MAP = {sku.sku_id: sku.sku_name for sku in SKUS}
+
+PRODUCT_CATALOG = [
+    {
+        "sku_id": "SUN_S1",
+        "official_name": SKU_NAME_MAP["SUN_S1"],
+        "short_name": "Unseen Sunscreen",
+        "product_group": "sunscreen",
+        "real_world_category": "face sunscreen",
+        "representative_size": "1.7 fl. oz.",
+        "dtc_price_anchor_usd": 38,
+        "dtc_price_range_note": "$19-$76 across sizes and packs on Supergoop",
+        "expected_mass_price_range_usd": [32, 36],
+        "expected_prestige_price_range_usd": [36, 40],
+        "legacy_aliases": ["Unseen Sunscreen SPF 40", "Daily Shield SPF 40"],
+    },
+    {
+        "sku_id": "SUN_S2",
+        "official_name": SKU_NAME_MAP["SUN_S2"],
+        "short_name": "Glowscreen",
+        "product_group": "sunscreen",
+        "real_world_category": "face sunscreen",
+        "representative_size": "1.7 fl. oz.",
+        "dtc_price_anchor_usd": 36,
+        "dtc_price_range_note": "Representative prestige-market anchor for full-size Glowscreen",
+        "expected_mass_price_range_usd": [34, 38],
+        "expected_prestige_price_range_usd": [36, 40],
+        "legacy_aliases": ["Invisible Mist SPF 50"],
+    },
+    {
+        "sku_id": "SUN_S3",
+        "official_name": SKU_NAME_MAP["SUN_S3"],
+        "short_name": "Every. Single. Face.",
+        "product_group": "sunscreen",
+        "real_world_category": "face sunscreen",
+        "representative_size": "1.7 fl. oz.",
+        "dtc_price_anchor_usd": 34,
+        "dtc_price_range_note": "Official Supergoop price anchor for 1.7 fl. oz.",
+        "expected_mass_price_range_usd": [30, 34],
+        "expected_prestige_price_range_usd": [32, 36],
+        "legacy_aliases": ["Play Everyday Lotion SPF 50", "Sport Gel SPF 60"],
+    },
+    {
+        "sku_id": "MOI_M1",
+        "official_name": SKU_NAME_MAP["MOI_M1"],
+        "short_name": "Superscreen Daily Cream",
+        "product_group": "moisturizer",
+        "real_world_category": "daily SPF moisturizer",
+        "representative_size": "1.7 fl. oz.",
+        "dtc_price_anchor_usd": 48,
+        "dtc_price_range_note": "Supergoop / Ulta premium moisturizer anchor",
+        "expected_mass_price_range_usd": [36, 42],
+        "expected_prestige_price_range_usd": [44, 50],
+        "legacy_aliases": ["Superscreen Daily Moisturizer", "Hydra Daily Lotion"],
+    },
+    {
+        "sku_id": "MOI_M2",
+        "official_name": SKU_NAME_MAP["MOI_M2"],
+        "short_name": "Mineral Sheerscreen",
+        "product_group": "moisturizer",
+        "real_world_category": "mineral face sunscreen",
+        "representative_size": "1.5 fl. oz.",
+        "dtc_price_anchor_usd": 40,
+        "dtc_price_range_note": "Full-size mineral-face-SPF anchor",
+        "expected_mass_price_range_usd": [30, 34],
+        "expected_prestige_price_range_usd": [38, 42],
+        "legacy_aliases": ["Barrier Repair Cream"],
+    },
+    {
+        "sku_id": "MOI_M3",
+        "official_name": SKU_NAME_MAP["MOI_M3"],
+        "short_name": "(Re)setting Powder",
+        "product_group": "moisturizer",
+        "real_world_category": "powder SPF",
+        "representative_size": "0.15 oz.",
+        "dtc_price_anchor_usd": 35,
+        "dtc_price_range_note": "Official Supergoop refillable powder anchor",
+        "expected_mass_price_range_usd": [26, 30],
+        "expected_prestige_price_range_usd": [33, 36],
+        "legacy_aliases": ["(Re)setting Powder SPF 35", "Night Recovery Balm"],
+    },
+]
+
+
+def sku_result(sku_id: str, sales_uplift_pct: float, channel: str, outcome: str) -> dict:
+    return {
+        "sku_id": sku_id,
+        "sku_name": SKU_NAME_MAP[sku_id],
+        "sales_uplift_pct": sales_uplift_pct,
+        "channel": channel,
+        "outcome": outcome,
+    }
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
@@ -772,7 +865,7 @@ def generate() -> None:
     for w in sorted(GROUP_PROMO_WEEKS["prestige"]):
         add_event(w, "Promo Start", "prestige", "sephora|ulta", "Selective prestige promo on elastic SKUs only.", promo_discount=8.0, promo_id="PROMO_PRESTIGE_GLOW_WEEKEND_2026")
     add_event(1, "Promo Start", "mass", "target|amazon", "Season opening SPF baseline campaign started.", promo_discount=10.0, promo_id="PROMO_SPRING_BASELINE_SPF_2026")
-    add_event(7, "Promo Start", "prestige", "sephora|ulta", "Social momentum hold campaign on premium SPF SKUs.", promo_discount=5.0, promo_id="PROMO_TIKTOK_SPORT_GEL_HOLD_2026")
+    add_event(7, "Promo Start", "prestige", "sephora|ulta", "Social momentum hold campaign on premium SPF SKUs.", promo_discount=5.0, promo_id="PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026")
     add_event(17, "Promo Start", "all", "sephora|ulta|target|amazon", "Week-17 smart clearance mix activated to close inventory.", promo_discount=20.0, promo_id="PROMO_WEEK17_CLEARANCE_MIX_2026", window="holdout")
     for w in [5, 11, 14]:
         add_event(w, "Social Spike", "all", "all", "Viral creator content increased brand pull and lowered elasticity.", promo_id="SOCIAL_VIRAL", window="confounded")
@@ -1184,9 +1277,9 @@ def generate() -> None:
             "season": "holiday_winter_2025",
             "promoted_skus": ["MOI_M1", "MOI_M2", "MOI_M3"],
             "sku_results": [
-                {"sku_id": "MOI_M1", "sku_name": "Hydra Daily Lotion", "sales_uplift_pct": 14.9, "channel": "target", "outcome": "up"},
-                {"sku_id": "MOI_M2", "sku_name": "Barrier Repair Cream", "sales_uplift_pct": 11.2, "channel": "amazon", "outcome": "up"},
-                {"sku_id": "MOI_M3", "sku_name": "Night Recovery Balm", "sales_uplift_pct": -1.8, "channel": "ulta", "outcome": "down"},
+                sku_result("MOI_M1", 14.9, "target", "up"),
+                sku_result("MOI_M2", 11.2, "amazon", "up"),
+                sku_result("MOI_M3", -1.8, "ulta", "down"),
             ],
             "channel_results": {
                 "target": {"sales_uplift_pct": 10.5, "margin_delta_pct": -3.1},
@@ -1229,9 +1322,9 @@ def generate() -> None:
             "season": "spring_summer_2026",
             "promoted_skus": ["SUN_S1", "SUN_S2", "MOI_M1"],
             "sku_results": [
-                {"sku_id": "SUN_S1", "sku_name": "Daily Shield SPF 40", "sales_uplift_pct": 12.6, "channel": "target", "outcome": "up"},
-                {"sku_id": "SUN_S2", "sku_name": "Invisible Mist SPF 50", "sales_uplift_pct": 9.8, "channel": "amazon", "outcome": "up"},
-                {"sku_id": "MOI_M1", "sku_name": "Hydra Daily Lotion", "sales_uplift_pct": 5.4, "channel": "target", "outcome": "up"},
+                sku_result("SUN_S1", 12.6, "target", "up"),
+                sku_result("SUN_S2", 9.8, "amazon", "up"),
+                sku_result("MOI_M1", 5.4, "target", "up"),
             ],
             "channel_results": {
                 "target": {"sales_uplift_pct": 9.9, "margin_delta_pct": -2.9},
@@ -1273,11 +1366,11 @@ def generate() -> None:
             "season": "spring_summer_2026",
             "promoted_skus": ["SUN_S1", "SUN_S2", "MOI_M1", "MOI_M2", "MOI_M3"],
             "sku_results": [
-                {"sku_id": "SUN_S1", "sku_name": "Daily Shield SPF 40", "sales_uplift_pct": 23.4, "channel": "amazon", "outcome": "up"},
-                {"sku_id": "SUN_S2", "sku_name": "Invisible Mist SPF 50", "sales_uplift_pct": 16.1, "channel": "target", "outcome": "up"},
-                {"sku_id": "MOI_M1", "sku_name": "Hydra Daily Lotion", "sales_uplift_pct": 11.8, "channel": "target", "outcome": "up"},
-                {"sku_id": "MOI_M2", "sku_name": "Barrier Repair Cream", "sales_uplift_pct": -2.9, "channel": "amazon", "outcome": "down"},
-                {"sku_id": "MOI_M3", "sku_name": "Night Recovery Balm", "sales_uplift_pct": -5.6, "channel": "target", "outcome": "down"},
+                sku_result("SUN_S1", 23.4, "amazon", "up"),
+                sku_result("SUN_S2", 16.1, "target", "up"),
+                sku_result("MOI_M1", 11.8, "target", "up"),
+                sku_result("MOI_M2", -2.9, "amazon", "down"),
+                sku_result("MOI_M3", -5.6, "target", "down"),
             ],
             "channel_results": {
                 "amazon": {"sales_uplift_pct": 17.8, "margin_delta_pct": -6.2},
@@ -1288,9 +1381,9 @@ def generate() -> None:
             "success_criteria": {"adds_min": 5000, "repeat_loss_rate_max": 0.2, "payback_months_max": 8, "ltv_cac_ratio_min": 1.8},
             "actual_performance": {"adds_achieved": 5620, "repeat_loss_rate_at_8w": 0.162, "payback_months": 6.5, "ltv_cac_ratio": 2.01},
         },
-        "PROMO_TIKTOK_SPORT_GEL_HOLD_2026": {
-            "promo_id": "PROMO_TIKTOK_SPORT_GEL_HOLD_2026",
-            "campaign_name": "TikTok Sport Gel Momentum Hold",
+        "PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026": {
+            "promo_id": "PROMO_TIKTOK_SPF_MOMENTUM_HOLD_2026",
+            "campaign_name": "TikTok SPF Momentum Hold",
             "story_phase": "pivot",
             "story_summary": "A social spike reduced effective elasticity for premium SPF, so we shifted to selective pricing and creator-led messaging.",
             "start_date": week_start(7).isoformat(),
@@ -1319,9 +1412,9 @@ def generate() -> None:
             "season": "spring_summer_2026",
             "promoted_skus": ["SUN_S3", "SUN_S2", "MOI_M2"],
             "sku_results": [
-                {"sku_id": "SUN_S3", "sku_name": "Sport Gel SPF 60", "sales_uplift_pct": 15.7, "channel": "sephora", "outcome": "up"},
-                {"sku_id": "SUN_S2", "sku_name": "Invisible Mist SPF 50", "sales_uplift_pct": 7.9, "channel": "ulta", "outcome": "up"},
-                {"sku_id": "MOI_M2", "sku_name": "Barrier Repair Cream", "sales_uplift_pct": 3.1, "channel": "ulta", "outcome": "up"},
+                sku_result("SUN_S3", 15.7, "sephora", "up"),
+                sku_result("SUN_S2", 7.9, "ulta", "up"),
+                sku_result("MOI_M2", 3.1, "ulta", "up"),
             ],
             "channel_results": {
                 "sephora": {"sales_uplift_pct": 9.8, "margin_delta_pct": -1.2},
@@ -1363,9 +1456,9 @@ def generate() -> None:
             "season": "spring_summer_2026",
             "promoted_skus": ["SUN_S2", "SUN_S3", "MOI_M2"],
             "sku_results": [
-                {"sku_id": "SUN_S2", "sku_name": "Invisible Mist SPF 50", "sales_uplift_pct": 11.4, "channel": "sephora", "outcome": "up"},
-                {"sku_id": "SUN_S3", "sku_name": "Sport Gel SPF 60", "sales_uplift_pct": 8.1, "channel": "ulta", "outcome": "up"},
-                {"sku_id": "MOI_M2", "sku_name": "Barrier Repair Cream", "sales_uplift_pct": 4.7, "channel": "ulta", "outcome": "up"},
+                sku_result("SUN_S2", 11.4, "sephora", "up"),
+                sku_result("SUN_S3", 8.1, "ulta", "up"),
+                sku_result("MOI_M2", 4.7, "ulta", "up"),
             ],
             "channel_results": {
                 "sephora": {"sales_uplift_pct": 7.4, "margin_delta_pct": -1.8},
@@ -1407,11 +1500,11 @@ def generate() -> None:
             "season": "spring_summer_2026",
             "promoted_skus": ["SUN_S1", "SUN_S2", "SUN_S3", "MOI_M1", "MOI_M2"],
             "sku_results": [
-                {"sku_id": "SUN_S1", "sku_name": "Daily Shield SPF 40", "sales_uplift_pct": 18.2, "channel": "amazon", "outcome": "up"},
-                {"sku_id": "SUN_S2", "sku_name": "Invisible Mist SPF 50", "sales_uplift_pct": 16.5, "channel": "target", "outcome": "up"},
-                {"sku_id": "SUN_S3", "sku_name": "Sport Gel SPF 60", "sales_uplift_pct": 11.4, "channel": "sephora", "outcome": "up"},
-                {"sku_id": "MOI_M1", "sku_name": "Hydra Daily Lotion", "sales_uplift_pct": 8.9, "channel": "target", "outcome": "up"},
-                {"sku_id": "MOI_M2", "sku_name": "Barrier Repair Cream", "sales_uplift_pct": 5.8, "channel": "ulta", "outcome": "up"},
+                sku_result("SUN_S1", 18.2, "amazon", "up"),
+                sku_result("SUN_S2", 16.5, "target", "up"),
+                sku_result("SUN_S3", 11.4, "sephora", "up"),
+                sku_result("MOI_M1", 8.9, "target", "up"),
+                sku_result("MOI_M2", 5.8, "ulta", "up"),
             ],
             "channel_results": {
                 "target": {"sales_uplift_pct": 14.1, "margin_delta_pct": -7.2},
@@ -1426,6 +1519,7 @@ def generate() -> None:
         },
     }
     write_json(DATA_DIR / "promo_metadata.json", promo_metadata)
+    write_json(DATA_DIR / "product_catalog.json", PRODUCT_CATALOG)
 
     scenarios = [
         {

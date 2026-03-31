@@ -765,6 +765,18 @@ body.app-loading-step {
   overflow: hidden;
 }
 
+body.app-loading-step .step-nav {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.app-loading-step footer {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 body.app-loading-step #load-data-section {
   opacity: 1;
   visibility: visible;

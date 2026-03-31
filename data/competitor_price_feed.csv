@@ -7,22 +7,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.94,32.11,False,,Neutrogena Store,in_stock,4.4,9806,product_page_scrape
 2026-02-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.973,37.16,True,beauty_offer,EltaMD Official,in_stock,4.3,9857,product_page_scrape
 2026-02-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.96,35.95,True,beauty_offer,Coola Suncare,in_stock,4.4,9815,product_page_scrape
-2026-02-02T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.918,20.04,False,,La Roche-Posay via Target,in_stock,4.5,6467,product_page_scrape
-2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.99,20.0,False,,Neutrogena Store,in_stock,4.5,6376,product_page_scrape
-2026-02-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.947,31.76,False,,EltaMD Official,in_stock,4.5,6374,product_page_scrape
-2026-02-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.977,30.98,True,beauty_offer,Coola Suncare,in_stock,4.4,6390,product_page_scrape
-2026-02-02T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.925,25.7,False,,La Roche-Posay via Target,in_stock,4.2,7555,product_page_scrape
-2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.98,25.22,False,,Neutrogena Store,in_stock,4.2,7623,product_page_scrape
-2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.949,36.31,True,beauty_offer,EltaMD Official,in_stock,4.2,7641,product_page_scrape
-2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.987,36.36,True,beauty_offer,Coola Suncare,in_stock,4.1,7570,product_page_scrape
+2026-02-02T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.918,29.36,False,,La Roche-Posay via Target,in_stock,4.5,6467,product_page_scrape
+2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.99,29.53,False,,Neutrogena Store,in_stock,4.5,6376,product_page_scrape
+2026-02-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.947,33.68,False,,EltaMD Official,in_stock,4.5,6374,product_page_scrape
+2026-02-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.977,32.88,True,beauty_offer,Coola Suncare,in_stock,4.4,6390,product_page_scrape
+2026-02-02T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.925,35.98,False,,La Roche-Posay via Target,in_stock,4.2,7555,product_page_scrape
+2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.98,35.49,False,,Neutrogena Store,in_stock,4.2,7623,product_page_scrape
+2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.949,44.69,True,beauty_offer,EltaMD Official,in_stock,4.2,7641,product_page_scrape
+2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.987,44.86,True,beauty_offer,Coola Suncare,in_stock,4.1,7570,product_page_scrape
 2026-02-02T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.968,28.86,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.3,5234,product_page_scrape
 2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.989,29.42,False,,Neutrogena Store,in_stock,4.3,5177,product_page_scrape
-2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,37.01,True,beauty_offer,EltaMD Official,in_stock,4.3,5254,product_page_scrape
-2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.97,37.12,False,,Coola Suncare,in_stock,4.3,5260,product_page_scrape
-2026-02-02T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.981,24.45,False,,La Roche-Posay via Target,in_stock,4.4,3812,product_page_scrape
-2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.942,23.43,False,,Neutrogena Store,in_stock,4.4,3849,product_page_scrape
-2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.988,32.85,True,beauty_offer,EltaMD Official,in_stock,4.4,3817,product_page_scrape
-2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.976,33.79,False,,Coola Suncare,in_stock,4.4,3821,product_page_scrape
+2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,38.91,True,beauty_offer,EltaMD Official,in_stock,4.3,5254,product_page_scrape
+2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.97,39.05,False,,Coola Suncare,in_stock,4.3,5260,product_page_scrape
+2026-02-02T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.981,26.37,False,,La Roche-Posay via Target,in_stock,4.4,3812,product_page_scrape
+2026-02-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.942,25.3,False,,Neutrogena Store,in_stock,4.4,3849,product_page_scrape
+2026-02-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.988,33.79,True,beauty_offer,EltaMD Official,in_stock,4.4,3817,product_page_scrape
+2026-02-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.976,34.77,False,,Coola Suncare,in_stock,4.4,3821,product_page_scrape
 2026-02-09T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.918,30.89,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.3,14186,product_page_scrape
 2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.947,30.41,False,,Neutrogena Store,in_stock,4.3,14204,product_page_scrape
 2026-02-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.982,36.69,True,beauty_offer,EltaMD Official,in_stock,4.3,14208,product_page_scrape
@@ -31,22 +31,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.97,32.02,True,limited_time_deal,Neutrogena Store,low_stock,4.5,9888,product_page_scrape
 2026-02-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.972,36.93,True,beauty_offer,EltaMD Official,in_stock,4.4,9851,product_page_scrape
 2026-02-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.975,36.47,True,beauty_offer,Coola Suncare,in_stock,4.4,9769,product_page_scrape
-2026-02-09T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.921,19.88,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,6478,product_page_scrape
-2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.939,19.19,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6391,product_page_scrape
-2026-02-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.955,31.84,False,,EltaMD Official,in_stock,4.5,6438,product_page_scrape
-2026-02-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.955,30.48,True,beauty_offer,Coola Suncare,in_stock,4.5,6403,product_page_scrape
-2026-02-09T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.971,25.47,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7631,product_page_scrape
-2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.931,25.5,False,,Neutrogena Store,in_stock,4.2,7663,product_page_scrape
-2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.992,36.69,True,beauty_offer,EltaMD Official,in_stock,4.2,7603,product_page_scrape
-2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.965,36.82,True,beauty_offer,Coola Suncare,in_stock,4.1,7615,product_page_scrape
+2026-02-09T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.921,29.12,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,6478,product_page_scrape
+2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.939,28.33,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6391,product_page_scrape
+2026-02-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.955,33.77,False,,EltaMD Official,in_stock,4.5,6438,product_page_scrape
+2026-02-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.955,32.35,True,beauty_offer,Coola Suncare,in_stock,4.5,6403,product_page_scrape
+2026-02-09T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.971,35.66,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7631,product_page_scrape
+2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.931,35.89,False,,Neutrogena Store,in_stock,4.2,7663,product_page_scrape
+2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.992,45.16,True,beauty_offer,EltaMD Official,in_stock,4.2,7603,product_page_scrape
+2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.965,45.43,True,beauty_offer,Coola Suncare,in_stock,4.1,7615,product_page_scrape
 2026-02-09T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.942,30.04,False,,La Roche-Posay via Target,in_stock,4.4,5254,product_page_scrape
 2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.97,29.22,False,,Neutrogena Store,in_stock,4.4,5228,product_page_scrape
-2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.963,36.55,True,beauty_offer,EltaMD Official,in_stock,4.3,5172,product_page_scrape
-2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.975,36.53,True,beauty_offer,Coola Suncare,in_stock,4.2,5243,product_page_scrape
-2026-02-09T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.955,23.6,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,3880,product_page_scrape
-2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.983,23.06,False,,Neutrogena Store,in_stock,4.3,3866,product_page_scrape
-2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.978,32.93,True,beauty_offer,EltaMD Official,in_stock,4.4,3827,product_page_scrape
-2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.969,33.44,False,,Coola Suncare,in_stock,4.4,3770,product_page_scrape
+2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.963,38.43,True,beauty_offer,EltaMD Official,in_stock,4.3,5172,product_page_scrape
+2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.975,38.43,True,beauty_offer,Coola Suncare,in_stock,4.2,5243,product_page_scrape
+2026-02-09T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.955,25.46,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,3880,product_page_scrape
+2026-02-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.983,24.9,False,,Neutrogena Store,in_stock,4.3,3866,product_page_scrape
+2026-02-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.978,33.87,True,beauty_offer,EltaMD Official,in_stock,4.4,3827,product_page_scrape
+2026-02-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.969,34.41,False,,Coola Suncare,in_stock,4.4,3770,product_page_scrape
 2026-02-16T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.917,31.22,False,,La Roche-Posay via Target,in_stock,4.3,14263,product_page_scrape
 2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.952,30.74,False,,Neutrogena Store,in_stock,4.3,14246,product_page_scrape
 2026-02-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.941,36.61,True,beauty_offer,EltaMD Official,in_stock,4.3,14235,product_page_scrape
@@ -55,22 +55,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.977,32.33,False,,Neutrogena Store,in_stock,4.4,9832,product_page_scrape
 2026-02-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.981,36.76,True,beauty_offer,EltaMD Official,in_stock,4.3,9893,product_page_scrape
 2026-02-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.975,35.84,True,beauty_offer,Coola Suncare,in_stock,4.4,9812,product_page_scrape
-2026-02-16T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.929,20.3,False,,La Roche-Posay via Target,in_stock,4.4,6448,product_page_scrape
-2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.981,20.0,False,,Neutrogena Store,in_stock,4.5,6433,product_page_scrape
-2026-02-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.942,31.38,True,beauty_offer,EltaMD Official,in_stock,4.5,6473,product_page_scrape
-2026-02-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.988,30.66,True,beauty_offer,Coola Suncare,in_stock,4.5,6451,product_page_scrape
-2026-02-16T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.965,25.97,False,,La Roche-Posay via Target,in_stock,4.2,7642,product_page_scrape
-2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.922,25.56,False,,Neutrogena Store,in_stock,4.1,7701,product_page_scrape
-2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.951,36.36,True,beauty_offer,EltaMD Official,in_stock,4.3,7628,product_page_scrape
-2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.943,36.32,True,beauty_offer,Coola Suncare,in_stock,4.2,7681,product_page_scrape
+2026-02-16T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.929,29.74,False,,La Roche-Posay via Target,in_stock,4.4,6448,product_page_scrape
+2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.981,29.53,False,,Neutrogena Store,in_stock,4.5,6433,product_page_scrape
+2026-02-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.942,33.28,True,beauty_offer,EltaMD Official,in_stock,4.5,6473,product_page_scrape
+2026-02-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.988,32.55,True,beauty_offer,Coola Suncare,in_stock,4.5,6451,product_page_scrape
+2026-02-16T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.965,36.36,False,,La Roche-Posay via Target,in_stock,4.2,7642,product_page_scrape
+2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.922,35.98,False,,Neutrogena Store,in_stock,4.1,7701,product_page_scrape
+2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.951,44.75,True,beauty_offer,EltaMD Official,in_stock,4.3,7628,product_page_scrape
+2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.943,44.81,True,beauty_offer,Coola Suncare,in_stock,4.2,7681,product_page_scrape
 2026-02-16T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.911,28.95,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5250,product_page_scrape
 2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.949,29.31,False,,Neutrogena Store,in_stock,4.3,5209,product_page_scrape
-2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.968,37.23,True,beauty_offer,EltaMD Official,in_stock,4.3,5272,product_page_scrape
-2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.954,36.87,True,beauty_offer,Coola Suncare,in_stock,4.3,5237,product_page_scrape
-2026-02-16T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.984,24.22,False,,La Roche-Posay via Target,in_stock,4.4,3874,product_page_scrape
-2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.947,23.9,False,,Neutrogena Store,in_stock,4.4,3870,product_page_scrape
-2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.97,33.76,False,,EltaMD Official,in_stock,4.4,3790,product_page_scrape
-2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.992,33.32,False,,Coola Suncare,in_stock,4.4,3859,product_page_scrape
+2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.968,39.14,True,beauty_offer,EltaMD Official,in_stock,4.3,5272,product_page_scrape
+2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.954,38.78,True,beauty_offer,Coola Suncare,in_stock,4.3,5237,product_page_scrape
+2026-02-16T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.984,26.12,False,,La Roche-Posay via Target,in_stock,4.4,3874,product_page_scrape
+2026-02-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.947,25.81,False,,Neutrogena Store,in_stock,4.4,3870,product_page_scrape
+2026-02-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.97,34.72,False,,EltaMD Official,in_stock,4.4,3790,product_page_scrape
+2026-02-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.992,34.28,False,,Coola Suncare,in_stock,4.4,3859,product_page_scrape
 2026-02-23T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.957,30.51,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,14338,product_page_scrape
 2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.983,26.76,True,limited_time_deal,Neutrogena Store,low_stock,4.3,14300,product_page_scrape
 2026-02-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.966,36.51,True,beauty_offer,EltaMD Official,in_stock,4.3,14238,product_page_scrape
@@ -79,22 +79,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.99,28.76,True,limited_time_deal,Neutrogena Store,low_stock,4.4,9871,product_page_scrape
 2026-02-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.948,35.98,True,beauty_offer,EltaMD Official,in_stock,4.4,9820,product_page_scrape
 2026-02-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.977,36.4,True,beauty_offer,Coola Suncare,in_stock,4.4,9881,product_page_scrape
-2026-02-23T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.917,20.01,False,,La Roche-Posay via Target,in_stock,4.4,6494,product_page_scrape
-2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.98,17.81,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6462,product_page_scrape
-2026-02-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.952,30.99,True,beauty_offer,EltaMD Official,in_stock,4.4,6472,product_page_scrape
-2026-02-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.95,31.07,True,beauty_offer,Coola Suncare,in_stock,4.5,6455,product_page_scrape
-2026-02-23T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.917,25.04,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7706,product_page_scrape
-2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.948,22.65,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7739,product_page_scrape
-2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.948,36.51,True,beauty_offer,EltaMD Official,in_stock,4.3,7672,product_page_scrape
-2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.972,36.24,True,beauty_offer,Coola Suncare,in_stock,4.1,7709,product_page_scrape
+2026-02-23T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.917,29.32,False,,La Roche-Posay via Target,in_stock,4.4,6494,product_page_scrape
+2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.98,26.29,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6462,product_page_scrape
+2026-02-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.952,32.87,True,beauty_offer,EltaMD Official,in_stock,4.4,6472,product_page_scrape
+2026-02-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.95,32.98,True,beauty_offer,Coola Suncare,in_stock,4.5,6455,product_page_scrape
+2026-02-23T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.917,35.06,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7706,product_page_scrape
+2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.948,31.87,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7739,product_page_scrape
+2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.948,44.94,True,beauty_offer,EltaMD Official,in_stock,4.3,7672,product_page_scrape
+2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.972,44.71,True,beauty_offer,Coola Suncare,in_stock,4.1,7709,product_page_scrape
 2026-02-23T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.989,29.17,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5317,product_page_scrape
 2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.947,26.48,True,limited_time_deal,Neutrogena Store,in_stock,4.2,5286,product_page_scrape
-2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.963,37.86,False,,EltaMD Official,in_stock,4.4,5205,product_page_scrape
-2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.952,36.94,True,beauty_offer,Coola Suncare,in_stock,4.3,5217,product_page_scrape
-2026-02-23T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.956,23.72,False,,La Roche-Posay via Target,in_stock,4.5,3855,product_page_scrape
-2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.927,20.72,True,limited_time_deal,Neutrogena Store,low_stock,4.4,3931,product_page_scrape
-2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.95,33.03,True,beauty_offer,EltaMD Official,in_stock,4.4,3817,product_page_scrape
-2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.962,32.74,True,beauty_offer,Coola Suncare,in_stock,4.4,3817,product_page_scrape
+2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.963,39.8,False,,EltaMD Official,in_stock,4.4,5205,product_page_scrape
+2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.952,38.86,True,beauty_offer,Coola Suncare,in_stock,4.3,5217,product_page_scrape
+2026-02-23T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.956,25.58,False,,La Roche-Posay via Target,in_stock,4.5,3855,product_page_scrape
+2026-02-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.927,22.38,True,limited_time_deal,Neutrogena Store,low_stock,4.4,3931,product_page_scrape
+2026-02-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.95,33.98,True,beauty_offer,EltaMD Official,in_stock,4.4,3817,product_page_scrape
+2026-02-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.962,33.69,True,beauty_offer,Coola Suncare,in_stock,4.4,3817,product_page_scrape
 2026-03-02T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.918,28.09,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,14279,product_page_scrape
 2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.988,29.58,True,limited_time_deal,Neutrogena Store,low_stock,4.2,14328,product_page_scrape
 2026-03-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.95,36.09,True,beauty_offer,EltaMD Official,in_stock,4.3,14256,product_page_scrape
@@ -103,22 +103,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.93,31.86,True,limited_time_deal,Neutrogena Store,in_stock,4.4,9902,product_page_scrape
 2026-03-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.962,36.53,True,beauty_offer,EltaMD Official,in_stock,4.4,9917,product_page_scrape
 2026-03-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.94,35.47,True,beauty_offer,Coola Suncare,in_stock,4.3,9840,product_page_scrape
-2026-03-02T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.94,18.24,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6535,product_page_scrape
-2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.956,18.89,True,limited_time_deal,Neutrogena Store,low_stock,4.5,6485,product_page_scrape
-2026-03-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.954,31.22,True,beauty_offer,EltaMD Official,in_stock,4.5,6500,product_page_scrape
-2026-03-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.959,31.15,True,beauty_offer,Coola Suncare,in_stock,4.6,6417,product_page_scrape
-2026-03-02T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.946,24.34,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7672,product_page_scrape
-2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.924,25.49,False,,Neutrogena Store,in_stock,4.2,7711,product_page_scrape
-2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.974,36.9,True,beauty_offer,EltaMD Official,in_stock,4.3,7665,product_page_scrape
-2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.981,36.94,True,beauty_offer,Coola Suncare,in_stock,4.2,7642,product_page_scrape
+2026-03-02T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.94,26.73,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6535,product_page_scrape
+2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.956,27.89,True,limited_time_deal,Neutrogena Store,low_stock,4.5,6485,product_page_scrape
+2026-03-02T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.954,33.11,True,beauty_offer,EltaMD Official,in_stock,4.5,6500,product_page_scrape
+2026-03-02T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.959,33.07,True,beauty_offer,Coola Suncare,in_stock,4.6,6417,product_page_scrape
+2026-03-02T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.946,34.07,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7672,product_page_scrape
+2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.924,35.87,False,,Neutrogena Store,in_stock,4.2,7711,product_page_scrape
+2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.974,45.41,True,beauty_offer,EltaMD Official,in_stock,4.3,7665,product_page_scrape
+2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.981,45.58,True,beauty_offer,Coola Suncare,in_stock,4.2,7642,product_page_scrape
 2026-03-02T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.963,27.03,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,5256,product_page_scrape
 2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.966,28.61,False,,Neutrogena Store,in_stock,4.3,5293,product_page_scrape
-2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.987,36.45,True,beauty_offer,EltaMD Official,in_stock,4.3,5299,product_page_scrape
-2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.962,37.2,False,,Coola Suncare,in_stock,4.3,5311,product_page_scrape
-2026-03-02T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.99,21.91,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,3909,product_page_scrape
-2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.948,23.68,False,,Neutrogena Store,in_stock,4.4,3878,product_page_scrape
-2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.966,33.54,True,beauty_offer,EltaMD Official,in_stock,4.4,3818,product_page_scrape
-2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.952,32.64,True,beauty_offer,Coola Suncare,in_stock,4.4,3916,product_page_scrape
+2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.987,38.32,True,beauty_offer,EltaMD Official,in_stock,4.3,5299,product_page_scrape
+2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.962,39.13,False,,Coola Suncare,in_stock,4.3,5311,product_page_scrape
+2026-03-02T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.99,23.63,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,3909,product_page_scrape
+2026-03-02T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.948,25.58,False,,Neutrogena Store,in_stock,4.4,3878,product_page_scrape
+2026-03-02T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.966,34.5,True,beauty_offer,EltaMD Official,in_stock,4.4,3818,product_page_scrape
+2026-03-02T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.952,33.59,True,beauty_offer,Coola Suncare,in_stock,4.4,3916,product_page_scrape
 2026-03-09T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.942,29.74,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.3,14377,product_page_scrape
 2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.987,30.53,False,,Neutrogena Store,in_stock,4.3,14385,product_page_scrape
 2026-03-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.95,36.51,True,beauty_offer,EltaMD Official,in_stock,4.3,14289,product_page_scrape
@@ -127,22 +127,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.954,32.47,False,,Neutrogena Store,in_stock,4.3,9934,product_page_scrape
 2026-03-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.986,35.92,True,beauty_offer,EltaMD Official,in_stock,4.3,9886,product_page_scrape
 2026-03-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.971,36.17,True,beauty_offer,Coola Suncare,in_stock,4.4,9856,product_page_scrape
-2026-03-09T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.945,19.77,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.6,6565,product_page_scrape
-2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.922,19.32,False,,Neutrogena Store,in_stock,4.4,6588,product_page_scrape
-2026-03-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.953,30.65,True,beauty_offer,EltaMD Official,in_stock,4.5,6525,product_page_scrape
-2026-03-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.952,30.99,True,beauty_offer,Coola Suncare,in_stock,4.5,6535,product_page_scrape
-2026-03-09T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.957,25.04,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7713,product_page_scrape
-2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.929,24.85,False,,Neutrogena Store,in_stock,4.2,7763,product_page_scrape
-2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.963,37.24,True,beauty_offer,EltaMD Official,in_stock,4.1,7698,product_page_scrape
-2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.964,35.67,True,beauty_offer,Coola Suncare,in_stock,4.1,7633,product_page_scrape
+2026-03-09T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.945,28.97,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.6,6565,product_page_scrape
+2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.922,28.52,False,,Neutrogena Store,in_stock,4.4,6588,product_page_scrape
+2026-03-09T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.953,32.51,True,beauty_offer,EltaMD Official,in_stock,4.5,6525,product_page_scrape
+2026-03-09T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.952,32.89,True,beauty_offer,Coola Suncare,in_stock,4.5,6535,product_page_scrape
+2026-03-09T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.957,35.05,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7713,product_page_scrape
+2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.929,34.97,False,,Neutrogena Store,in_stock,4.2,7763,product_page_scrape
+2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.963,45.83,True,beauty_offer,EltaMD Official,in_stock,4.1,7698,product_page_scrape
+2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.964,44.0,True,beauty_offer,Coola Suncare,in_stock,4.1,7633,product_page_scrape
 2026-03-09T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.939,28.82,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,5389,product_page_scrape
 2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.939,29.63,False,,Neutrogena Store,in_stock,4.3,5369,product_page_scrape
-2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.965,36.94,True,beauty_offer,EltaMD Official,in_stock,4.2,5226,product_page_scrape
-2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.982,36.63,True,beauty_offer,Coola Suncare,in_stock,4.3,5339,product_page_scrape
-2026-03-09T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.963,24.37,False,,La Roche-Posay via Target,in_stock,4.4,3968,product_page_scrape
-2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.96,23.49,False,,Neutrogena Store,in_stock,4.4,3976,product_page_scrape
-2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.985,33.7,False,,EltaMD Official,in_stock,4.4,3845,product_page_scrape
-2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.964,33.76,False,,Coola Suncare,in_stock,4.4,3905,product_page_scrape
+2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.965,38.83,True,beauty_offer,EltaMD Official,in_stock,4.2,5226,product_page_scrape
+2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.982,38.54,True,beauty_offer,Coola Suncare,in_stock,4.3,5339,product_page_scrape
+2026-03-09T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.963,26.28,False,,La Roche-Posay via Target,in_stock,4.4,3968,product_page_scrape
+2026-03-09T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.96,25.37,False,,Neutrogena Store,in_stock,4.4,3976,product_page_scrape
+2026-03-09T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.985,34.66,False,,EltaMD Official,in_stock,4.4,3845,product_page_scrape
+2026-03-09T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.964,34.73,False,,Coola Suncare,in_stock,4.4,3905,product_page_scrape
 2026-03-16T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.973,30.92,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,14331,product_page_scrape
 2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.931,28.89,True,limited_time_deal,Neutrogena Store,in_stock,4.3,14342,product_page_scrape
 2026-03-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.942,35.59,True,beauty_offer,EltaMD Official,in_stock,4.2,14335,product_page_scrape
@@ -151,22 +151,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.991,31.81,True,limited_time_deal,Neutrogena Store,low_stock,4.5,9908,product_page_scrape
 2026-03-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.961,35.51,True,beauty_offer,EltaMD Official,in_stock,4.4,9911,product_page_scrape
 2026-03-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.94,34.75,True,beauty_offer,Coola Suncare,in_stock,4.4,9889,product_page_scrape
-2026-03-16T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.959,19.48,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,6599,product_page_scrape
-2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.933,19.22,False,,Neutrogena Store,in_stock,4.5,6599,product_page_scrape
-2026-03-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.951,30.09,True,beauty_offer,EltaMD Official,in_stock,4.5,6534,product_page_scrape
-2026-03-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.957,29.01,True,beauty_offer,Coola Suncare,in_stock,4.6,6529,product_page_scrape
-2026-03-16T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.978,25.22,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7782,product_page_scrape
-2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.968,25.45,False,,Neutrogena Store,in_stock,4.2,7735,product_page_scrape
-2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.962,34.59,True,beauty_offer,EltaMD Official,in_stock,4.2,7738,product_page_scrape
-2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.992,34.63,True,beauty_offer,Coola Suncare,in_stock,4.2,7644,product_page_scrape
+2026-03-16T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.959,28.54,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,6599,product_page_scrape
+2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.933,28.38,False,,Neutrogena Store,in_stock,4.5,6599,product_page_scrape
+2026-03-16T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.951,31.91,True,beauty_offer,EltaMD Official,in_stock,4.5,6534,product_page_scrape
+2026-03-16T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.957,30.8,True,beauty_offer,Coola Suncare,in_stock,4.6,6529,product_page_scrape
+2026-03-16T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.978,35.31,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7782,product_page_scrape
+2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.968,35.82,False,,Neutrogena Store,in_stock,4.2,7735,product_page_scrape
+2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.962,42.57,True,beauty_offer,EltaMD Official,in_stock,4.2,7738,product_page_scrape
+2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.992,42.73,True,beauty_offer,Coola Suncare,in_stock,4.2,7644,product_page_scrape
 2026-03-16T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.938,29.98,False,,La Roche-Posay via Target,in_stock,4.3,5403,product_page_scrape
 2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.917,29.4,False,,Neutrogena Store,in_stock,4.3,5412,product_page_scrape
-2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,36.38,True,beauty_offer,EltaMD Official,in_stock,4.3,5239,product_page_scrape
-2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.958,35.23,True,beauty_offer,Coola Suncare,in_stock,4.3,5299,product_page_scrape
-2026-03-16T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.957,24.43,False,,La Roche-Posay via Target,in_stock,4.4,3947,product_page_scrape
-2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.953,23.39,False,,Neutrogena Store,in_stock,4.4,3994,product_page_scrape
-2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.984,32.41,True,beauty_offer,EltaMD Official,in_stock,4.4,3864,product_page_scrape
-2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.949,31.55,True,beauty_offer,Coola Suncare,in_stock,4.4,3942,product_page_scrape
+2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,38.24,True,beauty_offer,EltaMD Official,in_stock,4.3,5239,product_page_scrape
+2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.958,37.06,True,beauty_offer,Coola Suncare,in_stock,4.3,5299,product_page_scrape
+2026-03-16T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.957,26.34,False,,La Roche-Posay via Target,in_stock,4.4,3947,product_page_scrape
+2026-03-16T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.953,25.26,False,,Neutrogena Store,in_stock,4.4,3994,product_page_scrape
+2026-03-16T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.984,33.34,True,beauty_offer,EltaMD Official,in_stock,4.4,3864,product_page_scrape
+2026-03-16T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.949,32.46,True,beauty_offer,Coola Suncare,in_stock,4.4,3942,product_page_scrape
 2026-03-23T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.941,29.89,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,14401,product_page_scrape
 2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.983,26.26,True,limited_time_deal,Neutrogena Store,in_stock,4.3,14364,product_page_scrape
 2026-03-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.956,36.03,True,beauty_offer,EltaMD Official,in_stock,4.2,14364,product_page_scrape
@@ -175,22 +175,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.947,28.37,True,limited_time_deal,Neutrogena Store,in_stock,4.4,9987,product_page_scrape
 2026-03-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.955,37.02,True,beauty_offer,EltaMD Official,in_stock,4.4,9908,product_page_scrape
 2026-03-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.962,35.12,True,beauty_offer,Coola Suncare,in_stock,4.3,9937,product_page_scrape
-2026-03-23T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.934,19.54,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.5,6532,product_page_scrape
-2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.934,17.37,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6576,product_page_scrape
-2026-03-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.985,31.33,True,beauty_offer,EltaMD Official,in_stock,4.6,6532,product_page_scrape
-2026-03-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.987,30.25,True,beauty_offer,Coola Suncare,in_stock,4.5,6498,product_page_scrape
-2026-03-23T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.947,25.11,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7784,product_page_scrape
-2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.967,22.78,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7816,product_page_scrape
-2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.944,37.15,True,beauty_offer,EltaMD Official,in_stock,4.2,7704,product_page_scrape
-2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.983,35.86,True,beauty_offer,Coola Suncare,in_stock,4.2,7720,product_page_scrape
+2026-03-23T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.934,28.63,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.5,6532,product_page_scrape
+2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.934,25.64,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6576,product_page_scrape
+2026-03-23T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.985,33.23,True,beauty_offer,EltaMD Official,in_stock,4.6,6532,product_page_scrape
+2026-03-23T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.987,32.11,True,beauty_offer,Coola Suncare,in_stock,4.5,6498,product_page_scrape
+2026-03-23T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.947,35.15,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7784,product_page_scrape
+2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.967,32.06,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7816,product_page_scrape
+2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.944,45.73,True,beauty_offer,EltaMD Official,in_stock,4.2,7704,product_page_scrape
+2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.983,44.25,True,beauty_offer,Coola Suncare,in_stock,4.2,7720,product_page_scrape
 2026-03-23T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.988,30.01,False,,La Roche-Posay via Target,in_stock,4.3,5433,product_page_scrape
 2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.959,25.25,True,limited_time_deal,Neutrogena Store,low_stock,4.3,5398,product_page_scrape
-2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,36.93,True,beauty_offer,EltaMD Official,in_stock,4.2,5269,product_page_scrape
-2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.976,36.84,True,beauty_offer,Coola Suncare,in_stock,4.3,5349,product_page_scrape
-2026-03-23T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.957,24.35,False,,La Roche-Posay via Target,in_stock,4.3,3964,product_page_scrape
-2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.945,20.94,True,limited_time_deal,Neutrogena Store,in_stock,4.5,3924,product_page_scrape
-2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.942,33.42,True,beauty_offer,EltaMD Official,in_stock,4.4,3884,product_page_scrape
-2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.965,32.76,True,beauty_offer,Coola Suncare,in_stock,4.4,3938,product_page_scrape
+2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,38.82,True,beauty_offer,EltaMD Official,in_stock,4.2,5269,product_page_scrape
+2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.976,38.76,True,beauty_offer,Coola Suncare,in_stock,4.3,5349,product_page_scrape
+2026-03-23T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.957,26.26,False,,La Roche-Posay via Target,in_stock,4.3,3964,product_page_scrape
+2026-03-23T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.945,22.62,True,limited_time_deal,Neutrogena Store,in_stock,4.5,3924,product_page_scrape
+2026-03-23T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.942,34.37,True,beauty_offer,EltaMD Official,in_stock,4.4,3884,product_page_scrape
+2026-03-23T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.965,33.71,True,beauty_offer,Coola Suncare,in_stock,4.4,3938,product_page_scrape
 2026-03-30T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.912,30.1,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,14355,product_page_scrape
 2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.961,30.64,False,,Neutrogena Store,in_stock,4.3,14404,product_page_scrape
 2026-03-30T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.969,36.07,True,beauty_offer,EltaMD Official,in_stock,4.3,14352,product_page_scrape
@@ -199,22 +199,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.916,32.34,False,,Neutrogena Store,in_stock,4.4,10047,product_page_scrape
 2026-03-30T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.959,36.53,True,beauty_offer,EltaMD Official,in_stock,4.4,9932,product_page_scrape
 2026-03-30T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.953,36.58,True,beauty_offer,Coola Suncare,in_stock,4.3,9962,product_page_scrape
-2026-03-30T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.91,20.31,False,,La Roche-Posay via Target,in_stock,4.5,6623,product_page_scrape
-2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.975,19.39,False,,Neutrogena Store,in_stock,4.5,6603,product_page_scrape
-2026-03-30T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.945,32.01,False,,EltaMD Official,in_stock,4.5,6483,product_page_scrape
-2026-03-30T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.975,31.34,False,,Coola Suncare,in_stock,4.4,6503,product_page_scrape
-2026-03-30T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.963,25.08,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7751,product_page_scrape
-2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.984,25.19,False,,Neutrogena Store,in_stock,4.2,7807,product_page_scrape
-2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.974,36.49,True,beauty_offer,EltaMD Official,in_stock,4.2,7736,product_page_scrape
-2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.968,36.81,True,beauty_offer,Coola Suncare,in_stock,4.1,7714,product_page_scrape
+2026-03-30T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.91,29.75,False,,La Roche-Posay via Target,in_stock,4.5,6623,product_page_scrape
+2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.975,28.62,False,,Neutrogena Store,in_stock,4.5,6603,product_page_scrape
+2026-03-30T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.945,33.95,False,,EltaMD Official,in_stock,4.5,6483,product_page_scrape
+2026-03-30T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.975,33.26,False,,Coola Suncare,in_stock,4.4,6503,product_page_scrape
+2026-03-30T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.963,35.11,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7751,product_page_scrape
+2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.984,35.45,False,,Neutrogena Store,in_stock,4.2,7807,product_page_scrape
+2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.974,44.91,True,beauty_offer,EltaMD Official,in_stock,4.2,7736,product_page_scrape
+2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.968,45.41,True,beauty_offer,Coola Suncare,in_stock,4.1,7714,product_page_scrape
 2026-03-30T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.985,28.93,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5354,product_page_scrape
 2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.934,28.69,False,,Neutrogena Store,in_stock,4.3,5360,product_page_scrape
-2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.981,37.0,True,beauty_offer,EltaMD Official,in_stock,4.2,5333,product_page_scrape
-2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.959,35.98,True,beauty_offer,Coola Suncare,in_stock,4.2,5338,product_page_scrape
-2026-03-30T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.983,24.36,False,,La Roche-Posay via Target,in_stock,4.4,4053,product_page_scrape
-2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.963,23.91,False,,Neutrogena Store,in_stock,4.5,4014,product_page_scrape
-2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.975,34.0,False,,EltaMD Official,in_stock,4.4,3917,product_page_scrape
-2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.954,32.91,True,beauty_offer,Coola Suncare,in_stock,4.4,3898,product_page_scrape
+2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.981,38.89,True,beauty_offer,EltaMD Official,in_stock,4.2,5333,product_page_scrape
+2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.959,37.85,True,beauty_offer,Coola Suncare,in_stock,4.2,5338,product_page_scrape
+2026-03-30T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.983,26.27,False,,La Roche-Posay via Target,in_stock,4.4,4053,product_page_scrape
+2026-03-30T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.963,25.82,False,,Neutrogena Store,in_stock,4.5,4014,product_page_scrape
+2026-03-30T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.975,34.97,False,,EltaMD Official,in_stock,4.4,3917,product_page_scrape
+2026-03-30T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.954,33.87,True,beauty_offer,Coola Suncare,in_stock,4.4,3898,product_page_scrape
 2026-04-06T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.917,30.74,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,14397,product_page_scrape
 2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.94,29.75,True,limited_time_deal,Neutrogena Store,in_stock,4.3,14424,product_page_scrape
 2026-04-06T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.946,37.06,True,beauty_offer,EltaMD Official,in_stock,4.2,14386,product_page_scrape
@@ -223,22 +223,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.929,31.57,True,limited_time_deal,Neutrogena Store,in_stock,4.3,10017,product_page_scrape
 2026-04-06T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.98,37.01,True,beauty_offer,EltaMD Official,in_stock,4.4,9894,product_page_scrape
 2026-04-06T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.942,35.76,True,beauty_offer,Coola Suncare,in_stock,4.4,9883,product_page_scrape
-2026-04-06T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.924,20.18,False,,La Roche-Posay via Target,in_stock,4.5,6584,product_page_scrape
-2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.962,19.83,False,,Neutrogena Store,in_stock,4.5,6631,product_page_scrape
-2026-04-06T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.969,31.61,True,beauty_offer,EltaMD Official,in_stock,4.5,6584,product_page_scrape
-2026-04-06T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.979,30.72,True,beauty_offer,Coola Suncare,in_stock,4.5,6506,product_page_scrape
-2026-04-06T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.968,25.96,False,,La Roche-Posay via Target,in_stock,4.1,7880,product_page_scrape
-2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.958,25.09,False,,Neutrogena Store,in_stock,4.2,7803,product_page_scrape
-2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.962,37.1,True,beauty_offer,EltaMD Official,in_stock,4.3,7701,product_page_scrape
-2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.968,36.46,True,beauty_offer,Coola Suncare,in_stock,4.2,7748,product_page_scrape
+2026-04-06T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.924,29.56,False,,La Roche-Posay via Target,in_stock,4.5,6584,product_page_scrape
+2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.962,29.27,False,,Neutrogena Store,in_stock,4.5,6631,product_page_scrape
+2026-04-06T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.969,33.53,True,beauty_offer,EltaMD Official,in_stock,4.5,6584,product_page_scrape
+2026-04-06T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.979,32.61,True,beauty_offer,Coola Suncare,in_stock,4.5,6506,product_page_scrape
+2026-04-06T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.968,36.34,False,,La Roche-Posay via Target,in_stock,4.1,7880,product_page_scrape
+2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.958,35.31,False,,Neutrogena Store,in_stock,4.2,7803,product_page_scrape
+2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.962,45.66,True,beauty_offer,EltaMD Official,in_stock,4.3,7701,product_page_scrape
+2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.968,44.99,True,beauty_offer,Coola Suncare,in_stock,4.2,7748,product_page_scrape
 2026-04-06T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.931,29.18,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,5386,product_page_scrape
 2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.918,28.85,False,,Neutrogena Store,in_stock,4.2,5457,product_page_scrape
-2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,36.88,True,beauty_offer,EltaMD Official,in_stock,4.3,5353,product_page_scrape
-2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.978,37.27,False,,Coola Suncare,in_stock,4.3,5353,product_page_scrape
-2026-04-06T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.961,23.55,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,3995,product_page_scrape
-2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.98,23.2,False,,Neutrogena Store,in_stock,4.4,4026,product_page_scrape
-2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.966,33.78,False,,EltaMD Official,in_stock,4.5,3987,product_page_scrape
-2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.991,33.01,True,beauty_offer,Coola Suncare,in_stock,4.4,3911,product_page_scrape
+2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,38.77,True,beauty_offer,EltaMD Official,in_stock,4.3,5353,product_page_scrape
+2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.978,39.21,False,,Coola Suncare,in_stock,4.3,5353,product_page_scrape
+2026-04-06T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.961,25.4,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,3995,product_page_scrape
+2026-04-06T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.98,25.06,False,,Neutrogena Store,in_stock,4.4,4026,product_page_scrape
+2026-04-06T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.966,34.75,False,,EltaMD Official,in_stock,4.5,3987,product_page_scrape
+2026-04-06T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.991,33.97,True,beauty_offer,Coola Suncare,in_stock,4.4,3911,product_page_scrape
 2026-04-13T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.986,30.35,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.3,14452,product_page_scrape
 2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.986,29.98,True,limited_time_deal,Neutrogena Store,low_stock,4.3,14420,product_page_scrape
 2026-04-13T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.968,36.47,True,beauty_offer,EltaMD Official,in_stock,4.2,14398,product_page_scrape
@@ -247,22 +247,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.967,32.31,False,,Neutrogena Store,in_stock,4.4,10071,product_page_scrape
 2026-04-13T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.975,37.53,False,,EltaMD Official,in_stock,4.5,9939,product_page_scrape
 2026-04-13T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.955,35.56,True,beauty_offer,Coola Suncare,in_stock,4.4,10004,product_page_scrape
-2026-04-13T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.951,19.82,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.6,6695,product_page_scrape
-2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.926,19.47,False,,Neutrogena Store,in_stock,4.4,6614,product_page_scrape
-2026-04-13T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.97,30.89,True,beauty_offer,EltaMD Official,in_stock,4.5,6598,product_page_scrape
-2026-04-13T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.988,30.87,True,beauty_offer,Coola Suncare,in_stock,4.5,6593,product_page_scrape
-2026-04-13T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.982,25.67,False,,La Roche-Posay via Target,in_stock,4.2,7860,product_page_scrape
-2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.978,25.21,False,,Neutrogena Store,in_stock,4.2,7820,product_page_scrape
-2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.951,35.82,True,beauty_offer,EltaMD Official,in_stock,4.2,7696,product_page_scrape
-2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.95,35.43,True,beauty_offer,Coola Suncare,in_stock,4.2,7747,product_page_scrape
+2026-04-13T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.951,29.04,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.6,6695,product_page_scrape
+2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.926,28.75,False,,Neutrogena Store,in_stock,4.4,6614,product_page_scrape
+2026-04-13T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.97,32.76,True,beauty_offer,EltaMD Official,in_stock,4.5,6598,product_page_scrape
+2026-04-13T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.988,32.77,True,beauty_offer,Coola Suncare,in_stock,4.5,6593,product_page_scrape
+2026-04-13T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.982,35.94,False,,La Roche-Posay via Target,in_stock,4.2,7860,product_page_scrape
+2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.978,35.48,False,,Neutrogena Store,in_stock,4.2,7820,product_page_scrape
+2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.951,44.09,True,beauty_offer,EltaMD Official,in_stock,4.2,7696,product_page_scrape
+2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.95,43.71,True,beauty_offer,Coola Suncare,in_stock,4.2,7747,product_page_scrape
 2026-04-13T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.921,29.36,False,,La Roche-Posay via Target,in_stock,4.3,5402,product_page_scrape
 2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.932,29.24,False,,Neutrogena Store,in_stock,4.3,5501,product_page_scrape
-2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.96,36.58,True,beauty_offer,EltaMD Official,in_stock,4.3,5316,product_page_scrape
-2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.952,36.21,True,beauty_offer,Coola Suncare,in_stock,4.3,5331,product_page_scrape
-2026-04-13T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.974,23.27,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,4013,product_page_scrape
-2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.971,22.76,True,limited_time_deal,Neutrogena Store,low_stock,4.4,4052,product_page_scrape
-2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.979,32.87,True,beauty_offer,EltaMD Official,in_stock,4.4,3922,product_page_scrape
-2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.976,32.28,True,beauty_offer,Coola Suncare,in_stock,4.4,4002,product_page_scrape
+2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.96,38.45,True,beauty_offer,EltaMD Official,in_stock,4.3,5316,product_page_scrape
+2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.952,38.09,True,beauty_offer,Coola Suncare,in_stock,4.3,5331,product_page_scrape
+2026-04-13T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.974,25.09,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,4013,product_page_scrape
+2026-04-13T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.971,24.58,True,limited_time_deal,Neutrogena Store,low_stock,4.4,4052,product_page_scrape
+2026-04-13T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.979,33.81,True,beauty_offer,EltaMD Official,in_stock,4.4,3922,product_page_scrape
+2026-04-13T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.976,33.21,True,beauty_offer,Coola Suncare,in_stock,4.4,4002,product_page_scrape
 2026-04-20T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.951,27.97,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,14464,product_page_scrape
 2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.989,26.22,True,limited_time_deal,Neutrogena Store,low_stock,4.3,14426,product_page_scrape
 2026-04-20T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.986,35.74,True,beauty_offer,EltaMD Official,in_stock,4.3,14390,product_page_scrape
@@ -271,22 +271,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.973,27.99,True,limited_time_deal,Neutrogena Store,low_stock,4.4,10026,product_page_scrape
 2026-04-20T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.957,35.59,True,beauty_offer,EltaMD Official,in_stock,4.4,9989,product_page_scrape
 2026-04-20T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.968,35.46,True,beauty_offer,Coola Suncare,in_stock,4.4,9995,product_page_scrape
-2026-04-20T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.944,18.63,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6679,product_page_scrape
-2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.952,17.24,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6702,product_page_scrape
-2026-04-20T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.956,30.65,True,beauty_offer,EltaMD Official,in_stock,4.5,6585,product_page_scrape
-2026-04-20T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.948,30.25,True,beauty_offer,Coola Suncare,in_stock,4.4,6600,product_page_scrape
-2026-04-20T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.936,23.44,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7860,product_page_scrape
-2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.927,21.57,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7851,product_page_scrape
-2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.982,36.1,True,beauty_offer,EltaMD Official,in_stock,4.2,7737,product_page_scrape
-2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.955,35.76,True,beauty_offer,Coola Suncare,in_stock,4.3,7712,product_page_scrape
+2026-04-20T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.944,27.3,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6679,product_page_scrape
+2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.952,25.44,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6702,product_page_scrape
+2026-04-20T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.956,32.51,True,beauty_offer,EltaMD Official,in_stock,4.5,6585,product_page_scrape
+2026-04-20T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.948,32.11,True,beauty_offer,Coola Suncare,in_stock,4.4,6600,product_page_scrape
+2026-04-20T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.936,32.82,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7860,product_page_scrape
+2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.927,30.36,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7851,product_page_scrape
+2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.982,44.43,True,beauty_offer,EltaMD Official,in_stock,4.2,7737,product_page_scrape
+2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.955,44.12,True,beauty_offer,Coola Suncare,in_stock,4.3,7712,product_page_scrape
 2026-04-20T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.919,26.88,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5451,product_page_scrape
 2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.944,25.81,True,limited_time_deal,Neutrogena Store,in_stock,4.2,5502,product_page_scrape
-2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,37.04,True,beauty_offer,EltaMD Official,in_stock,4.3,5404,product_page_scrape
-2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.984,37.17,False,,Coola Suncare,in_stock,4.3,5317,product_page_scrape
-2026-04-20T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.977,22.42,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4092,product_page_scrape
-2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.962,20.66,True,limited_time_deal,Neutrogena Store,in_stock,4.4,4051,product_page_scrape
-2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.952,33.85,False,,EltaMD Official,in_stock,4.4,3990,product_page_scrape
-2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.975,32.22,True,beauty_offer,Coola Suncare,in_stock,4.4,3954,product_page_scrape
+2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,38.94,True,beauty_offer,EltaMD Official,in_stock,4.3,5404,product_page_scrape
+2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.984,39.1,False,,Coola Suncare,in_stock,4.3,5317,product_page_scrape
+2026-04-20T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.977,24.18,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4092,product_page_scrape
+2026-04-20T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.962,22.31,True,limited_time_deal,Neutrogena Store,in_stock,4.4,4051,product_page_scrape
+2026-04-20T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.952,34.82,False,,EltaMD Official,in_stock,4.4,3990,product_page_scrape
+2026-04-20T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.975,33.15,True,beauty_offer,Coola Suncare,in_stock,4.4,3954,product_page_scrape
 2026-04-27T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.99,30.45,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,14459,product_page_scrape
 2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.937,30.63,False,,Neutrogena Store,in_stock,4.4,14446,product_page_scrape
 2026-04-27T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.955,36.18,True,beauty_offer,EltaMD Official,in_stock,4.4,14343,product_page_scrape
@@ -295,22 +295,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.926,31.88,True,limited_time_deal,Neutrogena Store,low_stock,4.5,10079,product_page_scrape
 2026-04-27T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.958,36.45,True,beauty_offer,EltaMD Official,in_stock,4.4,9934,product_page_scrape
 2026-04-27T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.977,36.97,False,,Coola Suncare,in_stock,4.4,9965,product_page_scrape
-2026-04-27T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.967,19.59,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.5,6710,product_page_scrape
-2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.934,19.16,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6720,product_page_scrape
-2026-04-27T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.99,31.29,True,beauty_offer,EltaMD Official,in_stock,4.5,6557,product_page_scrape
-2026-04-27T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.953,31.16,True,beauty_offer,Coola Suncare,in_stock,4.5,6566,product_page_scrape
-2026-04-27T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.922,24.83,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7857,product_page_scrape
-2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.966,25.11,False,,Neutrogena Store,in_stock,4.1,7902,product_page_scrape
-2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.943,36.86,True,beauty_offer,EltaMD Official,in_stock,4.2,7747,product_page_scrape
-2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.971,36.1,True,beauty_offer,Coola Suncare,in_stock,4.2,7749,product_page_scrape
+2026-04-27T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.967,28.7,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.5,6710,product_page_scrape
+2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.934,28.28,True,limited_time_deal,Neutrogena Store,in_stock,4.5,6720,product_page_scrape
+2026-04-27T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.99,33.19,True,beauty_offer,EltaMD Official,in_stock,4.5,6557,product_page_scrape
+2026-04-27T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.953,33.08,True,beauty_offer,Coola Suncare,in_stock,4.5,6566,product_page_scrape
+2026-04-27T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.922,34.76,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.2,7857,product_page_scrape
+2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.966,35.35,False,,Neutrogena Store,in_stock,4.1,7902,product_page_scrape
+2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.943,45.36,True,beauty_offer,EltaMD Official,in_stock,4.2,7747,product_page_scrape
+2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.971,44.54,True,beauty_offer,Coola Suncare,in_stock,4.2,7749,product_page_scrape
 2026-04-27T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.953,29.11,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5505,product_page_scrape
 2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.986,28.85,False,,Neutrogena Store,in_stock,4.2,5540,product_page_scrape
-2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.972,36.48,True,beauty_offer,EltaMD Official,in_stock,4.3,5378,product_page_scrape
-2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.956,35.78,True,beauty_offer,Coola Suncare,in_stock,4.3,5362,product_page_scrape
-2026-04-27T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.94,23.37,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4130,product_page_scrape
-2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.941,23.35,False,,Neutrogena Store,in_stock,4.3,4144,product_page_scrape
-2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.987,33.78,False,,EltaMD Official,in_stock,4.3,3984,product_page_scrape
-2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.942,33.25,False,,Coola Suncare,in_stock,4.3,4009,product_page_scrape
+2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.972,38.35,True,beauty_offer,EltaMD Official,in_stock,4.3,5378,product_page_scrape
+2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.956,37.64,True,beauty_offer,Coola Suncare,in_stock,4.3,5362,product_page_scrape
+2026-04-27T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.94,25.2,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4130,product_page_scrape
+2026-04-27T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.941,25.22,False,,Neutrogena Store,in_stock,4.3,4144,product_page_scrape
+2026-04-27T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.987,34.75,False,,EltaMD Official,in_stock,4.3,3984,product_page_scrape
+2026-04-27T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.942,34.22,False,,Coola Suncare,in_stock,4.3,4009,product_page_scrape
 2026-05-04T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.96,30.6,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,14490,product_page_scrape
 2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.93,30.95,False,,Neutrogena Store,in_stock,4.2,14559,product_page_scrape
 2026-05-04T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.983,34.89,True,beauty_offer,EltaMD Official,in_stock,4.3,14339,product_page_scrape
@@ -319,22 +319,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.915,32.74,False,,Neutrogena Store,in_stock,4.3,10177,product_page_scrape
 2026-05-04T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.945,35.13,True,beauty_offer,EltaMD Official,in_stock,4.4,10040,product_page_scrape
 2026-05-04T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.977,35.01,True,beauty_offer,Coola Suncare,in_stock,4.4,9944,product_page_scrape
-2026-05-04T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.93,19.94,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,6687,product_page_scrape
-2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.952,19.61,False,,Neutrogena Store,in_stock,4.5,6766,product_page_scrape
-2026-05-04T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.974,29.94,True,beauty_offer,EltaMD Official,in_stock,4.5,6604,product_page_scrape
-2026-05-04T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.986,29.49,True,beauty_offer,Coola Suncare,in_stock,4.5,6649,product_page_scrape
-2026-05-04T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.985,24.82,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7902,product_page_scrape
-2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.94,24.29,True,limited_time_deal,Neutrogena Store,in_stock,4.1,7919,product_page_scrape
-2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.94,34.98,True,beauty_offer,EltaMD Official,in_stock,4.2,7825,product_page_scrape
-2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.979,34.28,True,beauty_offer,Coola Suncare,in_stock,4.3,7753,product_page_scrape
+2026-05-04T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.93,29.22,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,6687,product_page_scrape
+2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.952,28.95,False,,Neutrogena Store,in_stock,4.5,6766,product_page_scrape
+2026-05-04T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.974,31.76,True,beauty_offer,EltaMD Official,in_stock,4.5,6604,product_page_scrape
+2026-05-04T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.986,31.3,True,beauty_offer,Coola Suncare,in_stock,4.5,6649,product_page_scrape
+2026-05-04T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.985,34.75,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.2,7902,product_page_scrape
+2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.94,34.19,True,limited_time_deal,Neutrogena Store,in_stock,4.1,7919,product_page_scrape
+2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.94,43.06,True,beauty_offer,EltaMD Official,in_stock,4.2,7825,product_page_scrape
+2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.979,42.29,True,beauty_offer,Coola Suncare,in_stock,4.3,7753,product_page_scrape
 2026-05-04T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.919,29.78,False,,La Roche-Posay via Target,in_stock,4.3,5471,product_page_scrape
 2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.967,29.02,False,,Neutrogena Store,in_stock,4.3,5564,product_page_scrape
-2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,35.1,True,beauty_offer,EltaMD Official,in_stock,4.2,5369,product_page_scrape
-2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.966,34.22,True,beauty_offer,Coola Suncare,in_stock,4.3,5426,product_page_scrape
-2026-05-04T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.983,23.28,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,4109,product_page_scrape
-2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.97,23.33,False,,Neutrogena Store,in_stock,4.4,4129,product_page_scrape
-2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.961,32.27,True,beauty_offer,EltaMD Official,in_stock,4.3,3974,product_page_scrape
-2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.977,31.91,True,beauty_offer,Coola Suncare,in_stock,4.4,3965,product_page_scrape
+2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.958,36.9,True,beauty_offer,EltaMD Official,in_stock,4.2,5369,product_page_scrape
+2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.966,35.99,True,beauty_offer,Coola Suncare,in_stock,4.3,5426,product_page_scrape
+2026-05-04T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.983,25.11,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,4109,product_page_scrape
+2026-05-04T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.97,25.2,False,,Neutrogena Store,in_stock,4.4,4129,product_page_scrape
+2026-05-04T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.961,33.19,True,beauty_offer,EltaMD Official,in_stock,4.3,3974,product_page_scrape
+2026-05-04T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.977,32.83,True,beauty_offer,Coola Suncare,in_stock,4.4,3965,product_page_scrape
 2026-05-11T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.987,28.49,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,14583,product_page_scrape
 2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.937,26.88,True,limited_time_deal,Neutrogena Store,in_stock,4.2,14513,product_page_scrape
 2026-05-11T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.948,36.11,True,beauty_offer,EltaMD Official,in_stock,4.3,14465,product_page_scrape
@@ -343,22 +343,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.931,27.99,True,limited_time_deal,Neutrogena Store,in_stock,4.3,10191,product_page_scrape
 2026-05-11T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.98,35.65,True,beauty_offer,EltaMD Official,in_stock,4.5,9980,product_page_scrape
 2026-05-11T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.947,35.94,True,beauty_offer,Coola Suncare,in_stock,4.4,10006,product_page_scrape
-2026-05-11T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.986,18.86,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6740,product_page_scrape
-2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.926,17.32,True,limited_time_deal,Neutrogena Store,in_stock,4.4,6783,product_page_scrape
-2026-05-11T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.97,30.61,True,beauty_offer,EltaMD Official,in_stock,4.5,6585,product_page_scrape
-2026-05-11T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.96,30.83,True,beauty_offer,Coola Suncare,in_stock,4.5,6659,product_page_scrape
-2026-05-11T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.953,24.15,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.1,7984,product_page_scrape
-2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.918,21.71,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7955,product_page_scrape
-2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.959,36.59,True,beauty_offer,EltaMD Official,in_stock,4.2,7830,product_page_scrape
-2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.988,35.86,True,beauty_offer,Coola Suncare,in_stock,4.2,7848,product_page_scrape
+2026-05-11T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.986,27.63,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.5,6740,product_page_scrape
+2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.926,25.57,True,limited_time_deal,Neutrogena Store,in_stock,4.4,6783,product_page_scrape
+2026-05-11T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.97,32.46,True,beauty_offer,EltaMD Official,in_stock,4.5,6585,product_page_scrape
+2026-05-11T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.96,32.73,True,beauty_offer,Coola Suncare,in_stock,4.5,6659,product_page_scrape
+2026-05-11T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.953,33.81,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.1,7984,product_page_scrape
+2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.918,30.56,True,limited_time_deal,Neutrogena Store,in_stock,4.2,7955,product_page_scrape
+2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.959,45.04,True,beauty_offer,EltaMD Official,in_stock,4.2,7830,product_page_scrape
+2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.988,44.24,True,beauty_offer,Coola Suncare,in_stock,4.2,7848,product_page_scrape
 2026-05-11T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.957,27.51,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5533,product_page_scrape
 2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.988,25.98,True,limited_time_deal,Neutrogena Store,in_stock,4.2,5528,product_page_scrape
-2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,37.1,True,beauty_offer,EltaMD Official,in_stock,4.2,5440,product_page_scrape
-2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.955,35.87,True,beauty_offer,Coola Suncare,in_stock,4.3,5442,product_page_scrape
-2026-05-11T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.988,21.74,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,4190,product_page_scrape
-2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.952,20.54,True,limited_time_deal,Neutrogena Store,in_stock,4.4,4152,product_page_scrape
-2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.946,32.71,True,beauty_offer,EltaMD Official,in_stock,4.3,3962,product_page_scrape
-2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.986,33.28,False,,Coola Suncare,in_stock,4.5,4063,product_page_scrape
+2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.973,39.0,True,beauty_offer,EltaMD Official,in_stock,4.2,5440,product_page_scrape
+2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.955,37.74,True,beauty_offer,Coola Suncare,in_stock,4.3,5442,product_page_scrape
+2026-05-11T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.988,23.45,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.4,4190,product_page_scrape
+2026-05-11T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.952,22.18,True,limited_time_deal,Neutrogena Store,in_stock,4.4,4152,product_page_scrape
+2026-05-11T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.946,33.64,True,beauty_offer,EltaMD Official,in_stock,4.3,3962,product_page_scrape
+2026-05-11T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.986,34.25,False,,Coola Suncare,in_stock,4.5,4063,product_page_scrape
 2026-05-18T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.99,30.29,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,14531,product_page_scrape
 2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.921,30.85,False,,Neutrogena Store,in_stock,4.2,14616,product_page_scrape
 2026-05-18T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.968,36.91,True,beauty_offer,EltaMD Official,in_stock,4.3,14400,product_page_scrape
@@ -367,22 +367,22 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.97,31.67,True,limited_time_deal,Neutrogena Store,in_stock,4.3,10206,product_page_scrape
 2026-05-18T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.977,37.08,True,beauty_offer,EltaMD Official,in_stock,4.5,9991,product_page_scrape
 2026-05-18T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.94,35.62,True,beauty_offer,Coola Suncare,in_stock,4.4,9990,product_page_scrape
-2026-05-18T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.932,20.41,False,,La Roche-Posay via Target,in_stock,4.6,6796,product_page_scrape
-2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.982,19.37,False,,Neutrogena Store,in_stock,4.5,6806,product_page_scrape
-2026-05-18T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.983,31.67,True,beauty_offer,EltaMD Official,in_stock,4.5,6670,product_page_scrape
-2026-05-18T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.945,30.54,True,beauty_offer,Coola Suncare,in_stock,4.5,6627,product_page_scrape
-2026-05-18T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.982,25.6,False,,La Roche-Posay via Target,in_stock,4.2,7982,product_page_scrape
-2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.955,25.55,False,,Neutrogena Store,in_stock,4.2,7952,product_page_scrape
-2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.99,37.7,False,,EltaMD Official,in_stock,4.1,7821,product_page_scrape
-2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.983,36.88,True,beauty_offer,Coola Suncare,in_stock,4.2,7806,product_page_scrape
+2026-05-18T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.932,29.9,False,,La Roche-Posay via Target,in_stock,4.6,6796,product_page_scrape
+2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.982,28.59,False,,Neutrogena Store,in_stock,4.5,6806,product_page_scrape
+2026-05-18T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.983,33.59,True,beauty_offer,EltaMD Official,in_stock,4.5,6670,product_page_scrape
+2026-05-18T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.945,32.42,True,beauty_offer,Coola Suncare,in_stock,4.5,6627,product_page_scrape
+2026-05-18T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.982,35.84,False,,La Roche-Posay via Target,in_stock,4.2,7982,product_page_scrape
+2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.955,35.96,False,,Neutrogena Store,in_stock,4.2,7952,product_page_scrape
+2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.99,46.4,False,,EltaMD Official,in_stock,4.1,7821,product_page_scrape
+2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.983,45.51,True,beauty_offer,Coola Suncare,in_stock,4.2,7806,product_page_scrape
 2026-05-18T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.951,29.83,False,,La Roche-Posay via Target,in_stock,4.3,5615,product_page_scrape
 2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.917,29.51,False,,Neutrogena Store,in_stock,4.3,5534,product_page_scrape
-2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.969,36.51,True,beauty_offer,EltaMD Official,in_stock,4.2,5468,product_page_scrape
-2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.961,36.04,True,beauty_offer,Coola Suncare,in_stock,4.3,5368,product_page_scrape
-2026-05-18T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.963,23.66,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4196,product_page_scrape
-2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.965,23.04,False,,Neutrogena Store,in_stock,4.3,4226,product_page_scrape
-2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.986,32.89,True,beauty_offer,EltaMD Official,in_stock,4.4,4064,product_page_scrape
-2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.941,32.57,True,beauty_offer,Coola Suncare,in_stock,4.4,4002,product_page_scrape
+2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.969,38.39,True,beauty_offer,EltaMD Official,in_stock,4.2,5468,product_page_scrape
+2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.961,37.91,True,beauty_offer,Coola Suncare,in_stock,4.3,5368,product_page_scrape
+2026-05-18T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.963,25.52,True,limited_time_deal,La Roche-Posay via Target,low_stock,4.4,4196,product_page_scrape
+2026-05-18T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.965,24.88,False,,Neutrogena Store,in_stock,4.3,4226,product_page_scrape
+2026-05-18T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.986,33.83,True,beauty_offer,EltaMD Official,in_stock,4.4,4064,product_page_scrape
+2026-05-18T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.941,33.52,True,beauty_offer,Coola Suncare,in_stock,4.4,4002,product_page_scrape
 2026-05-25T08:00:00Z,target.com,target,TGT-SUN-S1,SUN_S1,0.959,31.36,False,,La Roche-Posay via Target,in_stock,4.2,14597,product_page_scrape
 2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-SUN-S1,SUN_S1,0.979,30.26,False,,Neutrogena Store,in_stock,4.3,14572,product_page_scrape
 2026-05-25T08:00:00Z,sephora.com,sephora,SEP-SUN-S1,SUN_S1,0.965,37.03,True,beauty_offer,EltaMD Official,in_stock,4.3,14400,product_page_scrape
@@ -391,19 +391,19 @@ captured_at,source_domain,channel,competitor_sku,matched_sku_id,match_confidence
 2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-SUN-S2,SUN_S2,0.912,31.63,True,limited_time_deal,Neutrogena Store,in_stock,4.4,10141,product_page_scrape
 2026-05-25T08:00:00Z,sephora.com,sephora,SEP-SUN-S2,SUN_S2,0.949,36.95,True,beauty_offer,EltaMD Official,in_stock,4.4,10045,product_page_scrape
 2026-05-25T08:00:00Z,ulta.com,ulta,ULT-SUN-S2,SUN_S2,0.972,35.88,True,beauty_offer,Coola Suncare,in_stock,4.4,10080,product_page_scrape
-2026-05-25T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.948,20.0,False,,La Roche-Posay via Target,in_stock,4.5,6794,product_page_scrape
-2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.929,20.01,False,,Neutrogena Store,in_stock,4.5,6752,product_page_scrape
-2026-05-25T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.971,32.11,False,,EltaMD Official,in_stock,4.5,6588,product_page_scrape
-2026-05-25T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.96,31.54,False,,Coola Suncare,in_stock,4.5,6642,product_page_scrape
-2026-05-25T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.93,25.58,False,,La Roche-Posay via Target,in_stock,4.2,8041,product_page_scrape
-2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.966,24.7,True,limited_time_deal,Neutrogena Store,in_stock,4.2,8001,product_page_scrape
-2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.98,36.24,True,beauty_offer,EltaMD Official,in_stock,4.2,7885,product_page_scrape
-2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.957,37.25,False,,Coola Suncare,in_stock,4.2,7802,product_page_scrape
+2026-05-25T08:00:00Z,target.com,target,TGT-SUN-S3,SUN_S3,0.948,29.3,False,,La Roche-Posay via Target,in_stock,4.5,6794,product_page_scrape
+2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-SUN-S3,SUN_S3,0.929,29.54,False,,Neutrogena Store,in_stock,4.5,6752,product_page_scrape
+2026-05-25T08:00:00Z,sephora.com,sephora,SEP-SUN-S3,SUN_S3,0.971,34.05,False,,EltaMD Official,in_stock,4.5,6588,product_page_scrape
+2026-05-25T08:00:00Z,ulta.com,ulta,ULT-SUN-S3,SUN_S3,0.96,33.48,False,,Coola Suncare,in_stock,4.5,6642,product_page_scrape
+2026-05-25T08:00:00Z,target.com,target,TGT-MOI-M1,MOI_M1,0.93,35.82,False,,La Roche-Posay via Target,in_stock,4.2,8041,product_page_scrape
+2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-MOI-M1,MOI_M1,0.966,34.76,True,limited_time_deal,Neutrogena Store,in_stock,4.2,8001,product_page_scrape
+2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M1,MOI_M1,0.98,44.6,True,beauty_offer,EltaMD Official,in_stock,4.2,7885,product_page_scrape
+2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M1,MOI_M1,0.957,45.96,False,,Coola Suncare,in_stock,4.2,7802,product_page_scrape
 2026-05-25T08:00:00Z,target.com,target,TGT-MOI-M2,MOI_M2,0.936,29.18,True,limited_time_deal,La Roche-Posay via Target,in_stock,4.3,5652,product_page_scrape
 2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-MOI-M2,MOI_M2,0.962,29.07,False,,Neutrogena Store,in_stock,4.3,5590,product_page_scrape
-2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.946,38.05,False,,EltaMD Official,in_stock,4.2,5480,product_page_scrape
-2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.98,36.41,True,beauty_offer,Coola Suncare,in_stock,4.3,5403,product_page_scrape
-2026-05-25T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.941,23.76,False,,La Roche-Posay via Target,in_stock,4.4,4146,product_page_scrape
-2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.981,23.89,False,,Neutrogena Store,in_stock,4.4,4188,product_page_scrape
-2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.951,34.06,False,,EltaMD Official,in_stock,4.4,3996,product_page_scrape
-2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.975,33.14,False,,Coola Suncare,in_stock,4.4,4025,product_page_scrape
+2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M2,MOI_M2,0.946,40.01,False,,EltaMD Official,in_stock,4.2,5480,product_page_scrape
+2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M2,MOI_M2,0.98,38.31,True,beauty_offer,Coola Suncare,in_stock,4.3,5403,product_page_scrape
+2026-05-25T08:00:00Z,target.com,target,TGT-MOI-M3,MOI_M3,0.941,25.62,False,,La Roche-Posay via Target,in_stock,4.4,4146,product_page_scrape
+2026-05-25T08:00:00Z,amazon.com,amazon,AMZ-MOI-M3,MOI_M3,0.981,25.8,False,,Neutrogena Store,in_stock,4.4,4188,product_page_scrape
+2026-05-25T08:00:00Z,sephora.com,sephora,SEP-MOI-M3,MOI_M3,0.951,35.03,False,,EltaMD Official,in_stock,4.4,3996,product_page_scrape
+2026-05-25T08:00:00Z,ulta.com,ulta,ULT-MOI-M3,MOI_M3,0.975,34.1,False,,Coola Suncare,in_stock,4.4,4025,product_page_scrape

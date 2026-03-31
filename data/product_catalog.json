@@ -1,0 +1,132 @@
+[
+  {
+    "sku_id": "SUN_S1",
+    "official_name": "Unseen Sunscreen SPF 50",
+    "short_name": "Unseen Sunscreen",
+    "product_group": "sunscreen",
+    "real_world_category": "face sunscreen",
+    "representative_size": "1.7 fl. oz.",
+    "dtc_price_anchor_usd": 38,
+    "dtc_price_range_note": "$19-$76 across sizes and packs on Supergoop",
+    "expected_mass_price_range_usd": [
+      32,
+      36
+    ],
+    "expected_prestige_price_range_usd": [
+      36,
+      40
+    ],
+    "legacy_aliases": [
+      "Unseen Sunscreen SPF 40",
+      "Daily Shield SPF 40"
+    ]
+  },
+  {
+    "sku_id": "SUN_S2",
+    "official_name": "Glowscreen SPF 40",
+    "short_name": "Glowscreen",
+    "product_group": "sunscreen",
+    "real_world_category": "face sunscreen",
+    "representative_size": "1.7 fl. oz.",
+    "dtc_price_anchor_usd": 36,
+    "dtc_price_range_note": "Representative prestige-market anchor for full-size Glowscreen",
+    "expected_mass_price_range_usd": [
+      34,
+      38
+    ],
+    "expected_prestige_price_range_usd": [
+      36,
+      40
+    ],
+    "legacy_aliases": [
+      "Invisible Mist SPF 50"
+    ]
+  },
+  {
+    "sku_id": "SUN_S3",
+    "official_name": "Every. Single. Face. Watery Lotion SPF 50",
+    "short_name": "Every. Single. Face.",
+    "product_group": "sunscreen",
+    "real_world_category": "face sunscreen",
+    "representative_size": "1.7 fl. oz.",
+    "dtc_price_anchor_usd": 34,
+    "dtc_price_range_note": "Official Supergoop price anchor for 1.7 fl. oz.",
+    "expected_mass_price_range_usd": [
+      30,
+      34
+    ],
+    "expected_prestige_price_range_usd": [
+      32,
+      36
+    ],
+    "legacy_aliases": [
+      "Play Everyday Lotion SPF 50",
+      "Sport Gel SPF 60"
+    ]
+  },
+  {
+    "sku_id": "MOI_M1",
+    "official_name": "Superscreen Hydrating Daily Cream SPF 40",
+    "short_name": "Superscreen Daily Cream",
+    "product_group": "moisturizer",
+    "real_world_category": "daily SPF moisturizer",
+    "representative_size": "1.7 fl. oz.",
+    "dtc_price_anchor_usd": 48,
+    "dtc_price_range_note": "Supergoop / Ulta premium moisturizer anchor",
+    "expected_mass_price_range_usd": [
+      36,
+      42
+    ],
+    "expected_prestige_price_range_usd": [
+      44,
+      50
+    ],
+    "legacy_aliases": [
+      "Superscreen Daily Moisturizer",
+      "Hydra Daily Lotion"
+    ]
+  },
+  {
+    "sku_id": "MOI_M2",
+    "official_name": "Mineral Sheerscreen SPF 30",
+    "short_name": "Mineral Sheerscreen",
+    "product_group": "moisturizer",
+    "real_world_category": "mineral face sunscreen",
+    "representative_size": "1.5 fl. oz.",
+    "dtc_price_anchor_usd": 40,
+    "dtc_price_range_note": "Full-size mineral-face-SPF anchor",
+    "expected_mass_price_range_usd": [
+      30,
+      34
+    ],
+    "expected_prestige_price_range_usd": [
+      38,
+      42
+    ],
+    "legacy_aliases": [
+      "Barrier Repair Cream"
+    ]
+  },
+  {
+    "sku_id": "MOI_M3",
+    "official_name": "(Re)setting 100% Mineral Powder SPF 35",
+    "short_name": "(Re)setting Powder",
+    "product_group": "moisturizer",
+    "real_world_category": "powder SPF",
+    "representative_size": "0.15 oz.",
+    "dtc_price_anchor_usd": 35,
+    "dtc_price_range_note": "Official Supergoop refillable powder anchor",
+    "expected_mass_price_range_usd": [
+      26,
+      30
+    ],
+    "expected_prestige_price_range_usd": [
+      33,
+      36
+    ],
+    "legacy_aliases": [
+      "(Re)setting Powder SPF 35",
+      "Night Recovery Balm"
+    ]
+  }
+]

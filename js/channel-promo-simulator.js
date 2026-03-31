@@ -13,6 +13,11 @@ import {
   loadEventCalendar,
   loadCompetitorPriceFeed
 } from './data-loader.js';
+import {
+  loadProductCatalog,
+  buildProductCatalogMap,
+  getCatalogLabel
+} from './product-catalog.js';
 import { formatCurrency, formatPercent, formatNumber } from './utils.js';
 
 let channelPromoRevenueChart = null;
@@ -2491,14 +2496,8 @@ function updateChannelPromoSimulator() {
 }
 
 // --------------- Competitor Alert Banner ---------------
-const SKU_DISPLAY_NAMES = {
-  SUN_S1: 'Unseen Sunscreen SPF 40',
-  SUN_S2: 'Glowscreen SPF 40',
-  SUN_S3: 'Play Everyday Lotion SPF 50',
-  MOI_M1: 'Superscreen Daily Moisturizer',
-  MOI_M2: 'Mineral Sheerscreen SPF 30',
-  MOI_M3: '(Re)setting Powder SPF 35'
-};
+let productCatalogMap = new Map();
+const getSkuDisplayName = (skuId) => getCatalogLabel(productCatalogMap, skuId, skuId);
 
 const CHANNEL_DISPLAY_NAMES = {
   target: 'Target',
@@ -2547,7 +2546,7 @@ async function updateCompetitorAlertBanner() {
       if (dropPct > 5) {
         alerts.push({
           sku: row.matched_sku_id,
-          skuName: SKU_DISPLAY_NAMES[row.matched_sku_id] || row.matched_sku_id,
+          skuName: getSkuDisplayName(row.matched_sku_id),
           channel: row.channel,
           channelName: CHANNEL_DISPLAY_NAMES[row.channel] || row.channel,
           prevPrice,
@@ -2608,14 +2607,15 @@ async function initializeChannelPromoSimulator() {
   if (!root) return;
 
   try {
-    const [weeklyData, params, skuWeekly, external, social, promoMeta, events] = await Promise.all([
+    const [weeklyData, params, skuWeekly, external, social, promoMeta, events, productCatalog] = await Promise.all([
       getWeeklyData('all'),
       loadElasticityParams(),
       loadSkuWeeklyData(),
       loadExternalFactors(),
       loadSocialSignals(),
       loadPromoMetadata(),
-      loadEventCalendar()
+      loadEventCalendar(),
+      loadProductCatalog()
     ]);
 
     if (!weeklyData?.length || !skuWeekly?.length || !params) return;
@@ -2625,6 +2625,7 @@ async function initializeChannelPromoSimulator() {
     socialSignals = social || [];
     promoMetadata = promoMeta || {};
     retailEvents = events || [];
+    productCatalogMap = buildProductCatalogMap(productCatalog);
 
     const currentWeekRow = skuWeeklyData.find(row => row.is_current_week === true);
     if (currentWeekRow) currentSeasonWeek = Number(currentWeekRow.week_of_season);
@@ -2813,7 +2814,7 @@ async function initializeChannelPromoSimulator() {
       } else if (type === 'social') {
         setControl(groupSelect, 'sunscreen');
         populateSkuSelector();
-        setControl(skuSelect, findSkuIdByName('Play Everyday Lotion SPF 50') || 'SUN_S3');
+        setControl(skuSelect, findSkuIdByName('Every. Single. Face. Watery Lotion SPF 50') || 'SUN_S3');
         setControl(massSlider, 5);
         setControl(prestigeSlider, 0);
         setControl(skuBoostSlider, 0);
@@ -2823,11 +2824,11 @@ async function initializeChannelPromoSimulator() {
         if (applyMass) applyMass.checked = false;
         if (applyPrestige) applyPrestige.checked = true;
         updateSkuBoostState();
-        setNarrative('In-Season Pivot: TikTok momentum spikes for Play Everyday Lotion SPF 50, so we hold depth and protect margin where social pull is strong.');
+        setNarrative('In-Season Pivot: social momentum spikes for Every. Single. Face. Watery Lotion SPF 50, so we hold depth and protect margin where social pull is strong.');
       } else if (type === 'clearance') {
         setControl(groupSelect, 'all');
         populateSkuSelector();
-        setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 40') || 'SUN_S1');
+        setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 50') || 'SUN_S1');
         setControl(massSlider, 20);
         setControl(prestigeSlider, 10);
         setControl(skuBoostSlider, 8);
@@ -2846,7 +2847,7 @@ async function initializeChannelPromoSimulator() {
       stopLivePlayback();
       setControl(groupSelect, 'sunscreen');
       populateSkuSelector();
-      setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 40') || 'SUN_S1');
+      setControl(skuSelect, findSkuIdByName('Unseen Sunscreen SPF 50') || 'SUN_S1');
       setControl(massSlider, 10);
       setControl(prestigeSlider, 0);
       setControl(skuBoostSlider, 12);
@@ -2856,7 +2857,7 @@ async function initializeChannelPromoSimulator() {
       if (applyMass) applyMass.checked = true;
       if (applyPrestige) applyPrestige.checked = false;
       updateSkuBoostState();
-      setNarrative('Cannibalization demo: discount Unseen Sunscreen SPF 40 and track unit migration from sibling sunscreen products.');
+      setNarrative('Cannibalization demo: discount Unseen Sunscreen SPF 50 and track unit migration from sibling sunscreen products.');
       updateValues();
     };
 

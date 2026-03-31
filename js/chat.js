@@ -14,6 +14,11 @@ import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 import { Marked } from "marked";
 import { parse } from "partial-json";
 import saveform from "saveform";
+import {
+  loadProductCatalog,
+  buildProductCatalogMap,
+  getCatalogLabel
+} from "./product-catalog.js";
 
 // Initialize Markdown renderer with code highlighting
 const marked = new Marked();
@@ -1133,9 +1138,14 @@ export async function generateLiveCopilot(payload = {}) {
     || (dataContext?.getVisualizationData ? dataContext.getVisualizationData()?.livePromoSnapshot : null)
     || null;
   const businessContext = payload.businessContext || dataContext?.businessContext || {};
+  const productCatalog = await loadProductCatalog();
+  const productCatalogMap = buildProductCatalogMap(productCatalog);
+  const skuSummary = productCatalog.map(entry => `${entry.official_name} (${entry.sku_id})`).join(', ');
+  const includeExample = `${getCatalogLabel(productCatalogMap, 'SUN_S1')} (high inventory, elastic), ${getCatalogLabel(productCatalogMap, 'SUN_S3')} (above competitor)`;
+  const excludeExample = `${getCatalogLabel(productCatalogMap, 'MOI_M3')} (strong social pull, less elastic)`;
 
   const systemPrompt = `You are a promotion optimization copilot for Supergoop (seasonal sunscreen & moisturizer brand).
-The 6 SKUs are: Daily Shield SPF 40 (SUN_S1), Invisible Mist SPF 50 (SUN_S2), Sport Gel SPF 60 (SUN_S3), Hydra Daily Lotion (MOI_M1), Barrier Repair Cream (MOI_M2), Night Recovery Balm (MOI_M3).
+The 6 SKUs are: ${skuSummary}.
 The 4 retailers are: Target & Amazon (mass channel), Sephora & Ulta (prestige channel).
 
 Return ONLY valid JSON with schema:
@@ -1146,8 +1156,8 @@ Return ONLY valid JSON with schema:
   "actions": ["string", "string", "string"],
   "risks": ["string", "string"],
   "why_now": "string <= 160 chars",
-  "include_in_promo": "string <= 200 chars — specific SKU names to promote and why (e.g. 'Daily Shield SPF 40 (high inventory, elastic), Sport Gel SPF 60 (above competitor)')",
-  "exclude_hold": "string <= 200 chars — specific SKU names to hold/exclude and why (e.g. 'Night Recovery Balm (strong social pull, less elastic)')",
+  "include_in_promo": "string <= 200 chars — specific SKU names to promote and why (e.g. '${includeExample}')",
+  "exclude_hold": "string <= 200 chars — specific SKU names to hold/exclude and why (e.g. '${excludeExample}')",
   "risk_watch": "string <= 200 chars — key risks to monitor this week",
   "decision_brief": "string <= 400 chars — numbered brief: 1) Include, 2) Exclude/Hold, 3) Channel plan (name Target/Amazon/Sephora/Ulta), 4) Expected inventory effect",
   "recommended_mass_promo": "number 0-40 — recommended promo depth % for Target & Amazon",

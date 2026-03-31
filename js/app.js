@@ -19,6 +19,11 @@ import {
   loadPromoMetadata
 } from './data-loader.js';
 import {
+  loadProductCatalog,
+  buildProductCatalogMap,
+  getCatalogLabel
+} from './product-catalog.js';
+import {
   simulateScenario,
   simulateScenarioWithPyodide,
   initializePyodideModels,
@@ -5379,11 +5384,12 @@ let wdInitialized = false;
 async function initializeWeeklyDrilldown() {
   if (wdInitialized) return;
   try {
-    const [skuWeekly, socialSignals, compFeed, productHistory] = await Promise.all([
+    const [skuWeekly, socialSignals, compFeed, productHistory, productCatalog] = await Promise.all([
       loadSkuWeeklyData(),
       loadSocialSignals(),
       loadCompetitorPriceFeed(),
-      loadProductChannelHistory()
+      loadProductChannelHistory(),
+      loadProductCatalog()
     ]);
     if (!skuWeekly?.length || !productHistory?.length) return;
 
@@ -5394,7 +5400,8 @@ async function initializeWeeklyDrilldown() {
     const fmtPts = v => `${v >= 0 ? '+' : ''}${v.toFixed(1)} pts`;
     const fmtDollarDelta = v => `${v >= 0 ? '+' : '-'}$${Math.abs(v).toFixed(2)}`;
     const fmtSignedScore = v => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
-    const SKU_NAMES = { SUN_S1: 'Unseen Sunscreen SPF 40', SUN_S2: 'Glowscreen SPF 40', SUN_S3: 'Play Everyday Lotion SPF 50', MOI_M1: 'Superscreen Daily Moisturizer', MOI_M2: 'Mineral Sheerscreen SPF 30', MOI_M3: '(Re)setting Powder SPF 35' };
+    const productCatalogMap = buildProductCatalogMap(productCatalog);
+    const getSkuName = (skuId) => getCatalogLabel(productCatalogMap, skuId, skuId);
     const CHANNEL_LABELS = { target: 'Target', amazon: 'Amazon', sephora: 'Sephora', ulta: 'Ulta' };
     const CHANNELS = ['target', 'amazon', 'sephora', 'ulta'];
 
@@ -5576,7 +5583,7 @@ async function initializeWeeklyDrilldown() {
     // Product × Channel Performance Grid
     const skuIds = [...new Set(thisWeekRows.map(r => r.sku_id))].sort();
     const gridHtml = skuIds.map(sku => {
-      const skuName = SKU_NAMES[sku] || sku;
+      const skuName = getSkuName(sku);
       let totalUnits = 0;
       const cells = CHANNELS.map(ch => {
         const row = thisWeekRows.find(r => r.sku_id === sku && (r.sales_channel || '').toLowerCase() === ch);
@@ -5607,7 +5614,7 @@ async function initializeWeeklyDrilldown() {
     if (revProductFilter && !revProductFilter.dataset.bound) {
       revProductFilter.innerHTML = [
         '<option value="all">All Products</option>',
-        ...skuIds.map(sku => `<option value="${sku}">${SKU_NAMES[sku] || sku}</option>`)
+        ...skuIds.map(sku => `<option value="${sku}">${getSkuName(sku)}</option>`)
       ].join('');
       revProductFilter.dataset.bound = 'true';
     }
@@ -5664,7 +5671,7 @@ async function initializeWeeklyDrilldown() {
       const changeClass = r.ownPriceChange < -0.05 ? 'text-danger' : r.ownPriceChange > 0.05 ? 'text-success' : 'text-muted';
       const changeIcon = r.ownPriceChange < -0.05 ? '<i class="bi bi-arrow-down-short"></i>' : r.ownPriceChange > 0.05 ? '<i class="bi bi-arrow-up-short"></i>' : '<i class="bi bi-dash"></i>';
       return `<tr>
-        <td class="fw-semibold">${SKU_NAMES[r.sku] || r.sku}</td>
+        <td class="fw-semibold">${getSkuName(r.sku)}</td>
         <td>${CHANNEL_LABELS[r.channel] || r.channel}</td>
         <td class="text-end">$${r.theirPrice.toFixed(2)}</td>
         <td class="text-end text-muted">$${r.prevOwnPrice.toFixed(2)}</td>
@@ -5700,7 +5707,7 @@ async function initializeWeeklyDrilldown() {
       const changeIcon = change > 1 ? '<i class="bi bi-arrow-up-short"></i>' : change < -1 ? '<i class="bi bi-arrow-down-short"></i>' : '';
       return `
         <div class="wd-social-bar-row">
-          <span class="wd-social-bar-label">${SKU_NAMES[sku] || sku}</span>
+          <span class="wd-social-bar-label">${getSkuName(sku)}</span>
           <div class="wd-social-bar-track" style="position:relative;">
             <div class="wd-social-bar-fill" style="width: ${prevPct}%; opacity: 0.3; position:absolute; top:0; left:0; height:100%;" title="Last week: ${prevAvg.toFixed(1)}"></div>
             <div class="wd-social-bar-fill" style="width: ${pct}%; position:relative; z-index:1;"></div>
@@ -5735,10 +5742,10 @@ async function initializeWeeklyDrilldown() {
       const prevU = prevWeekRows.filter(r => r.sku_id === sku).reduce((s, r) => s + toNum(r.units_sold), 0);
       return prevU > 0 && ((currU - prevU) / prevU * 100) < -5;
     });
-    if (decliningSkus.length) takeaways.push({ icon: 'bi-arrow-down-circle', cls: 'wd-take-warning', text: `${decliningSkus.map(s => SKU_NAMES[s] || s).join(', ')} declined >5% WoW in units. Investigate pricing or inventory depth.` });
+    if (decliningSkus.length) takeaways.push({ icon: 'bi-arrow-down-circle', cls: 'wd-take-warning', text: `${decliningSkus.map(s => getSkuName(s)).join(', ')} declined >5% WoW in units. Investigate pricing or inventory depth.` });
     // Competitor pricing alert
     const bigMoves = compRows.filter(r => Math.abs(r.move) > 0.5);
-    if (bigMoves.length) takeaways.push({ icon: 'bi-exclamation-triangle', cls: 'wd-take-danger', text: `${bigMoves.length} significant competitor price move(s) detected. Largest: ${SKU_NAMES[bigMoves[0].sku] || bigMoves[0].sku} on ${CHANNEL_LABELS[bigMoves[0].channel]} (${bigMoves[0].move > 0 ? '+' : ''}$${bigMoves[0].move.toFixed(2)}).` });
+    if (bigMoves.length) takeaways.push({ icon: 'bi-exclamation-triangle', cls: 'wd-take-danger', text: `${bigMoves.length} significant competitor price move(s) detected. Largest: ${getSkuName(bigMoves[0].sku)} on ${CHANNEL_LABELS[bigMoves[0].channel]} (${bigMoves[0].move > 0 ? '+' : ''}$${bigMoves[0].move.toFixed(2)}).` });
     // Social momentum
     if (sentimentScore > 20) takeaways.push({ icon: 'bi-graph-up-arrow', cls: 'wd-take-info', text: `Social sentiment is strong at ${fmtSignedScore(sentimentScore)}. Preserve pricing where possible and let organic demand do more of the work.` });
     else if (sentimentScore < -5) takeaways.push({ icon: 'bi-graph-down-arrow', cls: 'wd-take-info', text: `Social sentiment is soft at ${fmtSignedScore(sentimentScore)}. Content or creator support may be needed before leaning harder on price.` });

@@ -1,409 +1,409 @@
-week_start,week_of_season,is_current_week,season_phase,product_group,sku_id,sku_name,channel_group,sales_channel,start_inventory_units,end_inventory_units,list_price,effective_price,promo_depth_pct,competitor_price,price_gap_vs_competitor,social_engagement_score,base_elasticity,effective_elasticity,own_units_sold,cannibalized_out_units,net_units_sold,revenue,gross_margin_pct,sentiment_score
-2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,3200,3123,33.5,33.5,0.0,31.13,0.0761,64.44,-2.35,-2.441,77,0.0,77,2579.5,0.42,28.9
-2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,3200,3128,33.0,33.0,0.0,30.59,0.0788,63.52,-2.35,-2.441,72,0.0,72,2376.0,0.42,27.0
-2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2400,2349,39.0,39.0,0.0,36.05,0.0818,67.6,-1.55,-1.353,51,0.0,51,1989.0,0.56,35.2
-2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2400,2353,38.5,38.5,0.0,36.5,0.0548,68.23,-1.55,-1.353,47,0.0,47,1809.5,0.56,36.5
-2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2800,2735,35.5,35.5,0.0,32.8,0.0823,62.11,-2.15,-2.233,65,0.0,65,2307.5,0.42,24.2
-2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2800,2743,35.0,35.0,0.0,32.11,0.09,61.02,-2.15,-2.233,57,0.0,57,1995.0,0.42,22.0
-2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,2100,2052,39.0,39.0,0.0,37.16,0.0495,67.8,-1.42,-1.24,48,0.0,48,1872.0,0.56,35.6
-2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2100,2057,38.5,38.5,0.0,35.95,0.0709,66.95,-1.42,-1.24,43,0.0,43,1655.5,0.56,33.9
-2026-02-02,1,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,4200,4091,21.5,21.5,0.0,20.04,0.0729,60.6,-1.95,-2.026,109,0.0,109,2343.5,0.42,21.2
-2026-02-02,1,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,4200,4115,21.0,21.0,0.0,20.0,0.05,60.49,-1.95,-2.026,85,0.0,85,1785.0,0.42,21.0
-2026-02-02,1,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,2000,1954,33.0,33.0,0.0,31.76,0.039,64.52,-1.25,-1.188,46,0.0,46,1518.0,0.56,29.0
-2026-02-02,1,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,2000,1960,32.5,32.5,0.0,30.98,0.0491,63.05,-1.25,-1.188,40,0.0,40,1300.0,0.56,26.1
-2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2600,2542,27.5,27.5,0.0,25.7,0.07,64.28,-2.1,-2.181,58,0.0,58,1595.0,0.42,28.6
-2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2600,2550,27.0,27.0,0.0,25.22,0.0706,67.54,-2.1,-2.003,50,0.0,50,1350.0,0.42,35.1
-2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1900,1851,39.0,39.0,0.0,36.31,0.0741,67.47,-1.4,-1.222,49,0.0,49,1911.0,0.56,34.9
-2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1900,1858,38.5,38.5,0.0,36.36,0.0589,66.16,-1.4,-1.222,42,0.0,42,1617.0,0.56,32.3
-2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2200,2154,31.5,31.5,0.0,28.86,0.0915,59.35,-1.92,-1.994,46,0.0,46,1449.0,0.42,18.7
-2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2200,2160,31.0,31.0,0.0,29.42,0.0537,65.12,-1.92,-1.832,40,0.0,40,1240.0,0.42,30.2
-2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1700,1654,39.0,39.0,0.0,37.01,0.0538,64.15,-1.3,-1.236,46,0.0,46,1794.0,0.56,28.3
-2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1700,1660,38.5,38.5,0.0,37.12,0.0372,66.76,-1.3,-1.135,40,0.0,40,1540.0,0.56,33.5
-2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1800,1743,25.5,25.5,0.0,24.45,0.0429,61.75,-1.75,-1.818,57,0.0,57,1453.5,0.42,23.5
-2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1800,1762,25.0,25.0,0.0,23.43,0.067,57.23,-1.75,-1.818,38,0.0,38,950.0,0.42,14.5
-2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1400,1365,35.0,35.0,0.0,32.85,0.0654,65.27,-1.18,-1.03,35,0.0,35,1225.0,0.56,30.5
-2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1400,1361,34.5,34.5,0.0,33.79,0.021,64.13,-1.18,-1.122,39,0.0,39,1345.5,0.56,28.3
-2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,3123,3042,33.5,33.5,0.0,30.89,0.0845,65.57,-2.35,-2.242,81,0.0,81,2713.5,0.42,31.1
-2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,3128,3048,33.0,33.0,0.0,30.41,0.0852,68.35,-2.35,-2.242,80,0.0,80,2640.0,0.42,36.7
-2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2349,2291,39.0,39.0,0.0,36.69,0.063,68.68,-1.55,-1.353,58,0.0,58,2262.0,0.56,37.4
-2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2353,2300,38.5,38.5,0.0,36.01,0.0691,66.55,-1.55,-1.353,53,0.0,53,2040.5,0.56,33.1
-2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2735,2663,35.5,35.5,0.0,32.91,0.0787,63.08,-2.15,-2.233,72,0.0,72,2556.0,0.42,26.2
-2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2743,2681,35.0,35.0,0.0,32.02,0.0931,66.78,-2.15,-2.051,62,0.0,62,2170.0,0.42,33.6
-2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,2052,1994,39.0,39.0,0.0,36.93,0.0561,69.71,-1.42,-1.24,58,0.0,58,2262.0,0.56,39.4
-2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2057,2009,38.5,38.5,0.0,36.47,0.0557,67.26,-1.42,-1.24,48,0.0,48,1848.0,0.56,34.5
-2026-02-09,2,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,4091,3962,21.5,21.5,0.0,19.88,0.0815,62.74,-1.95,-2.026,129,0.0,129,2773.5,0.42,25.5
-2026-02-09,2,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,4115,4026,21.0,21.0,0.0,19.19,0.0943,62.48,-1.95,-2.026,89,0.0,89,1869.0,0.42,25.0
-2026-02-09,2,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1954,1900,33.0,33.0,0.0,31.84,0.0364,65.63,-1.25,-1.091,54,0.0,54,1782.0,0.56,31.3
-2026-02-09,2,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1960,1912,32.5,32.5,0.0,30.48,0.0663,65.09,-1.25,-1.091,48,0.0,48,1560.0,0.56,30.2
-2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2542,2475,27.5,27.5,0.0,25.47,0.0797,64.18,-2.1,-2.181,67,0.0,67,1842.5,0.42,28.4
-2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2550,2500,27.0,27.0,0.0,25.5,0.0588,67.13,-2.1,-2.003,50,0.0,50,1350.0,0.42,34.3
-2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1851,1798,39.0,39.0,0.0,36.69,0.063,71.62,-1.4,-1.222,53,0.0,53,2067.0,0.56,43.2
-2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1858,1813,38.5,38.5,0.0,36.82,0.0456,69.57,-1.4,-1.222,45,0.0,45,1732.5,0.56,39.1
-2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2154,2106,31.5,31.5,0.0,30.04,0.0486,61.19,-1.92,-1.994,48,0.0,48,1512.0,0.42,22.4
-2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2160,2115,31.0,31.0,0.0,29.22,0.0609,66.16,-1.92,-1.832,45,0.0,45,1395.0,0.42,32.3
-2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1654,1605,39.0,39.0,0.0,36.55,0.067,71.1,-1.3,-1.135,49,0.0,49,1911.0,0.56,42.2
-2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1660,1619,38.5,38.5,0.0,36.53,0.0539,70.84,-1.3,-1.135,41,0.0,41,1578.5,0.56,41.7
-2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1743,1682,25.5,25.5,0.0,23.6,0.0805,60.5,-1.75,-1.818,61,0.0,61,1555.5,0.42,21.0
-2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1762,1722,25.0,25.0,0.0,23.06,0.0841,61.84,-1.75,-1.818,40,0.0,40,1000.0,0.42,23.7
-2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1365,1329,35.0,35.0,0.0,32.93,0.0629,66.89,-1.18,-1.03,36,0.0,36,1260.0,0.56,33.8
-2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1361,1318,34.5,34.5,0.0,33.44,0.0317,63.31,-1.18,-1.122,43,0.0,43,1483.5,0.56,26.6
-2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,3042,2944,33.5,33.5,0.0,31.22,0.073,66.55,-2.35,-2.242,98,0.0,98,3283.0,0.42,33.1
-2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,3048,2956,33.0,33.0,0.0,30.74,0.0735,67.96,-2.35,-2.242,92,0.0,92,3036.0,0.42,35.9
-2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2291,2202,39.0,34.32,12.0,36.61,-0.0626,69.31,-1.55,-1.353,89,0.0,89,3054.48,0.51,38.6
-2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2300,2228,38.5,35.42,8.0,36.12,-0.0194,67.74,-1.55,-1.353,72,0.0,72,2550.24,0.526,35.5
-2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2663,2580,35.5,35.5,0.0,33.33,0.0651,65.72,-2.15,-2.051,83,0.0,83,2946.5,0.42,31.4
-2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2681,2613,35.0,35.0,0.0,32.33,0.0826,69.45,-2.15,-2.051,68,0.0,68,2380.0,0.42,38.9
-2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1994,1922,39.0,35.88,8.0,36.76,-0.0239,69.58,-1.42,-1.24,72,1.06,72,2583.36,0.526,39.2
-2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2009,1945,38.5,35.42,8.0,35.84,-0.0117,64.89,-1.42,-1.35,64,0.0,64,2266.88,0.526,29.8
-2026-02-16,3,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,3962,3832,21.5,21.5,0.0,20.3,0.0591,60.02,-1.95,-2.026,130,0.0,130,2795.0,0.42,20.0
-2026-02-16,3,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,4026,3925,21.0,21.0,0.0,20.0,0.05,69.17,-1.95,-1.86,101,0.0,101,2121.0,0.42,38.3
-2026-02-16,3,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1900,1837,33.0,31.02,6.0,31.38,-0.0115,67.32,-1.25,-1.091,63,1.38,63,1954.26,0.535,34.6
-2026-02-16,3,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1912,1853,32.5,29.9,8.0,30.66,-0.0248,64.89,-1.25,-1.188,59,0.0,59,1764.1,0.526,29.8
-2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2475,2407,27.5,27.5,0.0,25.97,0.0589,69.71,-2.1,-2.003,68,0.0,68,1870.0,0.42,39.4
-2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2500,2443,27.0,27.0,0.0,25.56,0.0563,72.18,-2.1,-2.003,57,0.0,57,1539.0,0.42,44.4
-2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1798,1733,39.0,35.88,8.0,36.36,-0.0132,71.89,-1.4,-1.222,65,0.95,65,2332.2,0.526,43.8
-2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1813,1755,38.5,36.19,6.0,36.32,-0.0036,71.55,-1.4,-1.222,58,1.28,58,2099.02,0.535,43.1
-2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2106,2055,31.5,31.5,0.0,28.95,0.0881,67.29,-1.92,-1.832,51,0.0,51,1606.5,0.42,34.6
-2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2115,2068,31.0,31.0,0.0,29.31,0.0577,69.53,-1.92,-1.832,47,0.0,47,1457.0,0.42,39.1
-2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1605,1550,39.0,35.88,8.0,37.23,-0.0363,71.99,-1.3,-1.135,55,0.8,55,1973.4,0.526,44.0
-2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1619,1561,38.5,33.88,12.0,36.87,-0.0811,70.74,-1.3,-1.135,58,0.0,58,1965.04,0.51,41.5
-2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1682,1615,25.5,25.5,0.0,24.22,0.0528,66.62,-1.75,-1.669,67,0.0,67,1708.5,0.42,33.2
-2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1722,1675,25.0,25.0,0.0,23.9,0.046,63.95,-1.75,-1.818,47,0.0,47,1175.0,0.42,27.9
-2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1329,1279,35.0,30.8,12.0,33.76,-0.0877,67.76,-1.18,-1.03,50,0.0,50,1540.0,0.51,35.5
-2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1318,1272,34.5,32.43,6.0,33.32,-0.0267,63.76,-1.18,-1.122,46,1.02,46,1491.78,0.535,27.5
-2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2944,2775,33.5,27.47,18.0,30.51,-0.0996,67.99,-2.35,-2.242,169,1.22,169,4642.43,0.344,36.0
-2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2956,2791,33.0,27.06,18.0,26.76,0.0112,68.8,-2.35,-2.242,165,0.0,165,4464.9,0.344,37.6
-2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2202,2126,39.0,39.0,0.0,36.51,0.0682,70.62,-1.55,-1.353,76,0.0,76,2964.0,0.56,41.2
-2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2228,2166,38.5,38.5,0.0,35.45,0.086,67.1,-1.55,-1.353,62,0.0,62,2387.0,0.56,34.2
-2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2580,2443,35.5,30.18,15.0,32.35,-0.0671,67.25,-2.15,-2.051,137,2.51,137,4134.66,0.357,34.5
-2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2613,2506,35.0,30.8,12.0,28.76,0.0709,64.59,-2.15,-2.233,107,2.36,107,3295.6,0.37,29.2
-2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1922,1852,39.0,39.0,0.0,35.98,0.0839,70.97,-1.42,-1.24,70,0.0,70,2730.0,0.56,41.9
-2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1945,1884,38.5,38.5,0.0,36.4,0.0577,67.29,-1.42,-1.24,61,0.0,61,2348.5,0.56,34.6
-2026-02-23,4,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,3832,3562,21.5,17.2,20.0,20.01,-0.1404,65.33,-1.95,-1.86,270,0.0,270,4644.0,0.336,30.7
-2026-02-23,4,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3925,3739,21.0,17.22,18.0,17.81,-0.0331,64.47,-1.95,-2.026,186,0.0,186,3202.92,0.344,28.9
-2026-02-23,4,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1837,1772,33.0,33.0,0.0,30.99,0.0649,67.94,-1.25,-1.091,65,0.0,65,2145.0,0.56,35.9
-2026-02-23,4,False,start,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1853,1795,32.5,32.5,0.0,31.07,0.046,68.49,-1.25,-1.091,58,0.0,58,1885.0,0.56,37.0
-2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2407,2281,27.5,22.55,18.0,25.04,-0.0994,63.62,-2.1,-2.181,126,0.0,126,2841.3,0.344,27.2
-2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2443,2345,27.0,22.14,18.0,22.65,-0.0225,69.77,-2.1,-2.003,98,0.71,98,2169.72,0.344,39.5
-2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1733,1667,39.0,39.0,0.0,36.51,0.0682,69.23,-1.4,-1.222,66,0.0,66,2574.0,0.56,38.5
-2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1755,1699,38.5,38.5,0.0,36.24,0.0624,71.85,-1.4,-1.222,56,0.0,56,2156.0,0.56,43.7
-2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2055,1964,31.5,25.83,18.0,29.17,-0.1145,62.35,-1.92,-1.994,91,0.0,91,2350.53,0.344,24.7
-2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2068,1980,31.0,24.8,20.0,26.48,-0.0634,65.44,-1.92,-1.832,88,0.0,88,2182.4,0.336,30.9
-2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1550,1494,39.0,39.0,0.0,37.86,0.0301,66.91,-1.3,-1.135,56,0.0,56,2184.0,0.56,33.8
-2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1561,1514,38.5,38.5,0.0,36.94,0.0422,63.67,-1.3,-1.236,47,0.0,47,1809.5,0.56,27.3
-2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1615,1525,25.5,22.44,12.0,23.72,-0.054,62.65,-1.75,-1.818,90,1.99,90,2019.6,0.37,25.3
-2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1675,1607,25.0,21.25,15.0,20.72,0.0256,59.76,-1.75,-1.818,68,1.24,68,1445.0,0.357,19.5
-2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1279,1235,35.0,35.0,0.0,33.03,0.0596,65.23,-1.18,-1.03,44,0.0,44,1540.0,0.56,30.5
-2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1272,1222,34.5,34.5,0.0,32.74,0.0538,66.39,-1.18,-1.03,50,0.0,50,1725.0,0.56,32.8
-2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2775,2629,33.5,28.47,15.0,28.09,0.0135,94.0,-2.35,-2.043,146,2.68,146,4156.62,0.357,88.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2791,2627,33.0,27.06,18.0,29.58,-0.0852,94.0,-2.35,-2.043,164,0.0,164,4437.84,0.344,88.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2126,2057,39.0,39.0,0.0,36.09,0.0806,94.0,-1.55,-1.233,69,0.0,69,2691.0,0.56,88.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2166,2103,38.5,38.5,0.0,35.25,0.0922,94.0,-1.55,-1.233,63,0.0,63,2425.5,0.56,88.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2443,2291,35.5,28.4,20.0,30.54,-0.0701,92.67,-2.15,-1.869,152,0.0,152,4316.8,0.336,85.3
-2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2506,2370,35.0,28.7,18.0,31.86,-0.0992,91.93,-2.15,-1.869,136,0.0,136,3903.2,0.344,83.9
-2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1852,1785,39.0,39.0,0.0,36.53,0.0676,94.0,-1.42,-1.129,67,0.0,67,2613.0,0.56,88.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1884,1827,38.5,38.5,0.0,35.47,0.0854,91.31,-1.42,-1.129,57,0.0,57,2194.5,0.56,82.6
-2026-03-02,5,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,3562,3313,21.5,17.2,20.0,18.24,-0.057,91.54,-1.95,-1.695,249,0.0,249,4282.8,0.336,83.1
-2026-03-02,5,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3739,3596,21.0,18.48,12.0,18.89,-0.0217,93.42,-1.95,-1.695,143,3.15,143,2642.64,0.37,86.8
-2026-03-02,5,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1772,1709,33.0,33.0,0.0,31.22,0.057,89.49,-1.25,-0.994,63,0.0,63,2079.0,0.56,79.0
-2026-03-02,5,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1795,1734,32.5,32.5,0.0,31.15,0.0433,92.79,-1.25,-0.994,61,0.0,61,1982.5,0.56,85.6
-2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2281,2188,27.5,24.2,12.0,24.34,-0.0058,85.22,-2.1,-1.825,93,2.76,93,2250.6,0.37,70.4
-2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2345,2257,27.0,22.95,15.0,25.49,-0.0996,85.91,-2.1,-1.825,88,1.62,88,2019.6,0.357,71.8
-2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1667,1604,39.0,39.0,0.0,36.9,0.0569,88.8,-1.4,-1.114,63,0.0,63,2457.0,0.56,77.6
-2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1699,1644,38.5,38.5,0.0,36.94,0.0422,87.15,-1.4,-1.114,55,0.0,55,2117.5,0.56,74.3
-2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1964,1877,31.5,25.83,18.0,27.03,-0.0444,83.24,-1.92,-1.669,87,0.63,87,2247.21,0.344,66.5
-2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1980,1914,31.0,27.28,12.0,28.61,-0.0465,79.58,-1.92,-1.669,66,1.96,66,1800.48,0.37,59.2
-2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1494,1442,39.0,39.0,0.0,36.45,0.07,86.66,-1.3,-1.034,52,0.0,52,2028.0,0.56,73.3
-2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1514,1466,38.5,38.5,0.0,37.2,0.0349,82.25,-1.3,-1.034,48,0.0,48,1848.0,0.56,64.5
-2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1525,1423,25.5,20.4,20.0,21.91,-0.0689,76.7,-1.75,-1.521,102,0.0,102,2080.8,0.336,53.4
-2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1607,1529,25.0,20.0,20.0,23.68,-0.1554,81.23,-1.75,-1.521,78,0.0,78,1560.0,0.336,62.5
-2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1235,1191,35.0,35.0,0.0,33.54,0.0435,84.73,-1.18,-0.939,44,0.0,44,1540.0,0.56,69.5
-2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1222,1174,34.5,34.5,0.0,32.64,0.057,84.49,-1.18,-0.939,48,0.0,48,1656.0,0.56,69.0
-2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2629,2524,33.5,33.5,0.0,29.74,0.1264,67.42,-2.35,-2.242,105,0.0,105,3517.5,0.42,34.8
-2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2627,2529,33.0,33.0,0.0,30.53,0.0809,71.16,-2.35,-2.242,98,0.0,98,3234.0,0.42,42.3
-2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,2057,1979,39.0,39.0,0.0,36.51,0.0682,72.28,-1.55,-1.353,78,0.0,78,3042.0,0.56,44.6
-2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2103,2036,38.5,38.5,0.0,36.13,0.0656,69.69,-1.55,-1.353,67,0.0,67,2579.5,0.56,39.4
-2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2291,2202,35.5,35.5,0.0,32.03,0.1083,67.5,-2.15,-2.051,89,0.0,89,3159.5,0.42,35.0
-2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2370,2287,35.0,35.0,0.0,32.47,0.0779,67.47,-2.15,-2.051,83,0.0,83,2905.0,0.42,34.9
-2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1785,1717,39.0,39.0,0.0,35.92,0.0857,73.81,-1.42,-1.24,68,0.0,68,2652.0,0.56,47.6
-2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1827,1767,38.5,38.5,0.0,36.17,0.0644,69.77,-1.42,-1.24,60,0.0,60,2310.0,0.56,39.5
-2026-03-09,6,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,3313,3163,21.5,21.5,0.0,19.77,0.0875,66.56,-1.95,-1.86,150,0.0,150,3225.0,0.42,33.1
-2026-03-09,6,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3596,3478,21.0,21.0,0.0,19.32,0.087,63.35,-1.95,-2.026,118,0.0,118,2478.0,0.42,26.7
-2026-03-09,6,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1709,1644,33.0,33.0,0.0,30.65,0.0767,66.77,-1.25,-1.091,65,0.0,65,2145.0,0.56,33.5
-2026-03-09,6,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1734,1672,32.5,32.5,0.0,30.99,0.0487,66.37,-1.25,-1.091,62,0.0,62,2015.0,0.56,32.7
-2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2188,2121,27.5,27.5,0.0,25.04,0.0982,59.89,-2.1,-2.181,67,0.0,67,1842.5,0.42,19.8
-2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2257,2196,27.0,27.0,0.0,24.85,0.0865,63.1,-2.1,-2.181,61,0.0,61,1647.0,0.42,26.2
-2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1604,1539,39.0,39.0,0.0,37.24,0.0473,70.33,-1.4,-1.222,65,0.0,65,2535.0,0.56,40.7
-2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1644,1590,38.5,38.5,0.0,35.67,0.0793,66.85,-1.4,-1.222,54,0.0,54,2079.0,0.56,33.7
-2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1877,1820,31.5,31.5,0.0,28.82,0.093,62.46,-1.92,-1.994,57,0.0,57,1795.5,0.42,24.9
-2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1914,1866,31.0,31.0,0.0,29.63,0.0462,64.99,-1.92,-1.994,48,0.0,48,1488.0,0.42,30.0
-2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1442,1391,39.0,39.0,0.0,36.94,0.0558,67.56,-1.3,-1.135,51,0.0,51,1989.0,0.56,35.1
-2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1466,1419,38.5,38.5,0.0,36.63,0.0511,66.45,-1.3,-1.135,47,0.0,47,1809.5,0.56,32.9
-2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1423,1359,25.5,25.5,0.0,24.37,0.0464,60.56,-1.75,-1.818,64,0.0,64,1632.0,0.42,21.1
-2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1529,1481,25.0,25.0,0.0,23.49,0.0643,59.03,-1.75,-1.818,48,0.0,48,1200.0,0.42,18.1
-2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1191,1146,35.0,35.0,0.0,33.7,0.0386,65.25,-1.18,-1.03,45,0.0,45,1575.0,0.56,30.5
-2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1174,1129,34.5,34.5,0.0,33.76,0.0219,66.62,-1.18,-1.03,45,0.0,45,1552.5,0.56,33.2
-2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2524,2414,33.5,33.5,0.0,30.92,0.0834,67.73,-2.35,-2.242,110,0.0,110,3685.0,0.42,35.5
-2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2529,2430,33.0,33.0,0.0,28.89,0.1423,76.2,-2.35,-2.043,99,0.0,99,3267.0,0.42,52.4
-2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1979,1891,39.0,35.88,8.0,35.59,0.0081,75.07,-1.55,-1.233,88,0.64,88,3157.44,0.526,50.1
-2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,2036,1941,38.5,33.88,12.0,34.0,-0.0035,74.33,-1.55,-1.353,95,0.0,95,3218.6,0.51,48.7
-2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2202,2111,35.5,35.5,0.0,32.1,0.1059,70.37,-2.15,-2.051,91,0.0,91,3230.5,0.42,40.7
-2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2287,2207,35.0,35.0,0.0,31.81,0.1003,68.54,-2.15,-2.051,80,0.0,80,2800.0,0.42,37.1
-2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1717,1626,39.0,35.1,10.0,35.51,-0.0115,79.88,-1.42,-1.129,91,0.0,91,3194.1,0.518,59.8
-2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1767,1687,38.5,34.65,10.0,34.75,-0.0029,71.65,-1.42,-1.24,80,0.58,80,2772.0,0.518,43.3
-2026-03-16,7,True,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,3163,2996,21.5,21.5,0.0,19.48,0.1037,63.55,-1.95,-2.026,167,0.0,167,3590.5,0.42,27.1
-2026-03-16,7,True,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3478,3361,21.0,21.0,0.0,19.22,0.0926,62.74,-1.95,-2.026,117,0.0,117,2457.0,0.42,25.5
-2026-03-16,7,True,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1644,1561,33.0,30.36,8.0,30.09,0.009,70.56,-1.25,-1.091,83,0.6,83,2519.88,0.526,41.1
-2026-03-16,7,True,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1672,1600,32.5,29.9,8.0,29.01,0.0307,68.11,-1.25,-1.091,72,1.06,72,2152.8,0.526,36.2
-2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2121,2053,27.5,27.5,0.0,25.22,0.0904,65.0,-2.1,-2.003,68,0.0,68,1870.0,0.42,30.0
-2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2196,2145,27.0,27.0,0.0,25.45,0.0609,65.76,-2.1,-2.003,51,0.0,51,1377.0,0.42,31.5
-2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1539,1471,39.0,35.88,8.0,34.59,0.0373,71.59,-1.4,-1.222,68,1.0,68,2439.84,0.526,43.2
-2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1590,1531,38.5,34.65,10.0,34.63,0.0006,68.91,-1.4,-1.222,59,0.42,59,2044.35,0.518,37.8
-2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1820,1765,31.5,31.5,0.0,29.98,0.0507,64.34,-1.92,-1.994,55,0.0,55,1732.5,0.42,28.7
-2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1866,1821,31.0,31.0,0.0,29.4,0.0544,59.71,-1.92,-1.994,45,0.0,45,1395.0,0.42,19.4
-2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1391,1326,39.0,35.1,10.0,36.38,-0.0352,61.8,-1.3,-1.236,65,0.47,65,2281.5,0.518,23.6
-2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1419,1365,38.5,35.42,8.0,35.23,0.0054,62.54,-1.3,-1.236,54,0.79,54,1912.68,0.526,25.1
-2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1359,1289,25.5,25.5,0.0,24.43,0.0438,56.35,-1.75,-1.818,70,0.0,70,1785.0,0.42,12.7
-2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1481,1439,25.0,25.0,0.0,23.39,0.0688,59.76,-1.75,-1.818,42,0.0,42,1050.0,0.42,19.5
-2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1146,1091,35.0,30.8,12.0,32.41,-0.0497,62.59,-1.18,-1.122,55,0.0,55,1694.0,0.51,25.2
-2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1129,1073,34.5,30.36,12.0,31.55,-0.0377,61.17,-1.18,-1.122,56,0.0,56,1700.16,0.51,22.3
-2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2414,2237,33.5,28.47,15.0,29.89,-0.0475,75.04,-2.35,-2.043,177,0.0,177,5039.19,0.357,50.1
-2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2430,2283,33.0,29.04,12.0,26.26,0.1059,78.58,-2.35,-2.043,147,4.35,147,4268.88,0.37,57.2
-2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1891,1805,39.0,39.0,0.0,36.03,0.0824,81.43,-1.55,-1.233,86,0.0,86,3354.0,0.56,62.9
-2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1941,1868,38.5,38.5,0.0,35.54,0.0833,78.19,-1.55,-1.233,73,0.0,73,2810.5,0.56,56.4
-2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2111,1956,35.5,30.18,15.0,32.54,-0.0725,72.07,-2.15,-2.051,155,0.0,155,4677.9,0.357,44.1
-2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2207,2069,35.0,28.7,18.0,28.37,0.0116,74.95,-2.15,-2.051,138,1.0,138,3960.6,0.344,49.9
-2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1626,1550,39.0,39.0,0.0,37.02,0.0535,77.5,-1.42,-1.129,76,0.0,76,2964.0,0.56,55.0
-2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1687,1621,38.5,38.5,0.0,35.12,0.0962,79.69,-1.42,-1.129,66,0.0,66,2541.0,0.56,59.4
-2026-03-23,8,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,2996,2768,21.5,18.92,12.0,19.54,-0.0317,73.81,-1.95,-1.86,228,2.49,228,4313.76,0.37,47.6
-2026-03-23,8,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3361,3145,21.0,16.8,20.0,17.37,-0.0328,80.79,-1.95,-1.695,216,0.0,216,3628.8,0.336,61.6
-2026-03-23,8,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1561,1483,33.0,33.0,0.0,31.33,0.0533,76.89,-1.25,-0.994,78,0.0,78,2574.0,0.56,53.8
-2026-03-23,8,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1600,1532,32.5,32.5,0.0,30.25,0.0744,75.54,-1.25,-0.994,68,0.0,68,2210.0,0.56,51.1
-2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,2053,1947,27.5,23.38,15.0,25.11,-0.0689,71.66,-2.1,-2.003,106,1.94,106,2478.28,0.357,43.3
-2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2145,2064,27.0,22.95,15.0,22.78,0.0075,69.53,-2.1,-2.003,81,0.88,81,1858.95,0.357,39.1
-2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1471,1412,39.0,39.0,0.0,37.15,0.0498,74.66,-1.4,-1.222,59,0.0,59,2301.0,0.56,49.3
-2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1531,1482,38.5,38.5,0.0,35.86,0.0736,72.83,-1.4,-1.222,49,0.0,49,1886.5,0.56,45.7
-2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1765,1679,31.5,25.83,18.0,30.01,-0.1393,66.03,-1.92,-1.832,86,0.62,86,2221.38,0.344,32.1
-2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1821,1750,31.0,25.42,18.0,25.25,0.0067,70.48,-1.92,-1.832,71,0.0,71,1804.82,0.344,41.0
-2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1326,1272,39.0,39.0,0.0,36.93,0.0561,73.47,-1.3,-1.135,54,0.0,54,2106.0,0.56,46.9
-2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1365,1317,38.5,38.5,0.0,36.84,0.0451,70.0,-1.3,-1.135,48,0.0,48,1848.0,0.56,40.0
-2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1289,1176,25.5,20.4,20.0,24.35,-0.1622,64.75,-1.75,-1.818,113,0.0,113,2305.2,0.336,29.5
-2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1439,1373,25.0,21.25,15.0,20.94,0.0148,66.36,-1.75,-1.669,66,0.72,66,1402.5,0.357,32.7
-2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1091,1049,35.0,35.0,0.0,33.42,0.0473,72.04,-1.18,-1.03,42,0.0,42,1470.0,0.56,44.1
-2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1073,1027,34.5,34.5,0.0,32.76,0.0531,72.22,-1.18,-1.03,46,0.0,46,1587.0,0.56,44.4
-2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2237,2118,33.5,33.5,0.0,30.1,0.113,66.99,-2.35,-2.242,119,0.0,119,3986.5,0.42,34.0
-2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2283,2172,33.0,33.0,0.0,30.64,0.077,61.69,-2.35,-2.441,111,0.0,111,3663.0,0.42,23.4
-2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1805,1722,39.0,39.0,0.0,36.07,0.0812,65.52,-1.55,-1.353,83,0.0,83,3237.0,0.56,31.0
-2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1868,1787,38.5,38.5,0.0,35.37,0.0885,63.92,-1.55,-1.473,81,0.0,81,3118.5,0.56,27.8
-2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1956,1848,35.5,35.5,0.0,32.17,0.1035,62.13,-2.15,-2.233,108,0.0,108,3834.0,0.42,24.3
-2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2069,1970,35.0,35.0,0.0,32.34,0.0823,62.07,-2.15,-2.233,99,0.0,99,3465.0,0.42,24.1
-2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1550,1468,39.0,39.0,0.0,36.53,0.0676,65.67,-1.42,-1.24,82,0.0,82,3198.0,0.56,31.3
-2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1621,1545,38.5,38.5,0.0,36.58,0.0525,65.7,-1.42,-1.24,76,0.0,76,2926.0,0.56,31.4
-2026-03-30,9,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,2768,2580,21.5,21.5,0.0,20.31,0.0586,60.5,-1.95,-2.026,188,0.0,188,4042.0,0.42,21.0
-2026-03-30,9,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3145,3010,21.0,21.0,0.0,19.39,0.083,61.1,-1.95,-2.026,135,0.0,135,2835.0,0.42,22.2
-2026-03-30,9,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1483,1402,33.0,33.0,0.0,32.01,0.0309,66.24,-1.25,-1.091,81,0.0,81,2673.0,0.56,32.5
-2026-03-30,9,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1532,1462,32.5,32.5,0.0,31.34,0.037,60.39,-1.25,-1.188,70,0.0,70,2275.0,0.56,20.8
-2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1947,1874,27.5,27.5,0.0,25.08,0.0965,60.33,-2.1,-2.181,73,0.0,73,2007.5,0.42,20.7
-2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2064,2005,27.0,27.0,0.0,25.19,0.0719,58.98,-2.1,-2.181,59,0.0,59,1593.0,0.42,18.0
-2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1412,1349,39.0,39.0,0.0,36.49,0.0688,60.95,-1.4,-1.331,63,0.0,63,2457.0,0.56,21.9
-2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1482,1427,38.5,38.5,0.0,36.81,0.0459,62.64,-1.4,-1.331,55,0.0,55,2117.5,0.56,25.3
-2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1679,1622,31.5,31.5,0.0,28.93,0.0888,58.37,-1.92,-1.994,57,0.0,57,1795.5,0.42,16.7
-2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1750,1704,31.0,31.0,0.0,28.69,0.0805,53.95,-1.92,-2.198,46,0.0,46,1426.0,0.42,7.9
-2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1272,1218,39.0,39.0,0.0,37.0,0.0541,62.53,-1.3,-1.236,54,0.0,54,2106.0,0.56,25.1
-2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1317,1268,38.5,38.5,0.0,35.98,0.07,62.62,-1.3,-1.236,49,0.0,49,1886.5,0.56,25.2
-2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1176,1114,25.5,25.5,0.0,24.36,0.0468,52.28,-1.75,-2.003,62,0.0,62,1581.0,0.42,4.6
-2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1373,1324,25.0,25.0,0.0,23.91,0.0456,51.6,-1.75,-2.003,49,0.0,49,1225.0,0.42,3.2
-2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1049,1007,35.0,35.0,0.0,34.0,0.0294,62.19,-1.18,-1.122,42,0.0,42,1470.0,0.56,24.4
-2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,1027,981,34.5,34.5,0.0,32.91,0.0483,56.1,-1.18,-1.122,46,0.0,46,1587.0,0.56,12.2
-2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,2118,1990,33.5,33.5,0.0,30.74,0.0898,60.32,-2.35,-2.441,128,0.0,128,4288.0,0.42,20.6
-2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2172,2045,33.0,33.0,0.0,29.75,0.1092,64.45,-2.35,-2.441,127,0.0,127,4191.0,0.42,28.9
-2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1722,1634,39.0,39.0,0.0,37.06,0.0523,63.19,-1.55,-1.473,88,0.0,88,3432.0,0.56,26.4
-2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1787,1706,38.5,38.5,0.0,35.64,0.0802,63.05,-1.55,-1.473,81,0.0,81,3118.5,0.56,26.1
-2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1848,1737,35.5,35.5,0.0,33.11,0.0722,60.19,-2.15,-2.233,111,0.0,111,3940.5,0.42,20.4
-2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1970,1877,35.0,35.0,0.0,31.57,0.1086,60.53,-2.15,-2.233,93,0.0,93,3255.0,0.42,21.1
-2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1468,1382,39.0,39.0,0.0,37.01,0.0538,64.37,-1.42,-1.35,86,0.0,86,3354.0,0.56,28.7
-2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1545,1474,38.5,38.5,0.0,35.76,0.0766,61.59,-1.42,-1.35,71,0.0,71,2733.5,0.56,23.2
-2026-04-06,10,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,2580,2389,21.5,21.5,0.0,20.18,0.0654,60.34,-1.95,-2.026,191,0.0,191,4106.5,0.42,20.7
-2026-04-06,10,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,3010,2868,21.0,21.0,0.0,19.83,0.059,58.43,-1.95,-2.026,142,0.0,142,2982.0,0.42,16.9
-2026-04-06,10,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1402,1318,33.0,33.0,0.0,31.61,0.044,64.17,-1.25,-1.188,84,0.0,84,2772.0,0.56,28.3
-2026-04-06,10,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1462,1389,32.5,32.5,0.0,30.72,0.0579,63.61,-1.25,-1.188,73,0.0,73,2372.5,0.56,27.2
-2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1874,1805,27.5,27.5,0.0,25.96,0.0593,54.02,-2.1,-2.404,69,0.0,69,1897.5,0.42,8.0
-2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,2005,1949,27.0,27.0,0.0,25.09,0.0761,53.77,-2.1,-2.404,56,0.0,56,1512.0,0.42,7.5
-2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1349,1286,39.0,39.0,0.0,37.1,0.0512,64.88,-1.4,-1.331,63,0.0,63,2457.0,0.56,29.8
-2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1427,1376,38.5,38.5,0.0,36.46,0.056,60.6,-1.4,-1.331,51,0.0,51,1963.5,0.56,21.2
-2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1622,1569,31.5,31.5,0.0,29.18,0.0795,52.38,-1.92,-2.198,53,0.0,53,1669.5,0.42,4.8
-2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1704,1658,31.0,31.0,0.0,28.85,0.0745,56.2,-1.92,-1.994,46,0.0,46,1426.0,0.42,12.4
-2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1218,1164,39.0,39.0,0.0,36.88,0.0575,59.35,-1.3,-1.236,54,0.0,54,2106.0,0.56,18.7
-2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1268,1220,38.5,38.5,0.0,37.27,0.033,55.43,-1.3,-1.236,48,0.0,48,1848.0,0.56,10.9
-2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1114,1051,25.5,25.5,0.0,23.55,0.0828,55.24,-1.75,-1.818,63,0.0,63,1606.5,0.42,10.5
-2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1324,1280,25.0,25.0,0.0,23.2,0.0776,52.22,-1.75,-2.003,44,0.0,44,1100.0,0.42,4.4
-2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,1007,964,35.0,35.0,0.0,33.78,0.0361,58.87,-1.18,-1.122,43,0.0,43,1505.0,0.56,17.7
-2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,981,934,34.5,34.5,0.0,33.01,0.0451,58.13,-1.18,-1.122,47,0.0,47,1621.5,0.56,16.3
-2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1990,1875,33.5,33.5,0.0,30.35,0.1038,79.68,-2.35,-2.043,115,0.0,115,3852.5,0.42,59.4
-2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,2045,1936,33.0,33.0,0.0,29.98,0.1007,74.85,-2.35,-2.242,109,0.0,109,3597.0,0.42,49.7
-2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1634,1526,39.0,34.32,12.0,36.47,-0.059,79.31,-1.55,-1.233,108,0.0,108,3706.56,0.51,58.6
-2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1706,1605,38.5,33.88,12.0,36.08,-0.061,77.18,-1.55,-1.233,101,0.0,101,3421.88,0.51,54.4
-2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1737,1630,35.5,35.5,0.0,32.49,0.0926,76.07,-2.15,-1.869,107,0.0,107,3798.5,0.42,52.1
-2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1877,1782,35.0,35.0,0.0,32.31,0.0833,78.69,-2.15,-1.869,95,0.0,95,3325.0,0.42,57.4
-2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1382,1287,39.0,35.1,10.0,37.53,-0.0647,77.51,-1.42,-1.129,95,0.69,95,3334.5,0.518,55.0
-2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1474,1402,38.5,36.19,6.0,35.56,0.0177,78.79,-1.42,-1.129,72,1.59,72,2605.68,0.535,57.6
-2026-04-13,11,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,2389,2203,21.5,21.5,0.0,19.82,0.0848,72.22,-1.95,-1.86,186,0.0,186,3999.0,0.42,44.4
-2026-04-13,11,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2868,2740,21.0,21.0,0.0,19.47,0.0786,74.7,-1.95,-1.86,128,0.0,128,2688.0,0.42,49.4
-2026-04-13,11,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1318,1234,33.0,29.7,10.0,30.89,-0.0385,78.63,-1.25,-0.994,84,0.61,84,2494.8,0.518,57.3
-2026-04-13,11,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1389,1308,32.5,29.9,8.0,30.87,-0.0314,75.81,-1.25,-0.994,81,1.19,81,2421.9,0.526,51.6
-2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1805,1739,27.5,27.5,0.0,25.67,0.0713,82.19,-2.1,-1.825,66,0.0,66,1815.0,0.42,64.4
-2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1949,1894,27.0,27.0,0.0,25.21,0.071,79.93,-2.1,-1.825,55,0.0,55,1485.0,0.42,59.9
-2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1286,1215,39.0,34.32,12.0,35.82,-0.0419,85.53,-1.4,-1.114,71,0.0,71,2436.72,0.51,71.1
-2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1376,1324,38.5,36.19,6.0,35.43,0.0215,85.49,-1.4,-1.114,52,0.76,52,1881.88,0.535,71.0
-2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1569,1516,31.5,31.5,0.0,29.36,0.0729,77.44,-1.92,-1.669,53,0.0,53,1669.5,0.42,54.9
-2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1658,1611,31.0,31.0,0.0,29.24,0.0602,80.6,-1.92,-1.669,47,0.0,47,1457.0,0.42,61.2
-2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1164,1109,39.0,35.1,10.0,36.58,-0.0405,86.36,-1.3,-1.034,55,0.4,55,1930.5,0.518,72.7
-2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1220,1170,38.5,34.65,10.0,36.21,-0.0431,78.87,-1.3,-1.034,50,0.0,50,1732.5,0.518,57.7
-2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,1051,995,25.5,25.5,0.0,23.27,0.0958,75.1,-1.75,-1.521,56,0.0,56,1428.0,0.42,50.2
-2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1280,1235,25.0,25.0,0.0,22.76,0.0984,75.45,-1.75,-1.521,45,0.0,45,1125.0,0.42,50.9
-2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,964,924,35.0,32.9,6.0,32.87,0.0009,77.62,-1.18,-0.939,40,0.87,40,1316.0,0.535,55.2
-2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,934,883,34.5,31.74,8.0,32.28,-0.0167,84.57,-1.18,-0.939,51,0.37,51,1618.74,0.526,69.1
-2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1875,1674,33.5,27.47,18.0,27.97,-0.0179,59.78,-2.35,-2.441,201,1.45,201,5521.47,0.344,19.6
-2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1936,1780,33.0,28.05,15.0,26.22,0.0698,60.44,-2.35,-2.441,156,1.7,156,4375.8,0.357,20.9
-2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1526,1449,39.0,39.0,0.0,35.74,0.0912,63.21,-1.55,-1.473,77,0.0,77,3003.0,0.56,26.4
-2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1605,1535,38.5,38.5,0.0,36.35,0.0591,59.03,-1.55,-1.473,70,0.0,70,2695.0,0.56,18.1
-2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1630,1466,35.5,28.4,20.0,30.4,-0.0658,56.6,-2.15,-2.233,164,0.0,164,4657.6,0.336,13.2
-2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1782,1640,35.0,28.7,18.0,27.99,0.0254,57.95,-2.15,-2.233,142,0.0,142,4075.4,0.344,15.9
-2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1287,1212,39.0,39.0,0.0,35.59,0.0958,64.04,-1.42,-1.35,75,0.0,75,2925.0,0.56,28.1
-2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1402,1341,38.5,38.5,0.0,35.46,0.0857,56.99,-1.42,-1.35,61,0.0,61,2348.5,0.56,14.0
-2026-04-20,12,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,2203,1892,21.5,17.2,20.0,18.63,-0.0768,54.1,-1.95,-2.232,311,0.0,311,5349.2,0.336,8.2
-2026-04-20,12,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2740,2531,21.0,17.22,18.0,17.24,-0.0012,55.75,-1.95,-2.026,209,0.0,209,3598.98,0.344,11.5
-2026-04-20,12,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1234,1160,33.0,33.0,0.0,30.65,0.0767,59.47,-1.25,-1.188,74,0.0,74,2442.0,0.56,18.9
-2026-04-20,12,False,in_season,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1308,1242,32.5,32.5,0.0,30.25,0.0744,59.49,-1.25,-1.188,66,0.0,66,2145.0,0.56,19.0
-2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1739,1642,27.5,22.55,18.0,23.44,-0.038,55.13,-2.1,-2.181,97,0.0,97,2187.35,0.344,10.3
-2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1894,1823,27.0,22.95,15.0,21.57,0.064,58.45,-2.1,-2.181,71,0.78,71,1629.45,0.357,16.9
-2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1215,1160,39.0,39.0,0.0,36.1,0.0803,60.61,-1.4,-1.331,55,0.0,55,2145.0,0.56,21.2
-2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1324,1279,38.5,38.5,0.0,35.76,0.0766,59.05,-1.4,-1.331,45,0.0,45,1732.5,0.56,18.1
-2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1516,1437,31.5,25.83,18.0,26.88,-0.0391,52.38,-1.92,-2.198,79,0.0,79,2040.57,0.344,4.8
-2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1611,1543,31.0,25.42,18.0,25.81,-0.0151,57.63,-1.92,-1.994,68,0.0,68,1728.56,0.344,15.3
-2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1109,1060,39.0,39.0,0.0,37.04,0.0529,59.8,-1.3,-1.236,49,0.0,49,1911.0,0.56,19.6
-2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1170,1129,38.5,38.5,0.0,37.17,0.0358,58.52,-1.3,-1.236,41,0.0,41,1578.5,0.56,17.0
-2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,995,898,25.5,20.91,18.0,22.42,-0.0674,49.74,-1.75,-2.003,97,0.0,97,2028.27,0.344,-0.5
-2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1235,1184,25.0,22.0,12.0,20.66,0.0649,52.12,-1.75,-2.003,51,1.13,51,1122.0,0.37,4.2
-2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,924,885,35.0,35.0,0.0,33.85,0.034,59.62,-1.18,-1.122,39,0.0,39,1365.0,0.56,19.2
-2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,883,841,34.5,34.5,0.0,32.22,0.0708,55.25,-1.18,-1.122,42,0.0,42,1449.0,0.56,10.5
-2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1674,1562,33.5,33.5,0.0,30.45,0.1002,57.02,-2.35,-2.441,112,0.0,112,3752.0,0.42,14.0
-2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1780,1677,33.0,33.0,0.0,30.63,0.0774,57.84,-2.35,-2.441,103,0.0,103,3399.0,0.42,15.7
-2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1449,1378,39.0,39.0,0.0,36.18,0.0779,62.95,-1.55,-1.473,71,0.0,71,2769.0,0.56,25.9
-2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1535,1470,38.5,38.5,0.0,35.93,0.0715,63.08,-1.55,-1.473,65,0.0,65,2502.5,0.56,26.2
-2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1466,1375,35.5,35.5,0.0,33.1,0.0725,56.46,-2.15,-2.233,91,0.0,91,3230.5,0.42,12.9
-2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1640,1558,35.0,35.0,0.0,31.88,0.0979,55.96,-2.15,-2.233,82,0.0,82,2870.0,0.42,11.9
-2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1212,1145,39.0,39.0,0.0,36.45,0.07,62.15,-1.42,-1.35,67,0.0,67,2613.0,0.56,24.3
-2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1341,1278,38.5,38.5,0.0,36.97,0.0414,55.6,-1.42,-1.35,63,0.0,63,2425.5,0.56,11.2
-2026-04-27,13,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,1892,1746,21.5,21.5,0.0,19.59,0.0975,57.57,-1.95,-2.026,146,0.0,146,3139.0,0.42,15.1
-2026-04-27,13,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2531,2408,21.0,21.0,0.0,19.16,0.096,56.66,-1.95,-2.026,123,0.0,123,2583.0,0.42,13.3
-2026-04-27,13,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1160,1090,33.0,33.0,0.0,31.29,0.0547,58.07,-1.25,-1.188,70,0.0,70,2310.0,0.56,16.1
-2026-04-27,13,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1242,1183,32.5,32.5,0.0,31.16,0.043,58.41,-1.25,-1.188,59,0.0,59,1917.5,0.56,16.8
-2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1642,1581,27.5,27.5,0.0,24.83,0.1075,58.55,-2.1,-2.181,61,0.0,61,1677.5,0.42,17.1
-2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1823,1775,27.0,27.0,0.0,25.11,0.0753,59.58,-2.1,-2.181,48,0.0,48,1296.0,0.42,19.2
-2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1160,1111,39.0,39.0,0.0,36.86,0.0581,58.33,-1.4,-1.331,49,0.0,49,1911.0,0.56,16.7
-2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1279,1233,38.5,38.5,0.0,36.1,0.0665,58.38,-1.4,-1.331,46,0.0,46,1771.0,0.56,16.8
-2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1437,1393,31.5,31.5,0.0,29.11,0.0821,55.86,-1.92,-1.994,44,0.0,44,1386.0,0.42,11.7
-2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1543,1500,31.0,31.0,0.0,28.85,0.0745,55.09,-1.92,-1.994,43,0.0,43,1333.0,0.42,10.2
-2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1060,1017,39.0,39.0,0.0,36.48,0.0691,58.32,-1.3,-1.236,43,0.0,43,1677.0,0.56,16.6
-2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1129,1092,38.5,38.5,0.0,35.78,0.076,57.1,-1.3,-1.236,37,0.0,37,1424.5,0.56,14.2
-2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,898,846,25.5,25.5,0.0,23.37,0.0911,52.94,-1.75,-2.003,52,0.0,52,1326.0,0.42,5.9
-2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1184,1142,25.0,25.0,0.0,23.35,0.0707,54.72,-1.75,-2.003,42,0.0,42,1050.0,0.42,9.4
-2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,885,850,35.0,35.0,0.0,33.78,0.0361,58.57,-1.18,-1.122,35,0.0,35,1225.0,0.56,17.1
-2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,841,800,34.5,34.5,0.0,33.25,0.0376,56.32,-1.18,-1.122,41,0.0,41,1414.5,0.56,12.6
-2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1562,1474,33.5,33.5,0.0,30.6,0.0948,69.65,-2.35,-2.242,88,0.0,88,2948.0,0.42,39.3
-2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1677,1591,33.0,33.0,0.0,30.95,0.0662,73.51,-2.35,-2.242,86,0.0,86,2838.0,0.42,47.0
-2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1378,1298,39.0,34.32,12.0,34.89,-0.0163,73.37,-1.55,-1.353,80,0.0,80,2745.6,0.51,46.7
-2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1470,1412,38.5,36.19,6.0,34.94,0.0358,70.46,-1.55,-1.353,58,0.42,58,2099.02,0.535,40.9
-2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1375,1300,35.5,35.5,0.0,32.15,0.1042,65.62,-2.15,-2.051,75,0.0,75,2662.5,0.42,31.2
-2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1558,1488,35.0,35.0,0.0,32.74,0.069,71.56,-2.15,-2.051,70,0.0,70,2450.0,0.42,43.1
-2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1145,1085,39.0,36.66,6.0,35.13,0.0436,71.96,-1.42,-1.24,60,1.31,60,2199.6,0.535,43.9
-2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1278,1224,38.5,36.19,6.0,35.01,0.0337,69.69,-1.42,-1.24,54,0.39,54,1954.26,0.535,39.4
-2026-05-04,14,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,1746,1613,21.5,21.5,0.0,19.94,0.0782,68.82,-1.95,-1.86,133,0.0,133,2859.5,0.42,37.6
-2026-05-04,14,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2408,2313,21.0,21.0,0.0,19.61,0.0709,69.54,-1.95,-1.86,95,0.0,95,1995.0,0.42,39.1
-2026-05-04,14,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1090,1023,33.0,29.7,10.0,29.94,-0.008,71.24,-1.25,-1.091,67,0.49,67,1989.9,0.518,42.5
-2026-05-04,14,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1183,1128,32.5,29.9,8.0,29.49,0.0139,73.27,-1.25,-1.091,55,0.0,55,1644.5,0.526,46.5
-2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1581,1526,27.5,27.5,0.0,24.82,0.108,64.42,-2.1,-2.181,55,0.0,55,1512.5,0.42,28.8
-2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1775,1734,27.0,27.0,0.0,24.29,0.1116,65.8,-2.1,-2.003,41,0.0,41,1107.0,0.42,31.6
-2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1111,1059,39.0,35.88,8.0,34.98,0.0257,70.42,-1.4,-1.222,52,0.76,52,1865.76,0.526,40.8
-2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1233,1192,38.5,36.19,6.0,34.28,0.0557,65.02,-1.4,-1.222,41,0.0,41,1483.79,0.535,30.0
-2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1393,1349,31.5,31.5,0.0,29.78,0.0578,60.8,-1.92,-1.994,44,0.0,44,1386.0,0.42,21.6
-2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1500,1465,31.0,31.0,0.0,29.02,0.0682,64.72,-1.92,-1.994,35,0.0,35,1085.0,0.42,29.4
-2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1017,976,39.0,36.66,6.0,35.1,0.0444,67.23,-1.3,-1.135,41,0.91,41,1503.06,0.535,34.5
-2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1092,1052,38.5,36.19,6.0,34.22,0.0576,62.76,-1.3,-1.236,40,0.0,40,1447.6,0.535,25.5
-2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,846,796,25.5,25.5,0.0,23.28,0.0954,60.04,-1.75,-1.818,50,0.0,50,1275.0,0.42,20.1
-2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1142,1106,25.0,25.0,0.0,23.33,0.0716,62.17,-1.75,-1.818,36,0.0,36,900.0,0.42,24.3
-2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,850,810,35.0,30.8,12.0,32.27,-0.0456,69.31,-1.18,-1.03,40,0.0,40,1232.0,0.51,38.6
-2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,800,760,34.5,32.43,6.0,31.91,0.0163,64.7,-1.18,-1.122,40,0.0,40,1297.2,0.535,29.4
-2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1474,1369,33.5,29.48,12.0,28.49,0.0347,60.57,-2.35,-2.441,105,1.15,105,3095.4,0.37,21.1
-2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1591,1459,33.0,27.06,18.0,26.88,0.0067,61.16,-2.35,-2.441,132,0.96,132,3571.92,0.344,22.3
-2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1298,1241,39.0,39.0,0.0,36.11,0.08,62.01,-1.55,-1.473,57,0.0,57,2223.0,0.56,24.0
-2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1412,1365,38.5,38.5,0.0,35.38,0.0882,62.0,-1.55,-1.473,47,0.0,47,1809.5,0.56,24.0
-2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1300,1195,35.5,30.18,15.0,30.02,0.0053,55.41,-2.15,-2.233,105,0.0,105,3168.9,0.357,10.8
-2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1488,1386,35.0,28.0,20.0,27.99,0.0004,58.83,-2.15,-2.233,102,0.0,102,2856.0,0.336,17.7
-2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1085,1036,39.0,39.0,0.0,35.65,0.094,62.7,-1.42,-1.35,49,0.0,49,1911.0,0.56,25.4
-2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1224,1178,38.5,38.5,0.0,35.94,0.0712,59.37,-1.42,-1.35,46,0.0,46,1771.0,0.56,18.7
-2026-05-11,15,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,1613,1460,21.5,18.92,12.0,18.86,0.0032,55.8,-1.95,-2.026,153,1.67,153,2894.76,0.37,11.6
-2026-05-11,15,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2313,2171,21.0,17.22,18.0,17.32,-0.0058,59.2,-1.95,-2.026,142,1.03,142,2445.24,0.344,18.4
-2026-05-11,15,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,1023,972,33.0,33.0,0.0,30.61,0.0781,63.2,-1.25,-1.188,51,0.0,51,1683.0,0.56,26.4
-2026-05-11,15,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1128,1083,32.5,32.5,0.0,30.83,0.0542,60.81,-1.25,-1.188,45,0.0,45,1462.5,0.56,21.6
-2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1526,1438,27.5,22.0,20.0,24.15,-0.089,58.33,-2.1,-2.181,88,0.0,88,1936.0,0.336,16.7
-2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1734,1681,27.0,23.76,12.0,21.71,0.0944,54.62,-2.1,-2.404,53,0.0,53,1259.28,0.37,9.2
-2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1059,1015,39.0,39.0,0.0,36.59,0.0659,62.69,-1.4,-1.331,44,0.0,44,1716.0,0.56,25.4
-2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1192,1157,38.5,38.5,0.0,35.86,0.0736,56.76,-1.4,-1.331,35,0.0,35,1347.5,0.56,13.5
-2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1349,1287,31.5,25.83,18.0,27.51,-0.0611,54.97,-1.92,-2.198,62,0.45,62,1601.46,0.344,9.9
-2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1465,1420,31.0,27.28,12.0,25.98,0.05,52.33,-1.92,-2.198,45,0.0,45,1227.6,0.37,4.7
-2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,976,938,39.0,39.0,0.0,37.1,0.0512,57.52,-1.3,-1.236,38,0.0,38,1482.0,0.56,15.0
-2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1052,1021,38.5,38.5,0.0,35.87,0.0733,56.39,-1.3,-1.236,31,0.0,31,1193.5,0.56,12.8
-2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,796,721,25.5,20.4,20.0,21.74,-0.0616,56.91,-1.75,-1.818,75,0.0,75,1530.0,0.336,13.8
-2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1106,1061,25.0,22.0,12.0,20.54,0.0711,54.81,-1.75,-2.003,45,0.0,45,990.0,0.37,9.6
-2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,810,782,35.0,35.0,0.0,32.71,0.07,66.11,-1.18,-1.03,28,0.0,28,980.0,0.56,32.2
-2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,760,729,34.5,34.5,0.0,33.28,0.0367,60.06,-1.18,-1.122,31,0.0,31,1069.5,0.56,20.1
-2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1369,1297,33.5,33.5,0.0,30.29,0.106,60.88,-2.35,-2.441,72,0.0,72,2412.0,0.42,21.8
-2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1459,1390,33.0,33.0,0.0,30.85,0.0697,61.24,-2.35,-2.441,69,0.0,69,2277.0,0.42,22.5
-2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1241,1191,39.0,39.0,0.0,36.91,0.0566,63.11,-1.55,-1.473,50,0.0,50,1950.0,0.56,26.2
-2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1365,1322,38.5,38.5,0.0,36.36,0.0589,65.44,-1.55,-1.353,43,0.0,43,1655.5,0.56,30.9
-2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1195,1133,35.5,35.5,0.0,33.51,0.0594,59.58,-2.15,-2.233,62,0.0,62,2201.0,0.42,19.2
-2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1386,1333,35.0,35.0,0.0,31.67,0.1051,62.16,-2.15,-2.233,53,0.0,53,1855.0,0.42,24.3
-2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1036,990,39.0,39.0,0.0,37.08,0.0518,62.98,-1.42,-1.35,46,0.0,46,1794.0,0.56,26.0
-2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1178,1140,38.5,38.5,0.0,35.62,0.0809,64.33,-1.42,-1.35,38,0.0,38,1463.0,0.56,28.7
-2026-05-18,16,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,1460,1352,21.5,21.5,0.0,20.41,0.0534,56.95,-1.95,-2.026,108,0.0,108,2322.0,0.42,13.9
-2026-05-18,16,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2171,2091,21.0,21.0,0.0,19.37,0.0842,58.56,-1.95,-2.026,80,0.0,80,1680.0,0.42,17.1
-2026-05-18,16,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,972,928,33.0,33.0,0.0,31.67,0.042,62.5,-1.25,-1.188,44,0.0,44,1452.0,0.56,25.0
-2026-05-18,16,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1083,1045,32.5,32.5,0.0,30.54,0.0642,59.75,-1.25,-1.188,38,0.0,38,1235.0,0.56,19.5
-2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1438,1392,27.5,27.5,0.0,25.6,0.0742,57.66,-2.1,-2.181,46,0.0,46,1265.0,0.42,15.3
-2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1681,1643,27.0,27.0,0.0,25.55,0.0568,55.59,-2.1,-2.181,38,0.0,38,1026.0,0.42,11.2
-2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,1015,977,39.0,39.0,0.0,37.7,0.0345,65.52,-1.4,-1.222,38,0.0,38,1482.0,0.56,31.0
-2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1157,1125,38.5,38.5,0.0,36.88,0.0439,57.72,-1.4,-1.331,32,0.0,32,1232.0,0.56,15.4
-2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1287,1251,31.5,31.5,0.0,29.83,0.056,56.22,-1.92,-1.994,36,0.0,36,1134.0,0.42,12.4
-2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1420,1387,31.0,31.0,0.0,29.51,0.0505,55.72,-1.92,-1.994,33,0.0,33,1023.0,0.42,11.4
-2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,938,904,39.0,39.0,0.0,36.51,0.0682,60.33,-1.3,-1.236,34,0.0,34,1326.0,0.56,20.7
-2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1021,991,38.5,38.5,0.0,36.04,0.0683,57.98,-1.3,-1.236,30,0.0,30,1155.0,0.56,16.0
-2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,721,678,25.5,25.5,0.0,23.66,0.0778,56.12,-1.75,-1.818,43,0.0,43,1096.5,0.42,12.2
-2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1061,1031,25.0,25.0,0.0,23.04,0.0851,56.05,-1.75,-1.818,30,0.0,30,750.0,0.42,12.1
-2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,782,757,35.0,35.0,0.0,32.89,0.0642,58.11,-1.18,-1.122,25,0.0,25,875.0,0.56,16.2
-2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,729,700,34.5,34.5,0.0,32.57,0.0593,58.54,-1.18,-1.122,29,0.0,29,1000.5,0.56,17.1
-2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,target,1297,1237,33.5,33.5,0.0,31.36,0.0682,63.38,-2.35,-2.441,60,0.0,60,2010.0,0.42,26.8
-2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,mass,amazon,1390,1333,33.0,33.0,0.0,30.26,0.0905,62.41,-2.35,-2.441,57,0.0,57,1881.0,0.42,24.8
-2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,sephora,1191,1147,39.0,39.0,0.0,37.03,0.0532,65.86,-1.55,-1.353,44,0.0,44,1716.0,0.56,31.7
-2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 40,prestige,ulta,1322,1283,38.5,38.5,0.0,36.32,0.06,63.45,-1.55,-1.473,39,0.0,39,1501.5,0.56,26.9
-2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1133,1086,35.5,35.5,0.0,32.03,0.1083,61.38,-2.15,-2.233,47,0.0,47,1668.5,0.42,22.8
-2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1333,1290,35.0,35.0,0.0,31.63,0.1065,62.69,-2.15,-2.233,43,0.0,43,1505.0,0.42,25.4
-2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,990,949,39.0,39.0,0.0,36.95,0.0555,62.89,-1.42,-1.35,41,0.0,41,1599.0,0.56,25.8
-2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1140,1106,38.5,38.5,0.0,35.88,0.073,63.69,-1.42,-1.35,34,0.0,34,1309.0,0.56,27.4
-2026-05-25,17,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,target,1352,1267,21.5,21.5,0.0,20.0,0.075,61.92,-1.95,-2.026,85,0.0,85,1827.5,0.42,23.8
-2026-05-25,17,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,mass,amazon,2091,2019,21.0,21.0,0.0,20.01,0.0495,62.2,-1.95,-2.026,72,0.0,72,1512.0,0.42,24.4
-2026-05-25,17,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,sephora,928,888,33.0,33.0,0.0,32.11,0.0277,65.72,-1.25,-1.091,40,0.0,40,1320.0,0.56,31.4
-2026-05-25,17,False,late,sunscreen,SUN_S3,Play Everyday Lotion SPF 50,prestige,ulta,1045,1012,32.5,32.5,0.0,31.54,0.0304,63.41,-1.25,-1.188,33,0.0,33,1072.5,0.56,26.8
-2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,target,1392,1352,27.5,27.5,0.0,25.58,0.0751,58.63,-2.1,-2.181,40,0.0,40,1100.0,0.42,17.3
-2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,mass,amazon,1643,1608,27.0,27.0,0.0,24.7,0.0931,60.07,-2.1,-2.181,35,0.0,35,945.0,0.42,20.1
-2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,sephora,977,941,39.0,39.0,0.0,36.24,0.0762,68.56,-1.4,-1.222,36,0.0,36,1404.0,0.56,37.1
-2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Daily Moisturizer,prestige,ulta,1125,1094,38.5,38.5,0.0,37.25,0.0336,64.39,-1.4,-1.331,31,0.0,31,1193.5,0.56,28.8
-2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1251,1219,31.5,31.5,0.0,29.18,0.0795,59.2,-1.92,-1.994,32,0.0,32,1008.0,0.42,18.4
-2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1387,1358,31.0,31.0,0.0,29.07,0.0664,61.35,-1.92,-1.994,29,0.0,29,899.0,0.42,22.7
-2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,904,875,39.0,39.0,0.0,38.05,0.025,63.3,-1.3,-1.236,29,0.0,29,1131.0,0.56,26.6
-2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,991,966,38.5,38.5,0.0,36.41,0.0574,64.59,-1.3,-1.236,25,0.0,25,962.5,0.56,29.2
-2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,target,678,642,25.5,25.5,0.0,23.76,0.0732,53.55,-1.75,-2.003,36,0.0,36,918.0,0.42,7.1
-2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,mass,amazon,1031,1004,25.0,25.0,0.0,23.89,0.0465,56.19,-1.75,-1.818,27,0.0,27,675.0,0.42,12.4
-2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,sephora,757,732,35.0,35.0,0.0,34.06,0.0276,60.25,-1.18,-1.122,25,0.0,25,875.0,0.56,20.5
-2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting Powder SPF 35,prestige,ulta,700,674,34.5,34.5,0.0,33.14,0.041,62.01,-1.18,-1.122,26,0.0,26,897.0,0.56,24.0
+week_start,week_of_season,is_current_week,season_phase,product_group,sku_id,sku_name,channel_group,sales_channel,start_inventory_units,end_inventory_units,list_price,effective_price,promo_depth_pct,competitor_price,price_gap_vs_competitor,social_engagement_score,base_elasticity,effective_elasticity,own_units_sold,cannibalized_out_units,net_units_sold,revenue,gross_margin_pct
+2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,3200,3123,33.5,33.5,0.0,31.13,0.0761,64.44,-2.35,-2.441,77,0.0,77,2579.5,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,3200,3128,33.0,33.0,0.0,30.59,0.0788,63.52,-2.35,-2.441,72,0.0,72,2376.0,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2400,2349,39.0,39.0,0.0,36.05,0.0818,67.6,-1.55,-1.353,51,0.0,51,1989.0,0.56
+2026-02-02,1,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2400,2353,38.5,38.5,0.0,36.5,0.0548,68.23,-1.55,-1.353,47,0.0,47,1809.5,0.56
+2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2800,2735,35.5,35.5,0.0,32.8,0.0823,62.11,-2.15,-2.233,65,0.0,65,2307.5,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2800,2743,35.0,35.0,0.0,32.11,0.09,61.02,-2.15,-2.233,57,0.0,57,1995.0,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,2100,2052,39.0,39.0,0.0,37.16,0.0495,67.8,-1.42,-1.24,48,0.0,48,1872.0,0.56
+2026-02-02,1,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2100,2057,38.5,38.5,0.0,35.95,0.0709,66.95,-1.42,-1.24,43,0.0,43,1655.5,0.56
+2026-02-02,1,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,3400,3315,31.5,31.5,0.0,29.36,0.0729,60.6,-1.95,-2.026,85,0.0,85,2677.5,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,3400,3333,31.0,31.0,0.0,29.53,0.0498,60.49,-1.95,-2.026,67,0.0,67,2077.0,0.42
+2026-02-02,1,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,2200,2160,35.0,35.0,0.0,33.68,0.0392,64.52,-1.25,-1.188,40,0.0,40,1400.0,0.56
+2026-02-02,1,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,2200,2165,34.5,34.5,0.0,32.88,0.0493,63.05,-1.25,-1.188,35,0.0,35,1207.5,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,2200,2153,38.5,38.5,0.0,35.98,0.07,64.28,-2.1,-2.181,47,0.0,47,1809.5,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,2200,2160,38.0,38.0,0.0,35.49,0.0707,67.54,-2.1,-2.003,40,0.0,40,1520.0,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1600,1560,48.0,48.0,0.0,44.69,0.0741,67.47,-1.4,-1.222,40,0.0,40,1920.0,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1600,1565,47.5,47.5,0.0,44.86,0.0588,66.16,-1.4,-1.222,35,0.0,35,1662.5,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2200,2154,31.5,31.5,0.0,28.86,0.0915,59.35,-1.92,-1.994,46,0.0,46,1449.0,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2200,2160,31.0,31.0,0.0,29.42,0.0537,65.12,-1.92,-1.832,40,0.0,40,1240.0,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1700,1654,41.0,41.0,0.0,38.91,0.0537,64.15,-1.3,-1.236,46,0.0,46,1886.0,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1700,1660,40.5,40.5,0.0,39.05,0.0371,66.76,-1.3,-1.135,40,0.0,40,1620.0,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1700,1651,27.5,27.5,0.0,26.37,0.0429,61.75,-1.75,-1.818,49,0.0,49,1347.5,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1700,1667,27.0,27.0,0.0,25.3,0.0672,57.23,-1.75,-1.818,33,0.0,33,891.0,0.42
+2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1300,1268,36.0,36.0,0.0,33.79,0.0654,65.27,-1.18,-1.03,32,0.0,32,1152.0,0.56
+2026-02-02,1,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1300,1265,35.5,35.5,0.0,34.77,0.021,64.13,-1.18,-1.122,35,0.0,35,1242.5,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,3123,3042,33.5,33.5,0.0,30.89,0.0845,65.57,-2.35,-2.242,81,0.0,81,2713.5,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,3128,3048,33.0,33.0,0.0,30.41,0.0852,68.35,-2.35,-2.242,80,0.0,80,2640.0,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2349,2291,39.0,39.0,0.0,36.69,0.063,68.68,-1.55,-1.353,58,0.0,58,2262.0,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2353,2300,38.5,38.5,0.0,36.01,0.0691,66.55,-1.55,-1.353,53,0.0,53,2040.5,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2735,2663,35.5,35.5,0.0,32.91,0.0787,63.08,-2.15,-2.233,72,0.0,72,2556.0,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2743,2681,35.0,35.0,0.0,32.02,0.0931,66.78,-2.15,-2.051,62,0.0,62,2170.0,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,2052,1994,39.0,39.0,0.0,36.93,0.0561,69.71,-1.42,-1.24,58,0.0,58,2262.0,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2057,2009,38.5,38.5,0.0,36.47,0.0557,67.26,-1.42,-1.24,48,0.0,48,1848.0,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,3315,3214,31.5,31.5,0.0,29.12,0.0817,62.74,-1.95,-2.026,101,0.0,101,3181.5,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,3333,3263,31.0,31.0,0.0,28.33,0.0942,62.48,-1.95,-2.026,70,0.0,70,2170.0,0.42
+2026-02-09,2,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,2160,2112,35.0,35.0,0.0,33.77,0.0364,65.63,-1.25,-1.091,48,0.0,48,1680.0,0.56
+2026-02-09,2,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,2165,2123,34.5,34.5,0.0,32.35,0.0665,65.09,-1.25,-1.091,42,0.0,42,1449.0,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,2153,2099,38.5,38.5,0.0,35.66,0.0796,64.18,-2.1,-2.181,54,0.0,54,2079.0,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,2160,2120,38.0,38.0,0.0,35.89,0.0588,67.13,-2.1,-2.003,40,0.0,40,1520.0,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1560,1517,48.0,48.0,0.0,45.16,0.0629,71.62,-1.4,-1.222,43,0.0,43,2064.0,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1565,1528,47.5,47.5,0.0,45.43,0.0456,69.57,-1.4,-1.222,37,0.0,37,1757.5,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2154,2106,31.5,31.5,0.0,30.04,0.0486,61.19,-1.92,-1.994,48,0.0,48,1512.0,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2160,2115,31.0,31.0,0.0,29.22,0.0609,66.16,-1.92,-1.832,45,0.0,45,1395.0,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1654,1605,41.0,41.0,0.0,38.43,0.0669,71.1,-1.3,-1.135,49,0.0,49,2009.0,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1660,1619,40.5,40.5,0.0,38.43,0.0539,70.84,-1.3,-1.135,41,0.0,41,1660.5,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1651,1598,27.5,27.5,0.0,25.46,0.0801,60.5,-1.75,-1.818,53,0.0,53,1457.5,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1667,1632,27.0,27.0,0.0,24.9,0.0843,61.84,-1.75,-1.818,35,0.0,35,945.0,0.42
+2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1268,1235,36.0,36.0,0.0,33.87,0.0629,66.89,-1.18,-1.03,33,0.0,33,1188.0,0.56
+2026-02-09,2,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1265,1225,35.5,35.5,0.0,34.41,0.0317,63.31,-1.18,-1.122,40,0.0,40,1420.0,0.56
+2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,3042,2944,33.5,33.5,0.0,31.22,0.073,66.55,-2.35,-2.242,98,0.0,98,3283.0,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,3048,2956,33.0,33.0,0.0,30.74,0.0735,67.96,-2.35,-2.242,92,0.0,92,3036.0,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2291,2202,39.0,34.32,12.0,36.61,-0.0626,69.31,-1.55,-1.353,89,0.0,89,3054.48,0.51
+2026-02-16,3,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2300,2228,38.5,35.42,8.0,36.12,-0.0194,67.74,-1.55,-1.353,72,0.0,72,2550.24,0.526
+2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2663,2580,35.5,35.5,0.0,33.33,0.0651,65.72,-2.15,-2.051,83,0.0,83,2946.5,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2681,2613,35.0,35.0,0.0,32.33,0.0826,69.45,-2.15,-2.051,68,0.0,68,2380.0,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1994,1922,39.0,35.88,8.0,36.76,-0.0239,69.58,-1.42,-1.24,72,1.06,72,2583.36,0.526
+2026-02-16,3,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,2009,1945,38.5,35.42,8.0,35.84,-0.0117,64.89,-1.42,-1.35,64,0.0,64,2266.88,0.526
+2026-02-16,3,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,3214,3112,31.5,31.5,0.0,29.74,0.0592,60.02,-1.95,-2.026,102,0.0,102,3213.0,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,3263,3184,31.0,31.0,0.0,29.53,0.0498,69.17,-1.95,-1.86,79,0.0,79,2449.0,0.42
+2026-02-16,3,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,2112,2057,35.0,32.9,6.0,33.28,-0.0114,67.32,-1.25,-1.091,55,1.21,55,1809.5,0.535
+2026-02-16,3,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,2123,2071,34.5,31.74,8.0,32.55,-0.0249,64.89,-1.25,-1.188,52,0.0,52,1650.48,0.526
+2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,2099,2045,38.5,38.5,0.0,36.36,0.0589,69.71,-2.1,-2.003,54,0.0,54,2079.0,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,2120,2075,38.0,38.0,0.0,35.98,0.0561,72.18,-2.1,-2.003,45,0.0,45,1710.0,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1517,1464,48.0,44.16,8.0,44.75,-0.0132,71.89,-1.4,-1.222,53,0.78,53,2340.48,0.526
+2026-02-16,3,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1528,1480,47.5,44.65,6.0,44.81,-0.0036,71.55,-1.4,-1.222,48,1.06,48,2143.2,0.535
+2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2106,2055,31.5,31.5,0.0,28.95,0.0881,67.29,-1.92,-1.832,51,0.0,51,1606.5,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2115,2068,31.0,31.0,0.0,29.31,0.0577,69.53,-1.92,-1.832,47,0.0,47,1457.0,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1605,1550,41.0,37.72,8.0,39.14,-0.0363,71.99,-1.3,-1.135,55,0.8,55,2074.6,0.526
+2026-02-16,3,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1619,1562,40.5,35.64,12.0,38.78,-0.081,70.74,-1.3,-1.135,57,0.0,57,2031.48,0.51
+2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1598,1540,27.5,27.5,0.0,26.12,0.0528,66.62,-1.75,-1.669,58,0.0,58,1595.0,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1632,1591,27.0,27.0,0.0,25.81,0.0461,63.95,-1.75,-1.818,41,0.0,41,1107.0,0.42
+2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1235,1190,36.0,31.68,12.0,34.72,-0.0876,67.76,-1.18,-1.03,45,0.0,45,1425.6,0.51
+2026-02-16,3,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1225,1183,35.5,33.37,6.0,34.28,-0.0265,63.76,-1.18,-1.122,42,0.93,42,1401.54,0.535
+2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2944,2775,33.5,27.47,18.0,30.51,-0.0996,67.99,-2.35,-2.242,169,1.22,169,4642.43,0.344
+2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2956,2791,33.0,27.06,18.0,26.76,0.0112,68.8,-2.35,-2.242,165,0.0,165,4464.9,0.344
+2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2202,2126,39.0,39.0,0.0,36.51,0.0682,70.62,-1.55,-1.353,76,0.0,76,2964.0,0.56
+2026-02-23,4,False,start,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2228,2166,38.5,38.5,0.0,35.45,0.086,67.1,-1.55,-1.353,62,0.0,62,2387.0,0.56
+2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2580,2443,35.5,30.18,15.0,32.35,-0.0671,67.25,-2.15,-2.051,137,2.51,137,4134.66,0.357
+2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2613,2506,35.0,30.8,12.0,28.76,0.0709,64.59,-2.15,-2.233,107,2.36,107,3295.6,0.37
+2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1922,1852,39.0,39.0,0.0,35.98,0.0839,70.97,-1.42,-1.24,70,0.0,70,2730.0,0.56
+2026-02-23,4,False,start,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1945,1884,38.5,38.5,0.0,36.4,0.0577,67.29,-1.42,-1.24,61,0.0,61,2348.5,0.56
+2026-02-23,4,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,3112,2899,31.5,25.2,20.0,29.32,-0.1405,65.33,-1.95,-1.86,213,0.0,213,5367.6,0.336
+2026-02-23,4,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,3184,3038,31.0,25.42,18.0,26.29,-0.0331,64.47,-1.95,-2.026,146,0.0,146,3711.32,0.344
+2026-02-23,4,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,2057,2000,35.0,35.0,0.0,32.87,0.0648,67.94,-1.25,-1.091,57,0.0,57,1995.0,0.56
+2026-02-23,4,False,start,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,2071,2020,34.5,34.5,0.0,32.98,0.0461,68.49,-1.25,-1.091,51,0.0,51,1759.5,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,2045,1942,38.5,31.57,18.0,35.06,-0.0995,63.62,-2.1,-2.181,103,0.0,103,3251.71,0.344
+2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,2075,1997,38.0,31.16,18.0,31.87,-0.0223,69.77,-2.1,-2.003,78,0.57,78,2430.48,0.344
+2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1464,1409,48.0,48.0,0.0,44.94,0.0681,69.23,-1.4,-1.222,55,0.0,55,2640.0,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1480,1434,47.5,47.5,0.0,44.71,0.0624,71.85,-1.4,-1.222,46,0.0,46,2185.0,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,2055,1966,31.5,25.83,18.0,29.17,-0.1145,62.35,-1.92,-1.994,89,0.0,89,2298.87,0.344
+2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,2068,1980,31.0,24.8,20.0,26.48,-0.0634,65.44,-1.92,-1.832,88,0.0,88,2182.4,0.336
+2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1550,1494,41.0,41.0,0.0,39.8,0.0302,66.91,-1.3,-1.135,56,0.0,56,2296.0,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1562,1515,40.5,40.5,0.0,38.86,0.0422,63.67,-1.3,-1.236,47,0.0,47,1903.5,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1540,1462,27.5,24.2,12.0,25.58,-0.0539,62.65,-1.75,-1.818,78,1.72,78,1887.6,0.37
+2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1591,1532,27.0,22.95,15.0,22.38,0.0255,59.76,-1.75,-1.818,59,1.07,59,1354.05,0.357
+2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1190,1150,36.0,36.0,0.0,33.98,0.0594,65.23,-1.18,-1.03,40,0.0,40,1440.0,0.56
+2026-02-23,4,False,start,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1183,1138,35.5,35.5,0.0,33.69,0.0537,66.39,-1.18,-1.03,45,0.0,45,1597.5,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2775,2629,33.5,28.47,15.0,28.09,0.0135,94.0,-2.35,-2.043,146,2.68,146,4156.62,0.357
+2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2791,2627,33.0,27.06,18.0,29.58,-0.0852,94.0,-2.35,-2.043,164,0.0,164,4437.84,0.344
+2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2126,2057,39.0,39.0,0.0,36.09,0.0806,94.0,-1.55,-1.233,69,0.0,69,2691.0,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2166,2103,38.5,38.5,0.0,35.25,0.0922,94.0,-1.55,-1.233,63,0.0,63,2425.5,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2443,2291,35.5,28.4,20.0,30.54,-0.0701,92.67,-2.15,-1.869,152,0.0,152,4316.8,0.336
+2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2506,2371,35.0,28.7,18.0,31.86,-0.0992,91.93,-2.15,-1.869,135,0.0,135,3874.5,0.344
+2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1852,1785,39.0,39.0,0.0,36.53,0.0676,94.0,-1.42,-1.129,67,0.0,67,2613.0,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1884,1827,38.5,38.5,0.0,35.47,0.0854,91.31,-1.42,-1.129,57,0.0,57,2194.5,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2899,2703,31.5,25.2,20.0,26.73,-0.0572,91.54,-1.95,-1.695,196,0.0,196,4939.2,0.336
+2026-03-02,5,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,3038,2926,31.0,27.28,12.0,27.89,-0.0219,93.42,-1.95,-1.695,112,2.47,112,3055.36,0.37
+2026-03-02,5,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,2000,1945,35.0,35.0,0.0,33.11,0.0571,89.49,-1.25,-0.994,55,0.0,55,1925.0,0.56
+2026-03-02,5,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,2020,1966,34.5,34.5,0.0,33.07,0.0432,92.79,-1.25,-0.994,54,0.0,54,1863.0,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1942,1868,38.5,33.88,12.0,34.07,-0.0056,85.22,-2.1,-1.825,74,2.2,74,2507.12,0.37
+2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1997,1926,38.0,32.3,15.0,35.87,-0.0995,85.91,-2.1,-1.825,71,1.29,71,2293.3,0.357
+2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1409,1357,48.0,48.0,0.0,45.41,0.057,88.8,-1.4,-1.114,52,0.0,52,2496.0,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1434,1389,47.5,47.5,0.0,45.58,0.0421,87.15,-1.4,-1.114,45,0.0,45,2137.5,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1966,1879,31.5,25.83,18.0,27.03,-0.0444,83.24,-1.92,-1.669,87,0.63,87,2247.21,0.344
+2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1980,1914,31.0,27.28,12.0,28.61,-0.0465,79.58,-1.92,-1.669,66,1.96,66,1800.48,0.37
+2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1494,1442,41.0,41.0,0.0,38.32,0.0699,86.66,-1.3,-1.034,52,0.0,52,2132.0,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1515,1467,40.5,40.5,0.0,39.13,0.035,82.25,-1.3,-1.034,48,0.0,48,1944.0,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1462,1374,27.5,22.0,20.0,23.63,-0.069,76.7,-1.75,-1.521,88,0.0,88,1936.0,0.336
+2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1532,1464,27.0,21.6,20.0,25.58,-0.1556,81.23,-1.75,-1.521,68,0.0,68,1468.8,0.336
+2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1150,1110,36.0,36.0,0.0,34.5,0.0435,84.73,-1.18,-0.939,40,0.0,40,1440.0,0.56
+2026-03-02,5,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1138,1094,35.5,35.5,0.0,33.59,0.0569,84.49,-1.18,-0.939,44,0.0,44,1562.0,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2629,2524,33.5,33.5,0.0,29.74,0.1264,67.42,-2.35,-2.242,105,0.0,105,3517.5,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2627,2529,33.0,33.0,0.0,30.53,0.0809,71.16,-2.35,-2.242,98,0.0,98,3234.0,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,2057,1979,39.0,39.0,0.0,36.51,0.0682,72.28,-1.55,-1.353,78,0.0,78,3042.0,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2103,2036,38.5,38.5,0.0,36.13,0.0656,69.69,-1.55,-1.353,67,0.0,67,2579.5,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2291,2202,35.5,35.5,0.0,32.03,0.1083,67.5,-2.15,-2.051,89,0.0,89,3159.5,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2371,2288,35.0,35.0,0.0,32.47,0.0779,67.47,-2.15,-2.051,83,0.0,83,2905.0,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1785,1717,39.0,39.0,0.0,35.92,0.0857,73.81,-1.42,-1.24,68,0.0,68,2652.0,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1827,1767,38.5,38.5,0.0,36.17,0.0644,69.77,-1.42,-1.24,60,0.0,60,2310.0,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2703,2586,31.5,31.5,0.0,28.97,0.0873,66.56,-1.95,-1.86,117,0.0,117,3685.5,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2926,2834,31.0,31.0,0.0,28.52,0.087,63.35,-1.95,-2.026,92,0.0,92,2852.0,0.42
+2026-03-09,6,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1945,1888,35.0,35.0,0.0,32.51,0.0766,66.77,-1.25,-1.091,57,0.0,57,1995.0,0.56
+2026-03-09,6,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1966,1912,34.5,34.5,0.0,32.89,0.049,66.37,-1.25,-1.091,54,0.0,54,1863.0,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1868,1814,38.5,38.5,0.0,35.05,0.0984,59.89,-2.1,-2.181,54,0.0,54,2079.0,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1926,1877,38.0,38.0,0.0,34.97,0.0866,63.1,-2.1,-2.181,49,0.0,49,1862.0,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1357,1303,48.0,48.0,0.0,45.83,0.0473,70.33,-1.4,-1.222,54,0.0,54,2592.0,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1389,1344,47.5,47.5,0.0,44.0,0.0795,66.85,-1.4,-1.222,45,0.0,45,2137.5,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1879,1822,31.5,31.5,0.0,28.82,0.093,62.46,-1.92,-1.994,57,0.0,57,1795.5,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1914,1866,31.0,31.0,0.0,29.63,0.0462,64.99,-1.92,-1.994,48,0.0,48,1488.0,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1442,1391,41.0,41.0,0.0,38.83,0.0559,67.56,-1.3,-1.135,51,0.0,51,2091.0,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1467,1420,40.5,40.5,0.0,38.54,0.0509,66.45,-1.3,-1.135,47,0.0,47,1903.5,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1374,1318,27.5,27.5,0.0,26.28,0.0464,60.56,-1.75,-1.818,56,0.0,56,1540.0,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1464,1423,27.0,27.0,0.0,25.37,0.0642,59.03,-1.75,-1.818,41,0.0,41,1107.0,0.42
+2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1110,1069,36.0,36.0,0.0,34.66,0.0387,65.25,-1.18,-1.03,41,0.0,41,1476.0,0.56
+2026-03-09,6,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1094,1053,35.5,35.5,0.0,34.73,0.0222,66.62,-1.18,-1.03,41,0.0,41,1455.5,0.56
+2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2524,2414,33.5,33.5,0.0,30.92,0.0834,67.73,-2.35,-2.242,110,0.0,110,3685.0,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2529,2430,33.0,33.0,0.0,28.89,0.1423,76.2,-2.35,-2.043,99,0.0,99,3267.0,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1979,1891,39.0,35.88,8.0,35.59,0.0081,75.07,-1.55,-1.233,88,0.64,88,3157.44,0.526
+2026-03-16,7,True,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,2036,1941,38.5,33.88,12.0,34.0,-0.0035,74.33,-1.55,-1.353,95,0.0,95,3218.6,0.51
+2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2202,2111,35.5,35.5,0.0,32.1,0.1059,70.37,-2.15,-2.051,91,0.0,91,3230.5,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2288,2208,35.0,35.0,0.0,31.81,0.1003,68.54,-2.15,-2.051,80,0.0,80,2800.0,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1717,1626,39.0,35.1,10.0,35.51,-0.0115,79.88,-1.42,-1.129,91,0.0,91,3194.1,0.518
+2026-03-16,7,True,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1767,1687,38.5,34.65,10.0,34.75,-0.0029,71.65,-1.42,-1.24,80,0.58,80,2772.0,0.518
+2026-03-16,7,True,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2586,2455,31.5,31.5,0.0,28.54,0.1037,63.55,-1.95,-2.026,131,0.0,131,4126.5,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2834,2742,31.0,31.0,0.0,28.38,0.0923,62.74,-1.95,-2.026,92,0.0,92,2852.0,0.42
+2026-03-16,7,True,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1888,1815,35.0,32.2,8.0,31.91,0.0091,70.56,-1.25,-1.091,73,0.53,73,2350.6,0.526
+2026-03-16,7,True,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1912,1849,34.5,31.74,8.0,30.8,0.0305,68.11,-1.25,-1.091,63,0.93,63,1999.62,0.526
+2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1814,1760,38.5,38.5,0.0,35.31,0.0903,65.0,-2.1,-2.003,54,0.0,54,2079.0,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1877,1836,38.0,38.0,0.0,35.82,0.0609,65.76,-2.1,-2.003,41,0.0,41,1558.0,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1303,1247,48.0,44.16,8.0,42.57,0.0374,71.59,-1.4,-1.222,56,0.82,56,2472.96,0.526
+2026-03-16,7,True,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1344,1296,47.5,42.75,10.0,42.73,0.0005,68.91,-1.4,-1.222,48,0.35,48,2052.0,0.518
+2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1822,1767,31.5,31.5,0.0,29.98,0.0507,64.34,-1.92,-1.994,55,0.0,55,1732.5,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1866,1821,31.0,31.0,0.0,29.4,0.0544,59.71,-1.92,-1.994,45,0.0,45,1395.0,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1391,1326,41.0,36.9,10.0,38.24,-0.035,61.8,-1.3,-1.236,65,0.47,65,2398.5,0.518
+2026-03-16,7,True,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1420,1366,40.5,37.26,8.0,37.06,0.0054,62.54,-1.3,-1.236,54,0.79,54,2012.04,0.526
+2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1318,1258,27.5,27.5,0.0,26.34,0.044,56.35,-1.75,-1.818,60,0.0,60,1650.0,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1423,1387,27.0,27.0,0.0,25.26,0.0689,59.76,-1.75,-1.818,36,0.0,36,972.0,0.42
+2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1069,1019,36.0,31.68,12.0,33.34,-0.0498,62.59,-1.18,-1.122,50,0.0,50,1584.0,0.51
+2026-03-16,7,True,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1053,1002,35.5,31.24,12.0,32.46,-0.0376,61.17,-1.18,-1.122,51,0.0,51,1593.24,0.51
+2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2414,2237,33.5,28.47,15.0,29.89,-0.0475,75.04,-2.35,-2.043,177,0.0,177,5039.19,0.357
+2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2430,2283,33.0,29.04,12.0,26.26,0.1059,78.58,-2.35,-2.043,147,4.35,147,4268.88,0.37
+2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1891,1805,39.0,39.0,0.0,36.03,0.0824,81.43,-1.55,-1.233,86,0.0,86,3354.0,0.56
+2026-03-23,8,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1941,1868,38.5,38.5,0.0,35.54,0.0833,78.19,-1.55,-1.233,73,0.0,73,2810.5,0.56
+2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,2111,1956,35.5,30.18,15.0,32.54,-0.0725,72.07,-2.15,-2.051,155,0.0,155,4677.9,0.357
+2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2208,2070,35.0,28.7,18.0,28.37,0.0116,74.95,-2.15,-2.051,138,1.0,138,3960.6,0.344
+2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1626,1550,39.0,39.0,0.0,37.02,0.0535,77.5,-1.42,-1.129,76,0.0,76,2964.0,0.56
+2026-03-23,8,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1687,1621,38.5,38.5,0.0,35.12,0.0962,79.69,-1.42,-1.129,66,0.0,66,2541.0,0.56
+2026-03-23,8,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2455,2276,31.5,27.72,12.0,28.63,-0.0318,73.81,-1.95,-1.86,179,1.95,179,4961.88,0.37
+2026-03-23,8,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2742,2571,31.0,24.8,20.0,25.64,-0.0328,80.79,-1.95,-1.695,171,0.0,171,4240.8,0.336
+2026-03-23,8,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1815,1747,35.0,35.0,0.0,33.23,0.0533,76.89,-1.25,-0.994,68,0.0,68,2380.0,0.56
+2026-03-23,8,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1849,1790,34.5,34.5,0.0,32.11,0.0744,75.54,-1.25,-0.994,59,0.0,59,2035.5,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1760,1675,38.5,32.73,15.0,35.15,-0.0688,71.66,-2.1,-2.003,85,1.55,85,2782.05,0.357
+2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1836,1771,38.0,32.3,15.0,32.06,0.0075,69.53,-2.1,-2.003,65,0.71,65,2099.5,0.357
+2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1247,1198,48.0,48.0,0.0,45.73,0.0496,74.66,-1.4,-1.222,49,0.0,49,2352.0,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1296,1256,47.5,47.5,0.0,44.25,0.0734,72.83,-1.4,-1.222,40,0.0,40,1900.0,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1767,1681,31.5,25.83,18.0,30.01,-0.1393,66.03,-1.92,-1.832,86,0.62,86,2221.38,0.344
+2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1821,1750,31.0,25.42,18.0,25.25,0.0067,70.48,-1.92,-1.832,71,0.0,71,1804.82,0.344
+2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1326,1272,41.0,41.0,0.0,38.82,0.0562,73.47,-1.3,-1.135,54,0.0,54,2214.0,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1366,1318,40.5,40.5,0.0,38.76,0.0449,70.0,-1.3,-1.135,48,0.0,48,1944.0,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1258,1161,27.5,22.0,20.0,26.26,-0.1622,64.75,-1.75,-1.818,97,0.0,97,2134.0,0.336
+2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1387,1330,27.0,22.95,15.0,22.62,0.0146,66.36,-1.75,-1.669,57,0.62,57,1308.15,0.357
+2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,1019,981,36.0,36.0,0.0,34.37,0.0474,72.04,-1.18,-1.03,38,0.0,38,1368.0,0.56
+2026-03-23,8,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,1002,960,35.5,35.5,0.0,33.71,0.0531,72.22,-1.18,-1.03,42,0.0,42,1491.0,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2237,2118,33.5,33.5,0.0,30.1,0.113,66.99,-2.35,-2.242,119,0.0,119,3986.5,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2283,2172,33.0,33.0,0.0,30.64,0.077,61.69,-2.35,-2.441,111,0.0,111,3663.0,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1805,1722,39.0,39.0,0.0,36.07,0.0812,65.52,-1.55,-1.353,83,0.0,83,3237.0,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1868,1787,38.5,38.5,0.0,35.37,0.0885,63.92,-1.55,-1.473,81,0.0,81,3118.5,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1956,1848,35.5,35.5,0.0,32.17,0.1035,62.13,-2.15,-2.233,108,0.0,108,3834.0,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,2070,1971,35.0,35.0,0.0,32.34,0.0823,62.07,-2.15,-2.233,99,0.0,99,3465.0,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1550,1468,39.0,39.0,0.0,36.53,0.0676,65.67,-1.42,-1.24,82,0.0,82,3198.0,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1621,1545,38.5,38.5,0.0,36.58,0.0525,65.7,-1.42,-1.24,76,0.0,76,2926.0,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2276,2129,31.5,31.5,0.0,29.75,0.0588,60.5,-1.95,-2.026,147,0.0,147,4630.5,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2571,2465,31.0,31.0,0.0,28.62,0.0832,61.1,-1.95,-2.026,106,0.0,106,3286.0,0.42
+2026-03-30,9,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1747,1676,35.0,35.0,0.0,33.95,0.0309,66.24,-1.25,-1.091,71,0.0,71,2485.0,0.56
+2026-03-30,9,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1790,1729,34.5,34.5,0.0,33.26,0.0373,60.39,-1.25,-1.188,61,0.0,61,2104.5,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1675,1617,38.5,38.5,0.0,35.11,0.0966,60.33,-2.1,-2.181,58,0.0,58,2233.0,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1771,1724,38.0,38.0,0.0,35.45,0.0719,58.98,-2.1,-2.181,47,0.0,47,1786.0,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1198,1147,48.0,48.0,0.0,44.91,0.0688,60.95,-1.4,-1.331,51,0.0,51,2448.0,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1256,1211,47.5,47.5,0.0,45.41,0.046,62.64,-1.4,-1.331,45,0.0,45,2137.5,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1681,1624,31.5,31.5,0.0,28.93,0.0888,58.37,-1.92,-1.994,57,0.0,57,1795.5,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1750,1704,31.0,31.0,0.0,28.69,0.0805,53.95,-1.92,-2.198,46,0.0,46,1426.0,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1272,1218,41.0,41.0,0.0,38.89,0.0543,62.53,-1.3,-1.236,54,0.0,54,2214.0,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1318,1269,40.5,40.5,0.0,37.85,0.07,62.62,-1.3,-1.236,49,0.0,49,1984.5,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1161,1108,27.5,27.5,0.0,26.27,0.0468,52.28,-1.75,-2.003,53,0.0,53,1457.5,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1330,1287,27.0,27.0,0.0,25.82,0.0457,51.6,-1.75,-2.003,43,0.0,43,1161.0,0.42
+2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,981,943,36.0,36.0,0.0,34.97,0.0295,62.19,-1.18,-1.122,38,0.0,38,1368.0,0.56
+2026-03-30,9,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,960,918,35.5,35.5,0.0,33.87,0.0481,56.1,-1.18,-1.122,42,0.0,42,1491.0,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,2118,1990,33.5,33.5,0.0,30.74,0.0898,60.32,-2.35,-2.441,128,0.0,128,4288.0,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2172,2045,33.0,33.0,0.0,29.75,0.1092,64.45,-2.35,-2.441,127,0.0,127,4191.0,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1722,1634,39.0,39.0,0.0,37.06,0.0523,63.19,-1.55,-1.473,88,0.0,88,3432.0,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1787,1706,38.5,38.5,0.0,35.64,0.0802,63.05,-1.55,-1.473,81,0.0,81,3118.5,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1848,1737,35.5,35.5,0.0,33.11,0.0722,60.19,-2.15,-2.233,111,0.0,111,3940.5,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1971,1878,35.0,35.0,0.0,31.57,0.1086,60.53,-2.15,-2.233,93,0.0,93,3255.0,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1468,1382,39.0,39.0,0.0,37.01,0.0538,64.37,-1.42,-1.35,86,0.0,86,3354.0,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1545,1474,38.5,38.5,0.0,35.76,0.0766,61.59,-1.42,-1.35,71,0.0,71,2733.5,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,2129,1979,31.5,31.5,0.0,29.56,0.0656,60.34,-1.95,-2.026,150,0.0,150,4725.0,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2465,2353,31.0,31.0,0.0,29.27,0.0591,58.43,-1.95,-2.026,112,0.0,112,3472.0,0.42
+2026-04-06,10,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1676,1602,35.0,35.0,0.0,33.53,0.0438,64.17,-1.25,-1.188,74,0.0,74,2590.0,0.56
+2026-04-06,10,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1729,1665,34.5,34.5,0.0,32.61,0.058,63.61,-1.25,-1.188,64,0.0,64,2208.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1617,1561,38.5,38.5,0.0,36.34,0.0594,54.02,-2.1,-2.404,56,0.0,56,2156.0,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1724,1679,38.0,38.0,0.0,35.31,0.0762,53.77,-2.1,-2.404,45,0.0,45,1710.0,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1147,1095,48.0,48.0,0.0,45.66,0.0512,64.88,-1.4,-1.331,52,0.0,52,2496.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1211,1169,47.5,47.5,0.0,44.99,0.0558,60.6,-1.4,-1.331,42,0.0,42,1995.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1624,1571,31.5,31.5,0.0,29.18,0.0795,52.38,-1.92,-2.198,53,0.0,53,1669.5,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1704,1658,31.0,31.0,0.0,28.85,0.0745,56.2,-1.92,-1.994,46,0.0,46,1426.0,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1218,1164,41.0,41.0,0.0,38.77,0.0575,59.35,-1.3,-1.236,54,0.0,54,2214.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1269,1221,40.5,40.5,0.0,39.21,0.0329,55.43,-1.3,-1.236,48,0.0,48,1944.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1108,1054,27.5,27.5,0.0,25.4,0.0827,55.24,-1.75,-1.818,54,0.0,54,1485.0,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1287,1249,27.0,27.0,0.0,25.06,0.0774,52.22,-1.75,-2.003,38,0.0,38,1026.0,0.42
+2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,943,903,36.0,36.0,0.0,34.75,0.036,58.87,-1.18,-1.122,40,0.0,40,1440.0,0.56
+2026-04-06,10,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,918,875,35.5,35.5,0.0,33.97,0.045,58.13,-1.18,-1.122,43,0.0,43,1526.5,0.56
+2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1990,1875,33.5,33.5,0.0,30.35,0.1038,79.68,-2.35,-2.043,115,0.0,115,3852.5,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,2045,1936,33.0,33.0,0.0,29.98,0.1007,74.85,-2.35,-2.242,109,0.0,109,3597.0,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1634,1527,39.0,34.32,12.0,36.47,-0.059,79.31,-1.55,-1.233,107,0.0,107,3672.24,0.51
+2026-04-13,11,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1706,1605,38.5,33.88,12.0,36.08,-0.061,77.18,-1.55,-1.233,101,0.0,101,3421.88,0.51
+2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1737,1630,35.5,35.5,0.0,32.49,0.0926,76.07,-2.15,-1.869,107,0.0,107,3798.5,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1878,1783,35.0,35.0,0.0,32.31,0.0833,78.69,-2.15,-1.869,95,0.0,95,3325.0,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1382,1287,39.0,35.1,10.0,37.53,-0.0647,77.51,-1.42,-1.129,95,0.69,95,3334.5,0.518
+2026-04-13,11,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1474,1402,38.5,36.19,6.0,35.56,0.0177,78.79,-1.42,-1.129,72,1.59,72,2605.68,0.535
+2026-04-13,11,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1979,1833,31.5,31.5,0.0,29.04,0.0847,72.22,-1.95,-1.86,146,0.0,146,4599.0,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2353,2252,31.0,31.0,0.0,28.75,0.0783,74.7,-1.95,-1.86,101,0.0,101,3131.0,0.42
+2026-04-13,11,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1602,1529,35.0,31.5,10.0,32.76,-0.0385,78.63,-1.25,-0.994,73,0.53,73,2299.5,0.518
+2026-04-13,11,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1665,1594,34.5,31.74,8.0,32.77,-0.0314,75.81,-1.25,-0.994,71,1.04,71,2253.54,0.526
+2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1561,1509,38.5,38.5,0.0,35.94,0.0712,82.19,-2.1,-1.825,52,0.0,52,2002.0,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1679,1635,38.0,38.0,0.0,35.48,0.071,79.93,-2.1,-1.825,44,0.0,44,1672.0,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1095,1036,48.0,42.24,12.0,44.09,-0.042,85.53,-1.4,-1.114,59,0.0,59,2492.16,0.51
+2026-04-13,11,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1169,1126,47.5,44.65,6.0,43.71,0.0215,85.49,-1.4,-1.114,43,0.63,43,1919.95,0.535
+2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1571,1518,31.5,31.5,0.0,29.36,0.0729,77.44,-1.92,-1.669,53,0.0,53,1669.5,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1658,1611,31.0,31.0,0.0,29.24,0.0602,80.6,-1.92,-1.669,47,0.0,47,1457.0,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1164,1109,41.0,36.9,10.0,38.45,-0.0403,86.36,-1.3,-1.034,55,0.4,55,2029.5,0.518
+2026-04-13,11,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1221,1171,40.5,36.45,10.0,38.09,-0.0431,78.87,-1.3,-1.034,50,0.0,50,1822.5,0.518
+2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1054,1005,27.5,27.5,0.0,25.09,0.0961,75.1,-1.75,-1.521,49,0.0,49,1347.5,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1249,1210,27.0,27.0,0.0,24.58,0.0985,75.45,-1.75,-1.521,39,0.0,39,1053.0,0.42
+2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,903,867,36.0,33.84,6.0,33.81,0.0009,77.62,-1.18,-0.939,36,0.8,36,1218.24,0.535
+2026-04-13,11,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,875,828,35.5,32.66,8.0,33.21,-0.0166,84.57,-1.18,-0.939,47,0.34,47,1535.02,0.526
+2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1875,1674,33.5,27.47,18.0,27.97,-0.0179,59.78,-2.35,-2.441,201,1.45,201,5521.47,0.344
+2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1936,1780,33.0,28.05,15.0,26.22,0.0698,60.44,-2.35,-2.441,156,1.7,156,4375.8,0.357
+2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1527,1450,39.0,39.0,0.0,35.74,0.0912,63.21,-1.55,-1.473,77,0.0,77,3003.0,0.56
+2026-04-20,12,False,in_season,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1605,1535,38.5,38.5,0.0,36.35,0.0591,59.03,-1.55,-1.473,70,0.0,70,2695.0,0.56
+2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1630,1466,35.5,28.4,20.0,30.4,-0.0658,56.6,-2.15,-2.233,164,0.0,164,4657.6,0.336
+2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1783,1641,35.0,28.7,18.0,27.99,0.0254,57.95,-2.15,-2.233,142,0.0,142,4075.4,0.344
+2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1287,1212,39.0,39.0,0.0,35.59,0.0958,64.04,-1.42,-1.35,75,0.0,75,2925.0,0.56
+2026-04-20,12,False,in_season,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1402,1341,38.5,38.5,0.0,35.46,0.0857,56.99,-1.42,-1.35,61,0.0,61,2348.5,0.56
+2026-04-20,12,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1833,1589,31.5,25.2,20.0,27.3,-0.0769,54.1,-1.95,-2.232,244,0.0,244,6148.8,0.336
+2026-04-20,12,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2252,2088,31.0,25.42,18.0,25.44,-0.0008,55.75,-1.95,-2.026,164,0.0,164,4168.88,0.344
+2026-04-20,12,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1529,1464,35.0,35.0,0.0,32.51,0.0766,59.47,-1.25,-1.188,65,0.0,65,2275.0,0.56
+2026-04-20,12,False,in_season,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1594,1536,34.5,34.5,0.0,32.11,0.0744,59.49,-1.25,-1.188,58,0.0,58,2001.0,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1509,1431,38.5,31.57,18.0,32.82,-0.0381,55.13,-2.1,-2.181,78,0.0,78,2462.46,0.344
+2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1635,1578,38.0,32.3,15.0,30.36,0.0639,58.45,-2.1,-2.181,57,0.62,57,1841.1,0.357
+2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,1036,990,48.0,48.0,0.0,44.43,0.0804,60.61,-1.4,-1.331,46,0.0,46,2208.0,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1126,1089,47.5,47.5,0.0,44.12,0.0766,59.05,-1.4,-1.331,37,0.0,37,1757.5,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1518,1439,31.5,25.83,18.0,26.88,-0.0391,52.38,-1.92,-2.198,79,0.0,79,2040.57,0.344
+2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1611,1543,31.0,25.42,18.0,25.81,-0.0151,57.63,-1.92,-1.994,68,0.0,68,1728.56,0.344
+2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1109,1060,41.0,41.0,0.0,38.94,0.0529,59.8,-1.3,-1.236,49,0.0,49,2009.0,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1171,1130,40.5,40.5,0.0,39.1,0.0358,58.52,-1.3,-1.236,41,0.0,41,1660.5,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,1005,921,27.5,22.55,18.0,24.18,-0.0674,49.74,-1.75,-2.003,84,0.0,84,1894.2,0.344
+2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1210,1166,27.0,23.76,12.0,22.31,0.065,52.12,-1.75,-2.003,44,0.97,44,1045.44,0.37
+2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,867,832,36.0,36.0,0.0,34.82,0.0339,59.62,-1.18,-1.122,35,0.0,35,1260.0,0.56
+2026-04-20,12,False,in_season,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,828,790,35.5,35.5,0.0,33.15,0.0709,55.25,-1.18,-1.122,38,0.0,38,1349.0,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1674,1562,33.5,33.5,0.0,30.45,0.1002,57.02,-2.35,-2.441,112,0.0,112,3752.0,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1780,1677,33.0,33.0,0.0,30.63,0.0774,57.84,-2.35,-2.441,103,0.0,103,3399.0,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1450,1379,39.0,39.0,0.0,36.18,0.0779,62.95,-1.55,-1.473,71,0.0,71,2769.0,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1535,1470,38.5,38.5,0.0,35.93,0.0715,63.08,-1.55,-1.473,65,0.0,65,2502.5,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1466,1375,35.5,35.5,0.0,33.1,0.0725,56.46,-2.15,-2.233,91,0.0,91,3230.5,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1641,1559,35.0,35.0,0.0,31.88,0.0979,55.96,-2.15,-2.233,82,0.0,82,2870.0,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1212,1145,39.0,39.0,0.0,36.45,0.07,62.15,-1.42,-1.35,67,0.0,67,2613.0,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1341,1278,38.5,38.5,0.0,36.97,0.0414,55.6,-1.42,-1.35,63,0.0,63,2425.5,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1589,1475,31.5,31.5,0.0,28.7,0.0976,57.57,-1.95,-2.026,114,0.0,114,3591.0,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,2088,1992,31.0,31.0,0.0,28.28,0.0962,56.66,-1.95,-2.026,96,0.0,96,2976.0,0.42
+2026-04-27,13,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1464,1402,35.0,35.0,0.0,33.19,0.0545,58.07,-1.25,-1.188,62,0.0,62,2170.0,0.56
+2026-04-27,13,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1536,1484,34.5,34.5,0.0,33.08,0.0429,58.41,-1.25,-1.188,52,0.0,52,1794.0,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1431,1382,38.5,38.5,0.0,34.76,0.1076,58.55,-2.1,-2.181,49,0.0,49,1886.5,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1578,1539,38.0,38.0,0.0,35.35,0.075,59.58,-2.1,-2.181,39,0.0,39,1482.0,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,990,949,48.0,48.0,0.0,45.36,0.0582,58.33,-1.4,-1.331,41,0.0,41,1968.0,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1089,1051,47.5,47.5,0.0,44.54,0.0665,58.38,-1.4,-1.331,38,0.0,38,1805.0,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1439,1395,31.5,31.5,0.0,29.11,0.0821,55.86,-1.92,-1.994,44,0.0,44,1386.0,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1543,1500,31.0,31.0,0.0,28.85,0.0745,55.09,-1.92,-1.994,43,0.0,43,1333.0,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1060,1017,41.0,41.0,0.0,38.35,0.0691,58.32,-1.3,-1.236,43,0.0,43,1763.0,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1130,1093,40.5,40.5,0.0,37.64,0.076,57.1,-1.3,-1.236,37,0.0,37,1498.5,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,921,876,27.5,27.5,0.0,25.2,0.0913,52.94,-1.75,-2.003,45,0.0,45,1237.5,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1166,1130,27.0,27.0,0.0,25.22,0.0706,54.72,-1.75,-2.003,36,0.0,36,972.0,0.42
+2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,832,800,36.0,36.0,0.0,34.75,0.036,58.57,-1.18,-1.122,32,0.0,32,1152.0,0.56
+2026-04-27,13,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,790,753,35.5,35.5,0.0,34.22,0.0374,56.32,-1.18,-1.122,37,0.0,37,1313.5,0.56
+2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1562,1474,33.5,33.5,0.0,30.6,0.0948,69.65,-2.35,-2.242,88,0.0,88,2948.0,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1677,1591,33.0,33.0,0.0,30.95,0.0662,73.51,-2.35,-2.242,86,0.0,86,2838.0,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1379,1299,39.0,34.32,12.0,34.89,-0.0163,73.37,-1.55,-1.353,80,0.0,80,2745.6,0.51
+2026-05-04,14,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1470,1412,38.5,36.19,6.0,34.94,0.0358,70.46,-1.55,-1.353,58,0.42,58,2099.02,0.535
+2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1375,1300,35.5,35.5,0.0,32.15,0.1042,65.62,-2.15,-2.051,75,0.0,75,2662.5,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1559,1489,35.0,35.0,0.0,32.74,0.069,71.56,-2.15,-2.051,70,0.0,70,2450.0,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1145,1085,39.0,36.66,6.0,35.13,0.0436,71.96,-1.42,-1.24,60,1.31,60,2199.6,0.535
+2026-05-04,14,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1278,1224,38.5,36.19,6.0,35.01,0.0337,69.69,-1.42,-1.24,54,0.39,54,1954.26,0.535
+2026-05-04,14,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1475,1370,31.5,31.5,0.0,29.22,0.078,68.82,-1.95,-1.86,105,0.0,105,3307.5,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,1992,1917,31.0,31.0,0.0,28.95,0.0708,69.54,-1.95,-1.86,75,0.0,75,2325.0,0.42
+2026-05-04,14,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1402,1343,35.0,31.5,10.0,31.76,-0.0082,71.24,-1.25,-1.091,59,0.43,59,1858.5,0.518
+2026-05-04,14,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1484,1436,34.5,31.74,8.0,31.3,0.0141,73.27,-1.25,-1.091,48,0.0,48,1523.52,0.526
+2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1382,1338,38.5,38.5,0.0,34.75,0.1079,64.42,-2.1,-2.181,44,0.0,44,1694.0,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1539,1506,38.0,38.0,0.0,34.19,0.1114,65.8,-2.1,-2.003,33,0.0,33,1254.0,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,949,906,48.0,44.16,8.0,43.06,0.0255,70.42,-1.4,-1.222,43,0.62,43,1898.88,0.526
+2026-05-04,14,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1051,1017,47.5,44.65,6.0,42.29,0.0558,65.02,-1.4,-1.222,34,0.0,34,1518.1,0.535
+2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1395,1351,31.5,31.5,0.0,29.78,0.0578,60.8,-1.92,-1.994,44,0.0,44,1386.0,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1500,1465,31.0,31.0,0.0,29.02,0.0682,64.72,-1.92,-1.994,35,0.0,35,1085.0,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,1017,976,41.0,38.54,6.0,36.9,0.0444,67.23,-1.3,-1.135,41,0.91,41,1580.14,0.535
+2026-05-04,14,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1093,1053,40.5,38.07,6.0,35.99,0.0578,62.76,-1.3,-1.236,40,0.0,40,1522.8,0.535
+2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,876,833,27.5,27.5,0.0,25.11,0.0952,60.04,-1.75,-1.818,43,0.0,43,1182.5,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1130,1099,27.0,27.0,0.0,25.2,0.0714,62.17,-1.75,-1.818,31,0.0,31,837.0,0.42
+2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,800,764,36.0,31.68,12.0,33.19,-0.0455,69.31,-1.18,-1.03,36,0.0,36,1140.48,0.51
+2026-05-04,14,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,753,716,35.5,33.37,6.0,32.83,0.0164,64.7,-1.18,-1.122,37,0.0,37,1234.69,0.535
+2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1474,1369,33.5,29.48,12.0,28.49,0.0347,60.57,-2.35,-2.441,105,1.15,105,3095.4,0.37
+2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1591,1459,33.0,27.06,18.0,26.88,0.0067,61.16,-2.35,-2.441,132,0.96,132,3571.92,0.344
+2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1299,1242,39.0,39.0,0.0,36.11,0.08,62.01,-1.55,-1.473,57,0.0,57,2223.0,0.56
+2026-05-11,15,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1412,1365,38.5,38.5,0.0,35.38,0.0882,62.0,-1.55,-1.473,47,0.0,47,1809.5,0.56
+2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1300,1195,35.5,30.18,15.0,30.02,0.0053,55.41,-2.15,-2.233,105,0.0,105,3168.9,0.357
+2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1489,1388,35.0,28.0,20.0,27.99,0.0004,58.83,-2.15,-2.233,101,0.0,101,2828.0,0.336
+2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1085,1036,39.0,39.0,0.0,35.65,0.094,62.7,-1.42,-1.35,49,0.0,49,1911.0,0.56
+2026-05-11,15,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1224,1178,38.5,38.5,0.0,35.94,0.0712,59.37,-1.42,-1.35,46,0.0,46,1771.0,0.56
+2026-05-11,15,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1370,1250,31.5,27.72,12.0,27.63,0.0033,55.8,-1.95,-2.026,120,1.31,120,3326.4,0.37
+2026-05-11,15,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,1917,1806,31.0,25.42,18.0,25.57,-0.0059,59.2,-1.95,-2.026,111,0.81,111,2821.62,0.344
+2026-05-11,15,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1343,1298,35.0,35.0,0.0,32.46,0.0783,63.2,-1.25,-1.188,45,0.0,45,1575.0,0.56
+2026-05-11,15,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1436,1396,34.5,34.5,0.0,32.73,0.0541,60.81,-1.25,-1.188,40,0.0,40,1380.0,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1338,1267,38.5,30.8,20.0,33.81,-0.089,58.33,-2.1,-2.181,71,0.0,71,2186.8,0.336
+2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1506,1463,38.0,33.44,12.0,30.56,0.0942,54.62,-2.1,-2.404,43,0.0,43,1437.92,0.37
+2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,906,870,48.0,48.0,0.0,45.04,0.0657,62.69,-1.4,-1.331,36,0.0,36,1728.0,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,1017,988,47.5,47.5,0.0,44.24,0.0737,56.76,-1.4,-1.331,29,0.0,29,1377.5,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1351,1289,31.5,25.83,18.0,27.51,-0.0611,54.97,-1.92,-2.198,62,0.45,62,1601.46,0.344
+2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1465,1420,31.0,27.28,12.0,25.98,0.05,52.33,-1.92,-2.198,45,0.0,45,1227.6,0.37
+2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,976,938,41.0,41.0,0.0,39.0,0.0513,57.52,-1.3,-1.236,38,0.0,38,1558.0,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1053,1022,40.5,40.5,0.0,37.74,0.0731,56.39,-1.3,-1.236,31,0.0,31,1255.5,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,833,769,27.5,22.0,20.0,23.45,-0.0618,56.91,-1.75,-1.818,64,0.0,64,1408.0,0.336
+2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1099,1061,27.0,23.76,12.0,22.18,0.0712,54.81,-1.75,-2.003,38,0.0,38,902.88,0.37
+2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,764,739,36.0,36.0,0.0,33.64,0.0702,66.11,-1.18,-1.03,25,0.0,25,900.0,0.56
+2026-05-11,15,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,716,687,35.5,35.5,0.0,34.25,0.0365,60.06,-1.18,-1.122,29,0.0,29,1029.5,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1369,1297,33.5,33.5,0.0,30.29,0.106,60.88,-2.35,-2.441,72,0.0,72,2412.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1459,1390,33.0,33.0,0.0,30.85,0.0697,61.24,-2.35,-2.441,69,0.0,69,2277.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1242,1192,39.0,39.0,0.0,36.91,0.0566,63.11,-1.55,-1.473,50,0.0,50,1950.0,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1365,1322,38.5,38.5,0.0,36.36,0.0589,65.44,-1.55,-1.353,43,0.0,43,1655.5,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1195,1133,35.5,35.5,0.0,33.51,0.0594,59.58,-2.15,-2.233,62,0.0,62,2201.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1388,1335,35.0,35.0,0.0,31.67,0.1051,62.16,-2.15,-2.233,53,0.0,53,1855.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,1036,990,39.0,39.0,0.0,37.08,0.0518,62.98,-1.42,-1.35,46,0.0,46,1794.0,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1178,1140,38.5,38.5,0.0,35.62,0.0809,64.33,-1.42,-1.35,38,0.0,38,1463.0,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1250,1166,31.5,31.5,0.0,29.9,0.0535,56.95,-1.95,-2.026,84,0.0,84,2646.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,1806,1743,31.0,31.0,0.0,28.59,0.0843,58.56,-1.95,-2.026,63,0.0,63,1953.0,0.42
+2026-05-18,16,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1298,1259,35.0,35.0,0.0,33.59,0.042,62.5,-1.25,-1.188,39,0.0,39,1365.0,0.56
+2026-05-18,16,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1396,1363,34.5,34.5,0.0,32.42,0.0642,59.75,-1.25,-1.188,33,0.0,33,1138.5,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1267,1230,38.5,38.5,0.0,35.84,0.0742,57.66,-2.1,-2.181,37,0.0,37,1424.5,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1463,1433,38.0,38.0,0.0,35.96,0.0567,55.59,-2.1,-2.181,30,0.0,30,1140.0,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,870,838,48.0,48.0,0.0,46.4,0.0345,65.52,-1.4,-1.222,32,0.0,32,1536.0,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,988,962,47.5,47.5,0.0,45.51,0.0437,57.72,-1.4,-1.331,26,0.0,26,1235.0,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1289,1253,31.5,31.5,0.0,29.83,0.056,56.22,-1.92,-1.994,36,0.0,36,1134.0,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1420,1387,31.0,31.0,0.0,29.51,0.0505,55.72,-1.92,-1.994,33,0.0,33,1023.0,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,938,904,41.0,41.0,0.0,38.39,0.068,60.33,-1.3,-1.236,34,0.0,34,1394.0,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,1022,992,40.5,40.5,0.0,37.91,0.0683,57.98,-1.3,-1.236,30,0.0,30,1215.0,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,769,732,27.5,27.5,0.0,25.52,0.0776,56.12,-1.75,-1.818,37,0.0,37,1017.5,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1061,1035,27.0,27.0,0.0,24.88,0.0852,56.05,-1.75,-1.818,26,0.0,26,702.0,0.42
+2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,739,716,36.0,36.0,0.0,33.83,0.0641,58.11,-1.18,-1.122,23,0.0,23,828.0,0.56
+2026-05-18,16,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,687,660,35.5,35.5,0.0,33.52,0.0591,58.54,-1.18,-1.122,27,0.0,27,958.5,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,target,1297,1237,33.5,33.5,0.0,31.36,0.0682,63.38,-2.35,-2.441,60,0.0,60,2010.0,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,mass,amazon,1390,1333,33.0,33.0,0.0,30.26,0.0905,62.41,-2.35,-2.441,57,0.0,57,1881.0,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,sephora,1192,1148,39.0,39.0,0.0,37.03,0.0532,65.86,-1.55,-1.353,44,0.0,44,1716.0,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S1,Unseen Sunscreen SPF 50,prestige,ulta,1322,1283,38.5,38.5,0.0,36.32,0.06,63.45,-1.55,-1.473,39,0.0,39,1501.5,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,target,1133,1086,35.5,35.5,0.0,32.03,0.1083,61.38,-2.15,-2.233,47,0.0,47,1668.5,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,mass,amazon,1335,1292,35.0,35.0,0.0,31.63,0.1065,62.69,-2.15,-2.233,43,0.0,43,1505.0,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,sephora,990,949,39.0,39.0,0.0,36.95,0.0555,62.89,-1.42,-1.35,41,0.0,41,1599.0,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S2,Glowscreen SPF 40,prestige,ulta,1140,1106,38.5,38.5,0.0,35.88,0.073,63.69,-1.42,-1.35,34,0.0,34,1309.0,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,target,1166,1100,31.5,31.5,0.0,29.3,0.0751,61.92,-1.95,-2.026,66,0.0,66,2079.0,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,mass,amazon,1743,1687,31.0,31.0,0.0,29.54,0.0494,62.2,-1.95,-2.026,56,0.0,56,1736.0,0.42
+2026-05-25,17,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,sephora,1259,1224,35.0,35.0,0.0,34.05,0.0279,65.72,-1.25,-1.091,35,0.0,35,1225.0,0.56
+2026-05-25,17,False,late,sunscreen,SUN_S3,Every. Single. Face. Watery Lotion SPF 50,prestige,ulta,1363,1334,34.5,34.5,0.0,33.48,0.0305,63.41,-1.25,-1.188,29,0.0,29,1000.5,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,target,1230,1198,38.5,38.5,0.0,35.82,0.0748,58.63,-2.1,-2.181,32,0.0,32,1232.0,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,mass,amazon,1433,1405,38.0,38.0,0.0,34.76,0.0932,60.07,-2.1,-2.181,28,0.0,28,1064.0,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,sephora,838,808,48.0,48.0,0.0,44.6,0.0762,68.56,-1.4,-1.222,30,0.0,30,1440.0,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M1,Superscreen Hydrating Daily Cream SPF 40,prestige,ulta,962,937,47.5,47.5,0.0,45.96,0.0335,64.39,-1.4,-1.331,25,0.0,25,1187.5,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,target,1253,1221,31.5,31.5,0.0,29.18,0.0795,59.2,-1.92,-1.994,32,0.0,32,1008.0,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,mass,amazon,1387,1358,31.0,31.0,0.0,29.07,0.0664,61.35,-1.92,-1.994,29,0.0,29,899.0,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,sephora,904,875,41.0,41.0,0.0,40.01,0.0247,63.3,-1.3,-1.236,29,0.0,29,1189.0,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M2,Mineral Sheerscreen SPF 30,prestige,ulta,992,967,40.5,40.5,0.0,38.31,0.0572,64.59,-1.3,-1.236,25,0.0,25,1012.5,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,target,732,701,27.5,27.5,0.0,25.62,0.0734,53.55,-1.75,-2.003,31,0.0,31,852.5,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,mass,amazon,1035,1012,27.0,27.0,0.0,25.8,0.0465,56.19,-1.75,-1.818,23,0.0,23,621.0,0.42
+2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,sephora,716,693,36.0,36.0,0.0,35.03,0.0277,60.25,-1.18,-1.122,23,0.0,23,828.0,0.56
+2026-05-25,17,False,late,moisturizer,MOI_M3,(Re)setting 100% Mineral Powder SPF 35,prestige,ulta,660,636,35.5,35.5,0.0,34.1,0.0411,62.01,-1.18,-1.122,24,0.0,24,852.0,0.56
