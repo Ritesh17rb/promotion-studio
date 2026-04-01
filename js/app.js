@@ -88,6 +88,8 @@ let currentStateHistoryRows = [];
 let currentStateHistoryBound = false;
 let currentStateHistoryChart = null;
 let currentStateChannelMixChart = null;
+let currentBusinessOverviewSocialSignals = [];
+let currentBusinessOverviewProductCatalog = null;
 let step2SkuImpactChart = null;
 let commercialSalesProjectionChart = null;
 let commercialSocialPowerChart = null;
@@ -99,6 +101,13 @@ let liveCopilotDebounceTimer = null;
 let liveCopilotInFlight = false;
 let selectedEventForLlm = null;
 let llmBusinessContext = {};
+
+const CURRENT_BUSINESS_OVERVIEW_CHANNEL_LOGOS = {
+  target: 'assets/logos/target.ico',
+  amazon: 'assets/logos/amazon.ico',
+  sephora: 'assets/logos/sephora.ico',
+  ulta: 'assets/logos/ulta.ico'
+};
 
 const CHANNEL_PRICE = {
   ad_supported: 24.0,
@@ -451,6 +460,7 @@ function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
 
   return {
     weeks: currentWindow,
+    previousWeeks: previousWindow,
     current: summarizeWindow(currentWindow),
     previous: summarizeWindow(previousWindow)
   };
@@ -486,9 +496,18 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
     ].join('');
 
     const channelFilter = document.getElementById('history-channel-filter');
+    const resetButton = document.getElementById('history-reset-filters');
     productFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     windowFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     if (channelFilter) channelFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        productFilter.value = 'all';
+        if (channelFilter) channelFilter.value = 'all';
+        windowFilter.value = '1';
+        renderCurrentStateHistoryDashboard();
+      });
+    }
     currentStateHistoryBound = true;
   }
 
@@ -507,7 +526,7 @@ function renderCurrentStateHistoryDashboard() {
   const windowFilter = document.getElementById('history-window-filter');
   const channelFilter = document.getElementById('history-channel-filter');
   const selectedProduct = productFilter?.value || 'all';
-  const windowWeeks = Number(windowFilter?.value || 52);
+  const windowWeeks = Number(windowFilter?.value || 1);
   const selectedChannel = channelFilter?.value || 'all';
   const selectedGroup = selectedProduct.startsWith('group:')
     ? selectedProduct.replace('group:', '').trim().toLowerCase()
@@ -523,7 +542,9 @@ function renderCurrentStateHistoryDashboard() {
   });
   const metrics = buildHistoryWindowMetrics(scopedRows, windowWeeks);
   const windowDateSet = new Set(metrics.weeks.map(row => String(row.date)));
+  const previousDateSet = new Set((metrics.previousWeeks || []).map(row => String(row.date)));
   const windowScopedRows = scopedRows.filter(row => windowDateSet.has(String(row.week_start || row.date || '')));
+  const previousWindowRows = scopedRows.filter(row => previousDateSet.has(String(row.week_start || row.date || '')));
   const selectedLabel = selectedProduct === 'all'
     ? 'All Products'
     : (selectedGroup ? formatProductGroupLabel(selectedGroup) : (scopedRows[0]?.sku_name || selectedProduct));
@@ -533,14 +554,25 @@ function renderCurrentStateHistoryDashboard() {
   const historyNoteEl = document.getElementById('history-selection-note');
   const trendBadgeEl = document.getElementById('history-trend-badge');
   const trendNoteEl = document.getElementById('history-trend-note');
+  const rangeChipEl = document.getElementById('current-business-overview-range');
+  const snapshotTitleEl = document.getElementById('history-snapshot-title');
+  const channelSummaryNoteEl = document.getElementById('history-channel-summary-note');
+  const riskRevenueEl = document.getElementById('history-risk-revenue');
+  const riskChangeEl = document.getElementById('history-risk-change');
+  const aiSummaryEl = document.getElementById('history-ai-summary');
+  const aiUpdatedEl = document.getElementById('history-ai-updated');
   const channelNoteEl = document.getElementById('history-channel-note');
   const tableNoteEl = document.getElementById('history-table-note');
 
   if (historyNoteEl) {
     const dateRangeText = windowStart && windowEnd ? `${windowStart} to ${windowEnd}` : formatHistoryPeriodLabel(windowWeeks);
-    historyNoteEl.textContent = `${selectedLabel} across ${formatHistoryPeriodLabel(windowWeeks)} (${dateRangeText}). Use the filter to move from total portfolio revenue to a product category or an individual SKU drilldown.`;
+    historyNoteEl.textContent = `${selectedLabel} across ${formatHistoryPeriodLabel(windowWeeks)} (${dateRangeText}).`;
   }
   if (trendBadgeEl) trendBadgeEl.textContent = selectedLabel;
+  if (snapshotTitleEl) snapshotTitleEl.innerHTML = `<i class="bi bi-moon-stars-fill me-2"></i>Business Snapshot (${formatHistoryPeriodLabel(windowWeeks)})`;
+  if (rangeChipEl) {
+    rangeChipEl.innerHTML = `<i class="bi bi-calendar-week me-2"></i>${formatHistoryPeriodLabel(windowWeeks)} • ${windowStart && windowEnd ? `${windowStart} – ${windowEnd}` : 'Date range unavailable'}`;
+  }
 
   const current = metrics.current;
   const previous = metrics.previous;
@@ -565,6 +597,112 @@ function renderCurrentStateHistoryDashboard() {
   setText('history-price-change', hasComparison ? `${priceDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(priceDelta))} vs prior period` : 'Window average');
   setText('history-gap-change', hasComparison ? `${formatPercentagePointDelta(gapDelta)} vs prior period` : 'Window average');
   setText('history-social-change', hasComparison ? `${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} pts vs prior period` : 'Window average');
+
+  const riskRevenue = windowScopedRows.reduce((sum, row) => {
+    const rowGap = toNumber(row.price_gap_vs_competitor);
+    const rowSocial = getBuzzSentimentScore(row);
+    if (rowGap > 0.025 && rowSocial < current.social) {
+      return sum + toNumber(row.revenue);
+    }
+    return sum;
+  }, 0);
+  const riskShare = current.revenue > 0 ? riskRevenue / current.revenue : 0;
+  if (riskRevenueEl) riskRevenueEl.textContent = formatCompactCurrency(riskRevenue, 1);
+  if (riskChangeEl) riskChangeEl.textContent = `${(riskShare * 100).toFixed(0)}% of selected-window revenue exposed to premium pricing with weaker buzz`;
+
+  const historyChannelMap = (rows) => {
+    const map = new Map();
+    rows.forEach(row => {
+      const channel = String(row.sales_channel || '').toLowerCase();
+      if (!channel) return;
+      if (!map.has(channel)) {
+        map.set(channel, {
+          channel,
+          revenue: 0,
+          units: 0,
+          ownPriceWeighted: 0,
+          compPriceWeighted: 0,
+          gapWeighted: 0,
+          socialWeighted: 0
+        });
+      }
+      const entry = map.get(channel);
+      const units = toNumber(row.units_sold);
+      const weight = units > 0 ? units : 1;
+      entry.revenue += toNumber(row.revenue);
+      entry.units += units;
+      entry.ownPriceWeighted += toNumber(row.own_price) * weight;
+      entry.compPriceWeighted += toNumber(row.competitor_price) * weight;
+      entry.gapWeighted += toNumber(row.price_gap_vs_competitor) * weight;
+      entry.socialWeighted += getBuzzSentimentScore(row) * weight;
+    });
+    return map;
+  };
+
+  const currentChannelMap = historyChannelMap(windowScopedRows);
+  const previousChannelMap = historyChannelMap(previousWindowRows);
+  const channelOrder = ['target', 'amazon', 'sephora', 'ulta'];
+  const channelCardsHost = document.getElementById('history-channel-action-cards');
+  const channelSummaries = channelOrder
+    .map(channel => {
+      const currentRow = currentChannelMap.get(channel);
+      const previousRow = previousChannelMap.get(channel);
+      const currentRevenue = currentRow?.revenue || 0;
+      const previousRevenue = previousRow?.revenue || 0;
+      const units = currentRow?.units || 0;
+      const gap = currentRow?.units > 0 ? ((currentRow.gapWeighted || 0) / currentRow.units) * 100 : 0;
+      const social = currentRow?.units > 0 ? (currentRow.socialWeighted || 0) / currentRow.units : 0;
+      const revenueDeltaPct = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+      const ownPrice = currentRow?.units > 0 ? (currentRow.ownPriceWeighted || 0) / currentRow.units : 0;
+      return {
+        channel,
+        label: KPI_CHANNEL_LABELS[channel] || channel,
+        revenue: currentRevenue,
+        revenueDeltaPct,
+        gap,
+        social,
+        units,
+        ownPrice,
+        tier: (channel === 'sephora' || channel === 'ulta') ? 'prestige' : 'mass',
+        logoSrc: CURRENT_BUSINESS_OVERVIEW_CHANNEL_LOGOS[channel] || ''
+      };
+    })
+    .filter(item => item.revenue > 0 || item.units > 0)
+    .sort((a, b) => b.revenue - a.revenue);
+
+  if (channelCardsHost) {
+    channelCardsHost.innerHTML = channelSummaries.map(item => `
+      <div class="col-lg-6 col-xl-3">
+          <div class="cbo-channel-card cbo-channel-${item.tier}">
+            <div class="cbo-channel-card-top">
+              <div class="cbo-channel-brand">
+                <span class="cbo-channel-brandmark">
+                  ${item.logoSrc ? `<img class="cbo-channel-logo" src="${item.logoSrc}" alt="${item.label} logo">` : `<span>${String(item.label.charAt(0) || '').toUpperCase()}</span>`}
+                </span>
+                <div>
+                  <div class="cbo-channel-name">${item.label}</div>
+                  <div class="cbo-channel-tier">${item.tier}</div>
+                </div>
+              </div>
+            </div>
+          <div class="cbo-channel-revenue">${formatCompactCurrency(item.revenue, 1)}</div>
+          <div class="cbo-channel-growth ${item.revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${item.revenueDeltaPct >= 0 ? '+' : ''}${item.revenueDeltaPct.toFixed(1)}% vs prior period</div>
+          <div class="cbo-channel-metric-row">
+            <span>Price Gap</span>
+            <strong class="${item.gap > 1 ? 'text-danger' : 'text-success'}">${item.gap >= 0 ? '+' : ''}${item.gap.toFixed(1)}%</strong>
+          </div>
+          <div class="cbo-channel-metric-row">
+            <span>Sentiment</span>
+            <strong class="${item.social >= 0 ? 'text-success' : 'text-danger'}">${item.social >= 0 ? '+' : ''}${item.social.toFixed(1)}</strong>
+          </div>
+          <div class="cbo-channel-metric-row">
+            <span>Avg Price</span>
+            <strong>${formatCurrency(item.ownPrice)}</strong>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 
   const chartLabels = metrics.weeks.map(row => {
     const date = new Date(`${row.date}T00:00:00`);
@@ -776,6 +914,36 @@ function renderCurrentStateHistoryDashboard() {
       : '';
     trendNoteEl.textContent = `${baseNote}${opportunityNote}`;
   }
+  if (channelSummaryNoteEl) {
+    const strongest = channelSummaries[0];
+    channelSummaryNoteEl.textContent = strongest
+      ? `${strongest.label} is the strongest channel in the selected window at ${formatCompactCurrency(strongest.revenue, 1)}. Cards combine revenue trend, price position, and demand signal into a recommended posture.`
+      : 'Channel cards summarize revenue trend, price position, and demand signal across the selected window.';
+  }
+  if (aiSummaryEl) {
+    const strongest = channelSummaries[0];
+    const mostPressured = [...channelSummaries].sort((a, b) => (b.gap - b.revenueDeltaPct) - (a.gap - a.revenueDeltaPct))[0];
+    const strongPrestige = channelSummaries
+      .filter(item => item.tier === 'prestige' && item.revenueDeltaPct >= 0)
+      .map(item => item.label);
+    const aiParts = [];
+    aiParts.push(`${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(windowWeeks)}.`);
+    if (mostPressured && mostPressured.gap > 2) {
+      aiParts.push(`${mostPressured.label} is showing the most pricing pressure at ${mostPressured.gap >= 0 ? '+' : ''}${mostPressured.gap.toFixed(1)}% versus competitor.`);
+    }
+    if (opportunityWeek) {
+      aiParts.push(`Social support peaked in the window on ${opportunityWeek.date}, which supports a lighter-promo or hold-price story when buzz is elevated.`);
+    }
+    if (strongPrestige.length) {
+      aiParts.push(`Prestige remains resilient in ${strongPrestige.join(' and ')} without needing heavy discounting.`);
+    } else if (strongest) {
+      aiParts.push(`${strongest.label} remains the clearest leader in the current business mix.`);
+    }
+    aiSummaryEl.textContent = aiParts.join(' ');
+  }
+  if (aiUpdatedEl) {
+    aiUpdatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${windowEnd || 'Unavailable'}`;
+  }
   if (channelNoteEl) {
     channelNoteEl.textContent = strongestChannel
       ? `${KPI_CHANNEL_LABELS[strongestChannel[0]] || strongestChannel[0]} is the strongest revenue channel in the selected window at ${formatCompactCurrency(strongestChannel[1], 1)}.`
@@ -785,6 +953,10 @@ function renderCurrentStateHistoryDashboard() {
     tableNoteEl.textContent = selectedProduct === 'all'
       ? 'Showing all product x channel combinations across the selected lookback window.'
       : `Showing ${selectedLabel} across Target, Amazon, Sephora, and Ulta for the selected lookback window.`;
+  }
+
+  if (typeof window.renderCurrentBusinessOverviewLatestWeek === 'function') {
+    window.renderCurrentBusinessOverviewLatestWeek();
   }
 }
 
@@ -5365,6 +5537,7 @@ async function init() {
   document.getElementById('save-edited-scenario-btn')?.addEventListener('click', saveEditedScenario);
 
   window.initializeCurrentStateHistoryDashboard = initializeCurrentStateHistoryDashboard;
+  window.renderCurrentBusinessOverviewLatestWeek = renderCurrentBusinessOverviewLatestWeek;
   window.initializeWeeklyDrilldown = initializeWeeklyDrilldown;
   // Make loadData available globally so it can be called when navigating to step 1
   window.loadAppData = loadData;
@@ -5373,6 +5546,335 @@ async function init() {
 
   // Initialize AI chat widgets on each step
   initializeStepChatWidgets();
+}
+
+async function renderCurrentBusinessOverviewLatestWeek() {
+  const issuesEl = document.getElementById('step1-top-issues-list');
+  const competitorBodyEl = document.getElementById('step1-competitor-alerts-body');
+  const competitorCountEl = document.getElementById('step1-competitor-alert-count');
+  const competitorNoteEl = document.getElementById('step1-competitor-alerts-note');
+  const snapshotBodyEl = document.getElementById('step1-product-channel-snapshot-body');
+  const snapshotNoteEl = document.getElementById('step1-product-channel-snapshot-note');
+  const actionsEl = document.getElementById('step1-recommended-actions-list');
+  const actionsNoteEl = document.getElementById('step1-recommended-actions-note');
+  const aiSummaryEl = document.getElementById('history-ai-summary');
+  const aiUpdatedEl = document.getElementById('history-ai-updated');
+
+  if (!issuesEl || !competitorBodyEl || !snapshotBodyEl || !actionsEl) return;
+
+  if (!currentStateHistoryRows.length) {
+    currentStateHistoryRows = await loadProductChannelHistory();
+  }
+  if (!currentBusinessOverviewSocialSignals.length) {
+    currentBusinessOverviewSocialSignals = await loadSocialSignals();
+  }
+  if (!currentBusinessOverviewProductCatalog) {
+    currentBusinessOverviewProductCatalog = await loadProductCatalog();
+  }
+  if (!currentStateHistoryRows.length) return;
+
+  const toNum = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const fmtPct = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+  const fmtPts = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)} pts`;
+  const fmtSigned = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}`;
+  const productCatalogMap = buildProductCatalogMap(currentBusinessOverviewProductCatalog);
+  const getSkuName = (skuId, fallback = skuId) => getCatalogLabel(productCatalogMap, skuId, fallback);
+  const CHANNEL_LABELS = { target: 'Target', amazon: 'Amazon', sephora: 'Sephora', ulta: 'Ulta' };
+  const CHANNELS = ['target', 'amazon', 'sephora', 'ulta'];
+
+  const selectedProduct = document.getElementById('history-product-filter')?.value || 'all';
+  const selectedChannel = document.getElementById('history-channel-filter')?.value || 'all';
+  const selectedGroup = selectedProduct.startsWith('group:')
+    ? selectedProduct.replace('group:', '').trim().toLowerCase()
+    : null;
+
+  const scopedHistory = currentStateHistoryRows.filter(row => {
+    const productMatch = selectedProduct === 'all'
+      ? true
+      : selectedGroup
+        ? String(row.product_group || '').toLowerCase() === selectedGroup
+        : row.sku_id === selectedProduct;
+    const channelMatch = selectedChannel === 'all'
+      ? true
+      : String(row.sales_channel || '').toLowerCase() === selectedChannel;
+    return productMatch && channelMatch;
+  });
+
+  const weeks = [...new Set(scopedHistory.map(row => String(row.week_start || row.date || '')).filter(Boolean))].sort();
+  const latestWeek = weeks[weeks.length - 1];
+  const priorWeek = weeks.length > 1 ? weeks[weeks.length - 2] : null;
+  const latestRows = scopedHistory.filter(row => String(row.week_start || row.date || '') === latestWeek);
+  const priorRows = priorWeek ? scopedHistory.filter(row => String(row.week_start || row.date || '') === priorWeek) : [];
+
+  if (!latestRows.length) {
+    issuesEl.innerHTML = '<div class="text-muted small">No latest-week rows are available for this selection.</div>';
+    competitorBodyEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No competitor alerts for the current selection.</td></tr>';
+    snapshotBodyEl.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No current-week SKU snapshot is available for this selection.</td></tr>';
+    actionsEl.innerHTML = '<div class="text-muted small">No actions generated because the current selection has no latest-week rows.</div>';
+    return;
+  }
+
+  const aggregateRows = (rows) => {
+    let revenue = 0;
+    let units = 0;
+    let ownPriceWeighted = 0;
+    let compPriceWeighted = 0;
+    let socialWeighted = 0;
+    let weightSum = 0;
+    rows.forEach(row => {
+      const unitsSold = toNum(row.units_sold);
+      const weight = unitsSold > 0 ? unitsSold : 1;
+      revenue += toNum(row.revenue);
+      units += unitsSold;
+      ownPriceWeighted += toNum(row.own_price) * weight;
+      compPriceWeighted += toNum(row.competitor_price) * weight;
+      socialWeighted += getBuzzSentimentScore(row) * weight;
+      weightSum += weight;
+    });
+    const avgPrice = units > 0 ? revenue / units : (weightSum ? ownPriceWeighted / weightSum : 0);
+    const avgComp = weightSum ? compPriceWeighted / weightSum : 0;
+    return {
+      revenue,
+      units,
+      avgPrice,
+      avgComp,
+      avgGap: avgComp ? ((avgPrice - avgComp) / avgComp) * 100 : 0,
+      avgSocial: weightSum ? socialWeighted / weightSum : 0
+    };
+  };
+
+  const latestAgg = aggregateRows(latestRows);
+  const priorAgg = aggregateRows(priorRows);
+  const latestWeekDate = new Date(`${latestWeek}T00:00:00`);
+  const latestWeekLabel = latestWeekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const channelRollups = CHANNELS.map(channel => {
+    const currentRows = latestRows.filter(row => String(row.sales_channel || '').toLowerCase() === channel);
+    const previousRows = priorRows.filter(row => String(row.sales_channel || '').toLowerCase() === channel);
+    const current = aggregateRows(currentRows);
+    const previous = aggregateRows(previousRows);
+    return {
+      channel,
+      label: CHANNEL_LABELS[channel],
+      revenue: current.revenue,
+      units: current.units,
+      revenueDeltaPct: previous.revenue > 0 ? ((current.revenue - previous.revenue) / previous.revenue) * 100 : 0,
+      unitsDeltaPct: previous.units > 0 ? ((current.units - previous.units) / previous.units) * 100 : 0,
+      gap: current.avgGap,
+      social: current.avgSocial,
+      tier: (channel === 'sephora' || channel === 'ulta') ? 'prestige' : 'mass'
+    };
+  }).filter(item => item.revenue > 0 || item.units > 0);
+
+  const competitorRows = latestRows.map(row => {
+    const prior = priorRows.find(prev => prev.sku_id === row.sku_id && String(prev.sales_channel || '').toLowerCase() === String(row.sales_channel || '').toLowerCase());
+    const competitorPrice = toNum(row.competitor_price);
+    const previousCompetitorPrice = prior ? toNum(prior.competitor_price) : competitorPrice;
+    const ourPrice = toNum(row.own_price);
+    const move = competitorPrice - previousCompetitorPrice;
+    const gap = competitorPrice ? ((ourPrice - competitorPrice) / competitorPrice) * 100 : 0;
+    return {
+      skuId: row.sku_id,
+      skuName: getSkuName(row.sku_id, row.sku_name || row.sku_id),
+      channel: String(row.sales_channel || '').toLowerCase(),
+      competitorPrice,
+      ourPrice,
+      move,
+      gap,
+      social: getBuzzSentimentScore(row),
+      revenue: toNum(row.revenue)
+    };
+  }).sort((a, b) => Math.max(Math.abs(b.move), Math.abs(b.gap)) - Math.max(Math.abs(a.move), Math.abs(a.gap)));
+
+  const significantMoves = competitorRows.filter(row => Math.abs(row.move) >= 0.4 || Math.abs(row.gap) >= 2.5);
+  if (competitorCountEl) {
+    competitorCountEl.textContent = `${significantMoves.length} significant move${significantMoves.length === 1 ? '' : 's'}`;
+  }
+  competitorBodyEl.innerHTML = (significantMoves.slice(0, 4).length ? significantMoves.slice(0, 4) : competitorRows.slice(0, 4)).map(row => `
+    <tr>
+      <td class="fw-semibold">${row.skuName}</td>
+      <td>${CHANNEL_LABELS[row.channel] || row.channel}</td>
+      <td class="text-end">${formatCurrency(row.competitorPrice)}</td>
+      <td class="text-end">${formatCurrency(row.ourPrice)}</td>
+      <td class="text-end ${row.gap > 1 ? 'text-danger' : row.gap < -1 ? 'text-success' : ''}">${row.gap >= 0 ? '+' : ''}${row.gap.toFixed(1)}%</td>
+    </tr>
+  `).join('');
+  if (competitorNoteEl) {
+    competitorNoteEl.textContent = `Current-week view for ${latestWeekLabel}. ${significantMoves.length ? `Most material move: ${significantMoves[0].skuName} on ${CHANNEL_LABELS[significantMoves[0].channel] || significantMoves[0].channel}.` : 'No major week-over-week competitor moves detected.'}`;
+  }
+
+  const previousBySkuChannel = new Map(priorRows.map(row => [`${row.sku_id}|${String(row.sales_channel || '').toLowerCase()}`, row]));
+  const skuSnapshot = [...new Set(latestRows.map(row => row.sku_id))].map(skuId => {
+    const skuRows = latestRows.filter(row => row.sku_id === skuId);
+    const topRow = [...skuRows].sort((a, b) => toNum(b.revenue) - toNum(a.revenue))[0];
+    const current = aggregateRows(skuRows);
+    const previousSkuRows = priorRows.filter(row => row.sku_id === skuId);
+    const previous = aggregateRows(previousSkuRows);
+    const unitsDeltaPct = previous.units > 0 ? ((current.units - previous.units) / previous.units) * 100 : 0;
+    const topPrev = topRow ? previousBySkuChannel.get(`${skuId}|${String(topRow.sales_channel || '').toLowerCase()}`) : null;
+    const topGap = topRow ? (toNum(topRow.competitor_price) ? ((toNum(topRow.own_price) - toNum(topRow.competitor_price)) / toNum(topRow.competitor_price)) * 100 : 0) : 0;
+    let insight = 'Balanced performance across price and demand.';
+    if (topGap > 3 && unitsDeltaPct < 0) {
+      insight = 'Volume softening while priced above competition.';
+    } else if (current.avgSocial > 20 && topGap <= 1) {
+      insight = 'High buzz with aligned price. Demand capture opportunity.';
+    } else if (unitsDeltaPct > 3 && topGap <= 0) {
+      insight = 'Strong momentum with competitive pricing.';
+    } else if (topPrev && toNum(topPrev.competitor_price) - toNum(topRow.competitor_price) > 0.4) {
+      insight = 'Competitor cut price this week. Watch conversion closely.';
+    }
+    return {
+      skuId,
+      skuName: getSkuName(skuId, skuRows[0]?.sku_name || skuId),
+      topChannel: topRow ? CHANNEL_LABELS[String(topRow.sales_channel || '').toLowerCase()] || topRow.sales_channel : '--',
+      units: current.units,
+      unitsDeltaPct,
+      ownPrice: current.avgPrice,
+      compPrice: current.avgComp,
+      gap: current.avgGap,
+      social: current.avgSocial,
+      insight,
+      revenue: current.revenue
+    };
+  }).sort((a, b) => b.revenue - a.revenue);
+
+  snapshotBodyEl.innerHTML = skuSnapshot.map(row => `
+    <tr>
+      <td class="fw-semibold">${row.skuName}</td>
+      <td>${row.topChannel}</td>
+      <td class="text-end">${formatCompactNumber(row.units, 1)}</td>
+      <td class="text-end ${row.unitsDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${fmtPct(row.unitsDeltaPct)}</td>
+      <td class="text-end">${formatCurrency(row.ownPrice)}</td>
+      <td class="text-end">${formatCurrency(row.compPrice)}</td>
+      <td class="text-end ${row.gap > 1 ? 'text-danger' : row.gap < -1 ? 'text-success' : ''}">${row.gap >= 0 ? '+' : ''}${row.gap.toFixed(1)}%</td>
+      <td>${row.insight}</td>
+    </tr>
+  `).join('');
+  if (snapshotNoteEl) {
+    snapshotNoteEl.textContent = `Latest-week snapshot for ${latestWeekLabel}. Table respects the current product and channel filters from the overview.`;
+  }
+
+  const pressuredCompetitorRow = significantMoves.find(row => row.gap > 2) || competitorRows.find(row => row.gap > 2);
+  const buzzOpportunity = [...skuSnapshot].sort((a, b) => b.social - a.social)[0];
+  const strongPrestigeChannel = channelRollups
+    .filter(row => row.tier === 'prestige')
+    .sort((a, b) => (b.revenueDeltaPct + b.social) - (a.revenueDeltaPct + a.social))[0];
+  const atRiskChannel = [...channelRollups].sort((a, b) => (b.gap - b.revenueDeltaPct) - (a.gap - a.revenueDeltaPct))[0];
+
+  const issueCards = [];
+  if (pressuredCompetitorRow) {
+    issueCards.push({
+      tone: 'danger',
+      title: `${CHANNEL_LABELS[pressuredCompetitorRow.channel] || pressuredCompetitorRow.channel} price gap widened to ${pressuredCompetitorRow.gap >= 0 ? '+' : ''}${pressuredCompetitorRow.gap.toFixed(1)}%`,
+      body: `Competitor price is ${formatCurrency(pressuredCompetitorRow.competitorPrice)} versus our ${formatCurrency(pressuredCompetitorRow.ourPrice)} on ${pressuredCompetitorRow.skuName}.`,
+      action: `Impact: ${formatCompactCurrency(pressuredCompetitorRow.revenue, 1)} of current-week revenue is exposed in this combination.`
+    });
+  }
+  if (buzzOpportunity) {
+    issueCards.push({
+      tone: 'success',
+      title: `High buzz for ${buzzOpportunity.skuName}`,
+      body: `Sentiment sits at ${fmtSigned(buzzOpportunity.social)} with a ${buzzOpportunity.gap >= 0 ? '+' : ''}${buzzOpportunity.gap.toFixed(1)}% price gap.`,
+      action: buzzOpportunity.gap <= 1 ? 'Opportunity: capture demand with lighter promo or hold-price posture.' : 'Opportunity: keep creative support high and watch whether pricing can normalize.'
+    });
+  }
+  if (strongPrestigeChannel) {
+    issueCards.push({
+      tone: 'info',
+      title: `${strongPrestigeChannel.label} is performing strongly`,
+      body: `${fmtPct(strongPrestigeChannel.revenueDeltaPct)} revenue trend with ${fmtSigned(strongPrestigeChannel.social)} sentiment support.`,
+      action: 'Action: avoid unnecessary discounting while prestige momentum remains intact.'
+    });
+  }
+  issuesEl.innerHTML = (issueCards.slice(0, 3).length ? issueCards.slice(0, 3).map(item => `
+    <div class="cbo-issue-item cbo-issue-${item.tone}">
+      <div class="cbo-issue-row">
+        <div class="cbo-issue-icon cbo-issue-icon-${item.tone}">
+          <i class="bi ${item.tone === 'danger' ? 'bi-exclamation-triangle' : item.tone === 'success' ? 'bi-check-circle' : 'bi-info-circle'}"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="cbo-issue-title">${item.title}</div>
+          <div class="cbo-issue-body">${item.body}</div>
+          <div class="cbo-issue-action">${item.action}</div>
+        </div>
+        <div class="cbo-issue-chevron"><i class="bi bi-chevron-right"></i></div>
+      </div>
+    </div>
+  `).join('') : '<div class="text-muted small">No acute issues detected in the latest-week selection.</div>');
+
+  const actions = [];
+  if (atRiskChannel && atRiskChannel.gap > 2) {
+    actions.push({
+      number: 1,
+      tone: 'danger',
+      title: `Support ${atRiskChannel.label} with a measured promo test`,
+      body: `The channel is ${atRiskChannel.gap >= 0 ? '+' : ''}${atRiskChannel.gap.toFixed(1)}% above competitor while revenue trend is ${fmtPct(atRiskChannel.revenueDeltaPct)}.`
+    });
+  }
+  if (buzzOpportunity) {
+    actions.push({
+      number: actions.length + 1,
+      tone: 'success',
+      title: `Leverage buzz behind ${buzzOpportunity.skuName}`,
+      body: `Social support is ${fmtSigned(buzzOpportunity.social)}. Use content or only light promo to convert demand without over-discounting.`
+    });
+  }
+  if (strongPrestigeChannel) {
+    actions.push({
+      number: actions.length + 1,
+      tone: 'info',
+      title: `Protect premium pricing in ${strongPrestigeChannel.label}`,
+      body: `Prestige remains healthy at ${fmtPct(strongPrestigeChannel.revenueDeltaPct)} revenue trend with supportive sentiment.`
+    });
+  }
+  actionsEl.innerHTML = (actions.slice(0, 3).length ? actions.slice(0, 3).map(item => `
+    <div class="cbo-action-item cbo-action-${item.tone}">
+      <div class="cbo-action-number">${item.number}</div>
+      <div>
+        <div class="cbo-action-title">${item.title}</div>
+        <div class="cbo-action-body">${item.body}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="text-muted small">No immediate action is required for the current latest-week selection.</div>');
+  if (actionsNoteEl) {
+    actionsNoteEl.textContent = `Generated from the ${latestWeekLabel} operating readout for the current selection.`;
+  }
+
+  const sortedSocialRows = currentBusinessOverviewSocialSignals
+    .slice()
+    .sort((a, b) => String(a.week_start || a.date || '').localeCompare(String(b.week_start || b.date || '')));
+  let latestSocialRow = null;
+  for (let i = sortedSocialRows.length - 1; i >= 0; i -= 1) {
+    const rowDate = String(sortedSocialRows[i].week_start || sortedSocialRows[i].date || '');
+    if (!latestWeek || rowDate <= latestWeek) {
+      latestSocialRow = sortedSocialRows[i];
+      break;
+    }
+  }
+  if (!latestSocialRow && sortedSocialRows.length) {
+    latestSocialRow = sortedSocialRows[sortedSocialRows.length - 1];
+  }
+
+  if (aiSummaryEl) {
+    const narrative = [];
+    narrative.push(`Revenue is ${latestAgg.revenue >= priorAgg.revenue ? 'holding' : 'softening'} in the latest week at ${formatCompactCurrency(latestAgg.revenue, 1)} (${fmtPct(priorAgg.revenue > 0 ? ((latestAgg.revenue - priorAgg.revenue) / priorAgg.revenue) * 100 : 0)} vs last week).`);
+    if (pressuredCompetitorRow) {
+      narrative.push(`${CHANNEL_LABELS[pressuredCompetitorRow.channel] || pressuredCompetitorRow.channel} is under the clearest competitor pressure on ${pressuredCompetitorRow.skuName} at ${pressuredCompetitorRow.gap >= 0 ? '+' : ''}${pressuredCompetitorRow.gap.toFixed(1)}% versus competitor.`);
+    }
+    if (buzzOpportunity) {
+      narrative.push(`Social buzz for ${buzzOpportunity.skuName} remains elevated at ${fmtSigned(buzzOpportunity.social)}, indicating a demand-capture opportunity.`);
+    }
+    if (strongPrestigeChannel) {
+      narrative.push(`Premium channels like ${strongPrestigeChannel.label} still read strong enough to protect margin.`);
+    }
+    aiSummaryEl.textContent = narrative.join(' ');
+  }
+  if (aiUpdatedEl) {
+    aiUpdatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${latestWeekLabel}${latestSocialRow ? ` • Social index ${fmtSigned(getBuzzSentimentScore(latestSocialRow))}` : ''}`;
+  }
 }
 
 // ==================== Weekly Drilldown (Step 3) ====================

@@ -145,7 +145,13 @@
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Start with the 52-week portfolio context, then collapse into the latest-week operating readout so pricing, competitor pressure, social demand, and SKU-channel posture can be explained in one place.</p>
+        <p class="section-subtitle">Combined view of performance, commercial drivers, and current-week operating signals to identify where the problem is, why it is happening, and what to do next.</p>
+      </div>
+      <div class="section-header-citation">
+        <div class="cbo-range-chip" id="current-business-overview-range">
+          <i class="bi bi-calendar-week me-2"></i>
+          Last 1 Week • --
+        </div>
       </div>
     </div>
 
@@ -156,164 +162,148 @@
     </div>
 
     <div id="current-state-history-section" style="display: none;">
-      <div class="wd-panel mb-4">
-        <div class="wd-panel-header">
-          <h6 class="wd-panel-title"><i class="bi bi-funnel me-2"></i>Filters</h6>
+      <div class="cbo-filter-card mb-4">
+        <div class="cbo-filter-header">
+          <div class="cbo-filter-title"><i class="bi bi-funnel me-2"></i>Filters</div>
+          <button class="btn btn-link btn-sm text-decoration-none p-0" id="history-reset-filters" type="button">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reset
+          </button>
         </div>
-        <div style="padding: 0 1.25rem 1.25rem;">
-          <div class="row g-3 align-items-end">
-            <div class="col-lg-3">
-              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-product-filter">Product</label>
-              <select id="history-product-filter" class="form-select">
-                <option value="all">All Products</option>
-              </select>
+        <div class="row g-3 align-items-end">
+          <div class="col-lg-3">
+            <label class="form-label fw-semibold small text-uppercase mb-1" for="history-product-filter">Product</label>
+            <select id="history-product-filter" class="form-select">
+              <option value="all">All Products</option>
+            </select>
+          </div>
+          <div class="col-lg-3">
+            <label class="form-label fw-semibold small text-uppercase mb-1" for="history-channel-filter">Channel</label>
+            <select id="history-channel-filter" class="form-select">
+              <option value="all">All Channels</option>
+              <option value="target">Target</option>
+              <option value="amazon">Amazon</option>
+              <option value="sephora">Sephora</option>
+              <option value="ulta">Ulta</option>
+            </select>
+          </div>
+          <div class="col-lg-3">
+            <label class="form-label fw-semibold small text-uppercase mb-1" for="history-window-filter">Lookback Window</label>
+            <select id="history-window-filter" class="form-select">
+              <option value="1" selected>Last 1 Week</option>
+              <option value="52">Last 1 Year</option>
+              <option value="26">Last 26 Weeks</option>
+              <option value="13">Last 13 Weeks</option>
+              <option value="7">Current Season (Last 7 Weeks)</option>
+              <option value="5">Last 5 Weeks</option>
+            </select>
+          </div>
+          <div class="col-lg-3">
+            <div class="cbo-selection-note" id="history-selection-note">Loading portfolio trend context...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cbo-panel mb-4">
+        <div class="cbo-panel-header-row">
+          <div>
+            <h6 class="cbo-panel-title mb-1" id="history-snapshot-title"><i class="bi bi-moon-stars-fill me-2"></i>Business Snapshot</h6>
+            <div class="cbo-panel-subtitle">Portfolio context across the selected lookback window, compared with the prior equivalent period.</div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card">
+              <div class="cbo-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+              <div class="cbo-kpi-label">Total Revenue</div>
+              <div class="cbo-kpi-value" id="history-total-revenue">--</div>
+              <div class="cbo-kpi-change" id="history-revenue-change">--</div>
             </div>
-            <div class="col-lg-3">
-              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-channel-filter">Channel</label>
-              <select id="history-channel-filter" class="form-select">
-                <option value="all">All Channels</option>
-                <option value="target">Target</option>
-                <option value="amazon">Amazon</option>
-                <option value="sephora">Sephora</option>
-                <option value="ulta">Ulta</option>
-              </select>
+          </div>
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card">
+              <div class="cbo-kpi-icon"><i class="bi bi-box-seam"></i></div>
+              <div class="cbo-kpi-label">Units Sold</div>
+              <div class="cbo-kpi-value" id="history-total-units">--</div>
+              <div class="cbo-kpi-change" id="history-units-change">--</div>
             </div>
-            <div class="col-lg-3">
-              <label class="form-label fw-semibold small text-uppercase mb-1" for="history-window-filter">Lookback Window</label>
-              <select id="history-window-filter" class="form-select">
-                <option value="52" selected>Last 1 Year</option>
-                <option value="26">Last 26 Weeks</option>
-                <option value="13">Last 13 Weeks</option>
-                <option value="7">Current Season (Last 7 Weeks)</option>
-                <option value="5">Last 5 Weeks</option>
-              </select>
+          </div>
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card">
+              <div class="cbo-kpi-icon"><i class="bi bi-tag"></i></div>
+              <div class="cbo-kpi-label">Avg Own Price</div>
+              <div class="cbo-kpi-value" id="history-avg-price">--</div>
+              <div class="cbo-kpi-change" id="history-price-change">--</div>
             </div>
-            <div class="col-lg-3">
-              <div class="small text-muted" id="history-selection-note">
-                Loading portfolio trend context...
+          </div>
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card">
+              <div class="cbo-kpi-icon"><i class="bi bi-scales"></i></div>
+              <div class="cbo-kpi-label">Competitor Gap</div>
+              <div class="cbo-kpi-value" id="history-gap">--</div>
+              <div class="cbo-kpi-change" id="history-gap-change">--</div>
+            </div>
+          </div>
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card">
+              <div class="cbo-kpi-icon"><i class="bi bi-chat-left-dots"></i></div>
+              <div class="cbo-kpi-label">Social Buzz</div>
+              <div class="cbo-kpi-value" id="history-social">--</div>
+              <div class="cbo-kpi-change" id="history-social-change">--</div>
+            </div>
+          </div>
+          <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="cbo-kpi-card cbo-kpi-risk">
+              <div class="cbo-kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+              <div class="cbo-kpi-label">At Risk Revenue</div>
+              <div class="cbo-kpi-value" id="history-risk-revenue">--</div>
+              <div class="cbo-kpi-change" id="history-risk-change">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cbo-summary-band mb-4">
+        <div class="cbo-summary-label">
+          <i class="bi bi-stars me-2"></i>
+          AI-Generated Business Summary
+        </div>
+        <div class="cbo-summary-text" id="history-ai-summary">
+          Building a narrative from revenue trend, channel pricing, and latest-week market pressure...
+        </div>
+        <div class="cbo-summary-updated" id="history-ai-updated">
+          <i class="bi bi-clock-history me-1"></i>
+          Updated: --
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-xl-8">
+          <div class="cbo-panel h-100">
+            <div class="cbo-panel-header-row">
+              <div>
+                <h6 class="cbo-panel-title mb-1"><i class="bi bi-grid-1x2-fill me-2"></i>Channel Performance &amp; Actions</h6>
+                <div class="cbo-panel-subtitle" id="history-channel-summary-note">Summarizing channel revenue, pricing posture, and demand support across the selected window.</div>
+              </div>
+            </div>
+            <div class="row g-3" id="history-channel-action-cards">
+              <div class="col-12">
+                <div class="text-muted small">Loading channel actions...</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="row g-3 mb-4">
-        <div class="col-lg-3 col-md-6">
-          <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Total Revenue</div>
-            <div class="wd-kpi-value" id="history-total-revenue">--</div>
-            <div class="wd-kpi-change" id="history-revenue-change">--</div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-          <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Units Sold</div>
-            <div class="wd-kpi-value" id="history-total-units">--</div>
-            <div class="wd-kpi-change" id="history-units-change">--</div>
-          </div>
-        </div>
-        <div class="col-lg-2 col-md-4">
-          <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Avg Own Price</div>
-            <div class="wd-kpi-value" id="history-avg-price">--</div>
-            <div class="wd-kpi-change" id="history-price-change">--</div>
-          </div>
-        </div>
-        <div class="col-lg-2 col-md-4">
-          <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Avg Comp Gap <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Percentage difference between our price and the average competitor price. Positive means we are priced higher than competition."></i></div>
-            <div class="wd-kpi-value" id="history-gap">--</div>
-            <div class="wd-kpi-change" id="history-gap-change">--</div>
-          </div>
-        </div>
-        <div class="col-lg-2 col-md-4">
-          <div class="wd-kpi-card">
-            <div class="wd-kpi-label">Avg Social Buzz <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Brand social sentiment index from -100 (very negative) to +100 (very positive). Based on weighted sentiment analysis across TikTok, Instagram, YouTube, and Twitter. Positive values indicate favorable brand perception driving demand up; negative values indicate unfavorable perception reducing demand."></i></div>
-            <div class="wd-kpi-value" id="history-social">--</div>
-            <div class="wd-kpi-change" id="history-social-change">--</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="wd-panel mb-4">
-        <div class="wd-panel-header">
-          <h6 class="wd-panel-title"><i class="bi bi-graph-up me-2"></i>Sales Trend vs Operating Levers</h6>
-          <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
-        </div>
-        <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with own price, competitor gap, and social buzz for the selected products.</div>
-        <div class="chart-container" style="height: 340px; padding: 0 1rem;">
-          <canvas id="history-performance-chart"></canvas>
-        </div>
-        <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-trend-note">
-          Building 52-week trendline across revenue, own price, competitor gap, and social buzz...
-        </div>
-      </div>
-
-      <div class="row g-4 mb-4">
-        <div class="col-lg-5">
-          <div class="wd-panel h-100">
-            <div class="wd-panel-header">
-              <h6 class="wd-panel-title"><i class="bi bi-pie-chart me-2"></i>Channel Mix Revenue</h6>
+        <div class="col-xl-4">
+          <div class="cbo-panel h-100">
+            <div class="cbo-panel-header-row">
+              <div>
+                <h6 class="cbo-panel-title mb-1"><i class="bi bi-rainbow me-2"></i>Top Issues &amp; Opportunities</h6>
+                <div class="cbo-panel-subtitle">Latest-week signals translated into decision-ready watch items.</div>
+              </div>
             </div>
-            <div class="small text-muted mb-2" style="padding: 0 1.25rem;">See which channels are driving sales for the selected product or for the total portfolio.</div>
-            <div class="chart-container" style="height: 320px; padding: 0 1rem;">
-              <canvas id="history-channel-mix-chart"></canvas>
-            </div>
-            <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-channel-note">
-              Comparing Target, Amazon, Sephora, and Ulta revenue over the selected window.
+            <div id="step1-top-issues-list">
+              <div class="text-muted small">Loading issues and opportunities...</div>
             </div>
           </div>
-        </div>
-        <div class="col-lg-7">
-          <div class="wd-panel h-100">
-            <div class="wd-panel-header">
-              <h6 class="wd-panel-title"><i class="bi bi-arrow-left-right me-2"></i>Channel & Product Price Position</h6>
-              <span class="badge bg-secondary-subtle text-secondary small">Top channels in scope</span>
-            </div>
-            <div class="table-responsive" style="padding: 0 1.25rem 1rem;">
-              <table class="table table-sm align-middle mb-1 wd-product-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Channel</th>
-                    <th class="text-end">Revenue</th>
-                    <th class="text-end">Units</th>
-                    <th class="text-end">Own Price</th>
-                    <th class="text-end">Competitor</th>
-                    <th class="text-end">Gap</th>
-                    <th class="text-end">Social Buzz</th>
-                  </tr>
-                </thead>
-                <tbody id="history-channel-table-body">
-                  <tr>
-                    <td colspan="8" class="text-center text-muted">Loading channel-product performance...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="small text-muted" style="padding: 0 1.25rem 1rem;" id="history-table-note">
-              Showing channel-level rollups for the selected product scope.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Chat Widget for Current State -->
-      <div class="wd-panel mt-4 mb-4">
-        <div class="wd-panel-header">
-          <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask questions about current state</span></h6>
-        </div>
-        <div style="padding: 0.75rem 1.25rem;">
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="What are the key trends in revenue over the last year? Which products are growing?">Key revenue trends and growing products?</button>
-            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="When social buzz was high but we kept prices low, what was the missed revenue opportunity?">Missed opportunity when buzz was high?</button>
-            <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="2" data-q="Which channel has the strongest revenue and where are we losing to competition?">Strongest channel and competitive gaps?</button>
-          </div>
-          <div class="input-group">
-            <input type="text" class="form-control step-chat-input" data-step="2" placeholder="Ask about current state trends...">
-            <button class="btn btn-primary step-chat-send" data-step="2"><i class="bi bi-send"></i></button>
-          </div>
-          <div class="step-chat-response mt-2 small" id="step-2-chat-response" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -1313,13 +1303,147 @@
     </div>
 
     <div id="current-state-weekly-shell" style="display: none;">
-      <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mt-4 mb-3">
-        <div>
-          <h6 class="wd-section-title mb-1"><i class="bi bi-lightning-charge me-2"></i>Latest Week Operating Readout</h6>
-          <div class="small text-muted">After the long-horizon baseline above, this section collapses into the latest week so the current operating signal is visible without a separate screen.</div>
+      <div class="row g-4 mt-1">
+        <div class="col-xl-8">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-graph-up-arrow me-2"></i>Sales Trend &amp; Key Drivers</h6>
+              <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
+            </div>
+            <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with own price, competitor gap, and social buzz for the selected scope.</div>
+            <div class="chart-container" style="height: 340px; padding: 0 1rem;">
+              <canvas id="history-performance-chart"></canvas>
+            </div>
+            <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-trend-note">
+              Building the trendline across revenue, pricing, competitor pressure, and social support...
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4">
+          <div class="cbo-panel h-100">
+            <div class="cbo-panel-header-row">
+              <div>
+                <h6 class="cbo-panel-title mb-1"><i class="bi bi-bell me-2"></i>Competitor Price Alerts</h6>
+                <div class="cbo-panel-subtitle">Largest current-week competitor moves and the resulting gap versus our price.</div>
+              </div>
+              <span class="badge bg-danger-subtle text-danger small" id="step1-competitor-alert-count">0 significant moves</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0 cbo-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Channel</th>
+                    <th class="text-end">Competitor</th>
+                    <th class="text-end">Our Price</th>
+                    <th class="text-end">Gap</th>
+                  </tr>
+                </thead>
+                <tbody id="step1-competitor-alerts-body">
+                  <tr><td colspan="5" class="text-center text-muted py-3">Loading competitor alerts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="cbo-footnote" id="step1-competitor-alerts-note">
+              Tracking current-week competitor price pressure across the active assortment.
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-8">
+          <div class="cbo-panel h-100">
+            <div class="cbo-panel-header-row">
+              <div>
+                <h6 class="cbo-panel-title mb-1"><i class="bi bi-table me-2"></i>Product x Channel Snapshot</h6>
+                <div class="cbo-panel-subtitle">Latest-week SKU view with top channel, unit movement, price position, and operating interpretation.</div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0 cbo-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Top Channel</th>
+                    <th class="text-end">Units</th>
+                    <th class="text-end">WoW</th>
+                    <th class="text-end">Own Price</th>
+                    <th class="text-end">Comp Price</th>
+                    <th class="text-end">Gap</th>
+                    <th>Insight</th>
+                  </tr>
+                </thead>
+                <tbody id="step1-product-channel-snapshot-body">
+                  <tr><td colspan="8" class="text-center text-muted py-3">Loading latest-week product snapshot...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="cbo-footnote" id="step1-product-channel-snapshot-note">
+              Current week readout aligned to the selected business scope above.
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-4">
+          <div class="cbo-panel h-100">
+            <div class="cbo-panel-header-row">
+              <div>
+                <h6 class="cbo-panel-title mb-1"><i class="bi bi-bullseye me-2"></i>Recommended Next Actions</h6>
+                <div class="cbo-panel-subtitle">Three practical actions driven by current channel pressure, buzz, and pricing posture.</div>
+              </div>
+            </div>
+            <div id="step1-recommended-actions-list">
+              <div class="text-muted small">Generating actions...</div>
+            </div>
+            <div class="cbo-footnote" id="step1-recommended-actions-note">
+              Actions balance Supergoop demand capture in mass with margin protection in prestige.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-pie-chart me-2"></i>Channel Mix Revenue</h6>
+            </div>
+            <div class="small text-muted mb-2" style="padding: 0 1.25rem;">See which channels are driving sales for the selected product or for the total portfolio.</div>
+            <div class="chart-container" style="height: 320px; padding: 0 1rem;">
+              <canvas id="history-channel-mix-chart"></canvas>
+            </div>
+            <div class="small text-muted mt-2" style="padding: 0 1.25rem 1rem;" id="history-channel-note">
+              Comparing Target, Amazon, Sephora, and Ulta revenue over the selected window.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="wd-panel h-100">
+            <div class="wd-panel-header">
+              <h6 class="wd-panel-title"><i class="bi bi-arrow-left-right me-2"></i>Channel &amp; Product Price Position</h6>
+              <span class="badge bg-secondary-subtle text-secondary small">Top channels in scope</span>
+            </div>
+            <div class="table-responsive" style="padding: 0 1.25rem 1rem;">
+              <table class="table table-sm align-middle mb-1 wd-product-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Channel</th>
+                    <th class="text-end">Revenue</th>
+                    <th class="text-end">Units</th>
+                    <th class="text-end">Own Price</th>
+                    <th class="text-end">Competitor</th>
+                    <th class="text-end">Gap</th>
+                    <th class="text-end">Social Buzz</th>
+                  </tr>
+                </thead>
+                <tbody id="history-channel-table-body">
+                  <tr>
+                    <td colspan="8" class="text-center text-muted">Loading channel-product performance...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="small text-muted" style="padding: 0 1.25rem 1rem;" id="history-table-note">
+              Showing channel-level rollups for the selected product scope.
+            </div>
+          </div>
         </div>
       </div>
-      <div id="current-state-weekly-anchor"></div>
     </div>
 
   </div>

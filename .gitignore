@@ -8,3 +8,8 @@ screenshots/
 # Python cache
 __pycache__/
 *.py[cod]
+
+# Local working files
+How_step1_should_look/
+meeting_transcript.md
+settings.json

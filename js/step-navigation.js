@@ -243,7 +243,7 @@ function showStepContent(step) {
       }
       break;
     case 2:
-      // Current state command center - 52-week overview + latest week readout
+      // Current business overview - reference-style 52-week overview + current signals
       if (window.location.protocol === 'file:') {
         renderStartupIssue({
           title: 'Open the app through a local server',
@@ -264,7 +264,6 @@ function showStepContent(step) {
       const loadSection = document.getElementById('load-data-section');
       const historySection = document.getElementById('current-state-history-section');
       const weeklyShell = document.getElementById('current-state-weekly-shell');
-      const weeklyAnchor = document.getElementById('current-state-weekly-anchor');
       const weeklyContent = document.getElementById('weekly-drilldown-content');
       const weeklyLoading = document.getElementById('wd-loading-state');
       const appDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
@@ -285,19 +284,10 @@ function showStepContent(step) {
         if (loadSection) loadSection.style.display = 'none';
         if (historySection) historySection.style.display = 'block';
         if (weeklyShell) weeklyShell.style.display = 'block';
-        if (weeklyContent && weeklyAnchor && weeklyContent.parentElement !== weeklyAnchor) {
-          weeklyAnchor.appendChild(weeklyContent);
-        }
-        if (weeklyLoading && weeklyAnchor && weeklyLoading.parentElement !== weeklyAnchor) {
-          weeklyAnchor.appendChild(weeklyLoading);
-        }
-        if (weeklyContent) weeklyContent.style.display = 'block';
+        if (weeklyContent) weeklyContent.style.display = 'none';
         if (weeklyLoading) weeklyLoading.style.display = 'none';
         if (window.initializeCurrentStateHistoryDashboard && typeof window.initializeCurrentStateHistoryDashboard === 'function') {
           window.initializeCurrentStateHistoryDashboard();
-        }
-        if (window.initializeWeeklyDrilldown && typeof window.initializeWeeklyDrilldown === 'function') {
-          window.initializeWeeklyDrilldown();
         }
         break;
       }
