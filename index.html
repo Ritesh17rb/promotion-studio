@@ -47,28 +47,24 @@
           <div class="steps-stack">
             <div class="step-indicator">
               <!-- Data Foundation -->
-              <div class="step-dot module-data-foundation" data-step="1">1</div>
+              <div class="step-dot module-data-foundation" data-step="2">1</div>
               <div class="step-line"></div>
-              <div class="step-dot module-data-foundation" data-step="2">2</div>
-              <div class="step-line"></div>
-              <div class="step-dot module-data-foundation" data-step="3">3</div>
-              <div class="step-line"></div>
-              <div class="step-dot module-data-foundation" data-step="4">4</div>
+              <div class="step-dot module-data-foundation" data-step="4">2</div>
               <div class="step-line"></div>
               <!-- Segmentation -->
-              <div class="step-dot module-segmentation" data-step="5">5</div>
+              <div class="step-dot module-segmentation" data-step="5">3</div>
               <div class="step-line"></div>
-              <div class="step-dot module-segmentation" data-step="6">6</div>
+              <div class="step-dot module-segmentation" data-step="6">4</div>
               <div class="step-line"></div>
               <!-- Promotion Planning Roadmap -->
-              <div class="step-dot module-elasticity" data-step="7">7</div>
+              <div class="step-dot module-elasticity" data-step="7">5</div>
               <div class="step-line"></div>
-              <div class="step-dot module-elasticity" data-step="8">8</div>
+              <div class="step-dot module-elasticity" data-step="8">6</div>
               <div class="step-line"></div>
-              <div class="step-dot module-elasticity" data-step="9">9</div>
+              <div class="step-dot module-elasticity" data-step="9">7</div>
               <div class="step-line"></div>
               <!-- AI & Advanced Analytics -->
-              <div class="step-dot module-analytics" data-step="10">10</div>
+              <div class="step-dot module-analytics" data-step="10">8</div>
             </div>
             <div class="step-legend">
               <div class="legend-item legend-data-foundation">
@@ -129,7 +125,7 @@
               Open this app through a local server, not by double-clicking the HTML file.
               Run <code>start-promotion-studio.bat</code> or serve the folder on <code>http://127.0.0.1:8000</code>.
             </div>
-            <button class="btn btn-primary-custom btn-lg" onclick="goToStep(1)">
+            <button class="btn btn-primary-custom btn-lg" onclick="goToStep(2)">
               Start Exploration <i class="bi bi-arrow-right ms-2"></i>
             </button>
           </div>
@@ -137,26 +133,26 @@
       </div>
     </section>
 
-    <!-- Section 1: Current State Overview -->
+    <!-- Section 1: Current Business Overview -->
     <section class="section" id="section-1">
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 2</div>
+        <div class="section-number">Step 1</div>
         <h2 class="section-title">
-          Current State Overview
+          Current Business Overview
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step1" title="View Methodology">
             <i class="bi bi-info-circle"></i>
           </button>
         </h2>
-        <p class="section-subtitle">Review the last 52 weeks across all products and channels, then trace sales performance against your three operating levers: own price, competitor price gap, and social buzz.</p>
+        <p class="section-subtitle">Start with the 52-week portfolio context, then collapse into the latest-week operating readout so pricing, competitor pressure, social demand, and SKU-channel posture can be explained in one place.</p>
       </div>
     </div>
 
     <!-- Top Navigation -->
     <div class="section-header-nav">
-      <button class="btn btn-secondary-custom" onclick="goToStep(1)"><i class="bi bi-arrow-left me-2"></i> Back to Data Explorer</button>
-      <button class="btn btn-primary-custom" onclick="goToStep(3)">Next: Last Week Drilldown <i class="bi bi-arrow-right ms-2"></i></button>
+      <button class="btn btn-secondary-custom" onclick="goToStep(0)"><i class="bi bi-arrow-left me-2"></i> Back to Start</button>
+      <button class="btn btn-primary-custom" onclick="goToStep(4)">Next: Event Calendar <i class="bi bi-arrow-right ms-2"></i></button>
     </div>
 
     <div id="current-state-history-section" style="display: none;">
@@ -1316,6 +1312,16 @@
 
     </div>
 
+    <div id="current-state-weekly-shell" style="display: none;">
+      <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mt-4 mb-3">
+        <div>
+          <h6 class="wd-section-title mb-1"><i class="bi bi-lightning-charge me-2"></i>Latest Week Operating Readout</h6>
+          <div class="small text-muted">After the long-horizon baseline above, this section collapses into the latest week so the current operating signal is visible without a separate screen.</div>
+        </div>
+      </div>
+      <div id="current-state-weekly-anchor"></div>
+    </div>
+
   </div>
 
   </section>
@@ -1325,7 +1331,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 3</div>
+        <div class="section-number">Hidden</div>
         <h2 class="section-title">Last Week Performance Drilldown</h2>
         <p class="section-subtitle">Zoom into last week only to diagnose current channel posture, competitor price moves, social buzz, and product-level signal exposure before taking action.</p>
       </div>
@@ -1546,7 +1552,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 1</div>
+        <div class="section-number">Hidden</div>
         <h2 class="section-title">Data Explorer</h2>
         <p class="section-subtitle">Start by inspecting the underlying datasets powering the analysis, including SKU-channel performance, competitor pricing, and social buzz signals.</p>
       </div>
@@ -1613,7 +1619,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 7</div>
+        <div class="section-number">Step 5</div>
         <h2 class="section-title">
           In-Season Planner Model Board
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step3" title="View Methodology">
@@ -1641,7 +1647,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 8</div>
+        <div class="section-number">Step 6</div>
         <h2 class="section-title">
           End-of-Season Markdown Decision Models
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step4" title="View Methodology">
@@ -1669,7 +1675,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 9</div>
+        <div class="section-number">Step 7</div>
         <h2 class="section-title">
           Portfolio Migration & Advanced Analysis
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step5" title="View Methodology">
@@ -1697,7 +1703,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 5</div>
+        <div class="section-number">Step 3</div>
         <h2 class="section-title">
           Customer Cohorts
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step6" title="View Methodology">
@@ -1724,7 +1730,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 6</div>
+        <div class="section-number">Step 4</div>
         <h2 class="section-title">
           Segment Response Comparison
           <button class="btn btn-sm btn-outline-info ms-2" data-bs-toggle="modal" data-bs-target="#methodology-modal-step7" title="View Methodology">
@@ -1751,7 +1757,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 4</div>
+        <div class="section-number">Step 2</div>
         <h2 class="section-title">Event Calendar</h2>
         <p class="section-subtitle">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that drive in-season optimization pivots.</p>
       </div>
@@ -1794,7 +1800,7 @@
   <div class="container">
     <div class="section-header section-header-split">
       <div class="section-header-main">
-        <div class="section-number">Step 10</div>
+        <div class="section-number">Step 8</div>
         <h2 class="section-title">AI Promotion Optimization Assistant</h2>
         <p class="section-subtitle">Ask for SKU-level promotion recommendations using inventory runway, competitor price gaps, social momentum, and historical promo effectiveness.</p>
       </div>
@@ -3922,13 +3928,13 @@
 
   <!-- Methodology Modals -->
 
-  <!-- Step 2: Current State Overview -->
+  <!-- Step 2: Current Business Overview -->
   <div class="modal fade" id="methodology-modal-step1" tabindex="-1" aria-labelledby="methodology-modal-step1-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="methodology-modal-step1-label">
-            <i class="bi bi-calculator me-2"></i> Methodology: Current State Overview
+            <i class="bi bi-calculator me-2"></i> Methodology: Current Business Overview
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -4249,108 +4255,86 @@
                     <span>Step</span>
                     <span>Name + Subtitle</span>
                   </div>
-                  <button class="steps-table-row" type="button" data-step="1" style="--step-index: 1;">
+                  <button class="steps-table-row" type="button" data-step="2" style="--step-index: 1;">
                     <span class="steps-table-step">
                       <span class="step-dot steps-modal-dot module-data-foundation">1</span>
                       <span class="steps-table-step-label">Step 1</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Data Explorer</strong>
-                      <span class="text-muted">Inspect the raw datasets powering promotion optimization, including SKU-channel performance, competitor pricing, and social buzz signals.</span>
+                      <strong>Current Business Overview</strong>
+                      <span class="text-muted">Combine 52-week portfolio context and the latest-week operating readout in one decision screen.</span>
                     </span>
                   </button>
-                  <button class="steps-table-row" type="button" data-step="2" style="--step-index: 2;">
+                  <button class="steps-table-row" type="button" data-step="4" style="--step-index: 2;">
                     <span class="steps-table-step">
                       <span class="step-dot steps-modal-dot module-data-foundation">2</span>
                       <span class="steps-table-step-label">Step 2</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Current State Overview</strong>
-                      <span class="text-muted">Review the last 52 weeks across all products, with drilldowns by channel, price, competitor gap, social buzz, and revenue trend.</span>
-                    </span>
-                    
-                  </button>
-                  <button class="steps-table-row" type="button" data-step="3" style="--step-index: 3;">
-                    <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-data-foundation">3</span>
-                      <span class="steps-table-step-label">Step 3</span>
-                    </span>
-                    <span class="steps-table-body">
-                      <strong>Last Week Performance Drilldown</strong>
-                      <span class="text-muted">Zoom into last week’s KPIs, current channel groups, competitor moves, social buzz, and product-level market signal exposure.</span>
-                    </span>
-                  </button>
-                  <button class="steps-table-row" type="button" data-step="4" style="--step-index: 4;">
-                    <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-data-foundation">4</span>
-                      <span class="steps-table-step-label">Step 4</span>
-                    </span>
-                    <span class="steps-table-body">
                       <strong>Event Calendar</strong>
                       <span class="text-muted">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that trigger in-season optimization pivots.</span>
                     </span>
+                    
                   </button>
-                  <button class="steps-table-row" type="button" data-step="5" style="--step-index: 5;">
+                  <button class="steps-table-row" type="button" data-step="5" style="--step-index: 3;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-segmentation">5</span>
-                      <span class="steps-table-step-label">Step 5</span>
+                      <span class="step-dot steps-modal-dot module-segmentation">3</span>
+                      <span class="steps-table-step-label">Step 3</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>Customer Cohorts</strong>
                       <span class="text-muted">Analyze customer cohorts and their differential promotion response patterns to guide targeted offers.</span>
                     </span>
                   </button>
-                  <button class="steps-table-row" type="button" data-step="6" style="--step-index: 6;">
+                  <button class="steps-table-row" type="button" data-step="6" style="--step-index: 4;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-segmentation">6</span>
-                      <span class="steps-table-step-label">Step 6</span>
+                      <span class="step-dot steps-modal-dot module-segmentation">4</span>
+                      <span class="steps-table-step-label">Step 4</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>Segment Response Comparison</strong>
                       <span class="text-muted">Compare promotion response across segments and identify where discount depth drives incremental lift.</span>
                     </span>
                   </button>
-                  <button class="steps-table-row" type="button" data-step="7" style="--step-index: 7;">
+                  <button class="steps-table-row" type="button" data-step="7" style="--step-index: 5;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-elasticity">7</span>
-                      <span class="steps-table-step-label">Step 7</span>
+                      <span class="step-dot steps-modal-dot module-elasticity">5</span>
+                      <span class="steps-table-step-label">Step 5</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>In-Season Planner Model Board</strong>
                       <span class="text-muted">Weekly SKU-level promotion model using live inventory, competitor, social, and cannibalization signals.</span>
                     </span>
                   </button>
-                  <button class="steps-table-row" type="button" data-step="8" style="--step-index: 8;">
+                  <button class="steps-table-row" type="button" data-step="8" style="--step-index: 6;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-elasticity">8</span>
-                      <span class="steps-table-step-label">Step 8</span>
+                      <span class="step-dot steps-modal-dot module-elasticity">6</span>
+                      <span class="steps-table-step-label">Step 6</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>End-of-Season Markdown Decision Models</strong>
                       <span class="text-muted">Historical promotion evidence + markdown ladder model to finish the season closer to zero inventory.</span>
                     </span>
                   </button>
-                  <button class="steps-table-row" type="button" data-step="9" style="--step-index: 9;">
+                  <button class="steps-table-row" type="button" data-step="9" style="--step-index: 7;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-elasticity">9</span>
-                      <span class="steps-table-step-label">Step 9</span>
+                      <span class="step-dot steps-modal-dot module-elasticity">7</span>
+                      <span class="steps-table-step-label">Step 7</span>
                     </span>
                     <span class="steps-table-body">
-                      <strong>Portfolio Migration & Advanced Analysis</strong>
+                      <strong>Portfolio Migration &amp; Advanced Analysis</strong>
                       <span class="text-muted">Simulate Mass vs Prestige migration, SKU cannibalization paths, and rank saved scenarios for growth/profit tradeoffs.</span>
                     </span>
-                    
                   </button>
-                  <button class="steps-table-row" type="button" data-step="10" style="--step-index: 10;">
+                  <button class="steps-table-row" type="button" data-step="10" style="--step-index: 8;">
                     <span class="steps-table-step">
-                      <span class="step-dot steps-modal-dot module-analytics">10</span>
-                      <span class="steps-table-step-label">Step 10</span>
+                      <span class="step-dot steps-modal-dot module-analytics">8</span>
+                      <span class="steps-table-step-label">Step 8</span>
                     </span>
                     <span class="steps-table-body">
                       <strong>AI Promotion Optimization Assistant</strong>
                       <span class="text-muted">Get SKU-level promotion recommendations grounded in inventory, competitor pricing, social signals, and past outcomes.</span>
                     </span>
-                    
                   </button>
                 </div>
               </div>
@@ -4409,7 +4393,7 @@
   <!-- Brand Click Handler -->
   <script>
     function handleBrandClick() {
-      goToStep(1);
+      goToStep(0);
     }
   </script>
 

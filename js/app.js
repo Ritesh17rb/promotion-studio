@@ -2914,10 +2914,8 @@ async function loadData() {
     await initializeStep2SignalsLab();
 
     // All section visibility is controlled by step navigation.
-    // After the loader completes, we re-render the currently active step so:
-    // - Step 1 shows Data Explorer
-    // - Step 2 shows the 52-week current-state dashboard
-    // - Step 3 shows the weekly drilldown
+    // After the loader completes, re-render the active visible step.
+    // The current demo flow starts at the merged current-state screen.
 
     // Initialize segmentation section if data is available (but keep hidden)
     if (window.segmentEngine && window.segmentEngine.isDataLoaded()) {
@@ -2945,7 +2943,7 @@ async function loadData() {
 
     if (typeof window.goToStep === 'function') {
       const activeStep = Number(window.__currentStepNavigation);
-      window.goToStep(Number.isFinite(activeStep) ? activeStep : 1);
+      window.goToStep(Number.isFinite(activeStep) ? activeStep : 2);
     }
 
     // Initialize Pyodide models in background (non-blocking)
@@ -3854,7 +3852,7 @@ function updateSegmentVisualization() {
         console.warn('Channel elasticity data failed:', error);
         if (channelView) {
           channelView.innerHTML =
-            '<p class="text-muted">Load data in Step 1 to see channel charts.</p>';
+            '<p class="text-muted">Start with Step 1 to load the current-state workspace, then return here to see channel charts.</p>';
         }
       });
 
@@ -3878,7 +3876,7 @@ function updateSegmentVisualization() {
     const kpiDashboard = document.getElementById('segment-kpi-dashboard');
     if (kpiDashboard) {
       kpiDashboard.innerHTML =
-        '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Cohort data not loaded. Load data in Step 1, or use <strong>Channel View</strong> for elasticity by channel.</div>';
+        '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Cohort data not loaded. Start with Step 1 to load the current-state workspace, or use <strong>Channel View</strong> for elasticity by channel.</div>';
     }
     return;
   }
@@ -4249,7 +4247,7 @@ function renderSegmentComparisonTable() {
   const container = document.getElementById('segment-comparison-table');
   if (!container) return;
   if (!window.segmentEngine || !window.segmentEngine.isDataLoaded()) {
-    container.innerHTML = '<div class="alert alert-warning mb-0">Load cohort data in Step 1 to compare cohort response.</div>';
+    container.innerHTML = '<div class="alert alert-warning mb-0">Start with Step 1 to load cohort data before comparing response.</div>';
     renderSegmentComparisonSummary([], { axisLabel: getComparisonAxisLabel(axis), tierLabel: getTierLabel(tier) });
     return;
   }

@@ -175,26 +175,9 @@ html {
 }
 
 .step-legend {
-  display: grid;
-  grid-template-columns:
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size)
-    var(--step-line-width)
-    var(--step-dot-size);
-  column-gap: var(--step-gap);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
   align-items: center;
   margin-top: 0;
 }
@@ -238,20 +221,11 @@ html {
   color: #20c997;
 }
 
-.legend-data-foundation {
-  grid-column: 1 / span 5;
-}
-
-.legend-segmentation {
-  grid-column: 7 / span 3;
-}
-
-.legend-elasticity {
-  grid-column: 11 / span 5;
-}
-
+.legend-data-foundation,
+.legend-segmentation,
+.legend-elasticity,
 .legend-analytics {
-  grid-column: 17 / span 1;
+  grid-column: auto;
 }
 
 @media (max-width: 992px) {

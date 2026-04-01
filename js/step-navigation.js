@@ -218,6 +218,9 @@ function showStepContent(step) {
 
       if (dataViewerSection) dataViewerSection.style.display = 'none';
       if (step1LoadSection) {
+        if (step1LoadSection.parentElement !== document.body) {
+          document.body.appendChild(step1LoadSection);
+        }
         step1LoadSection.style.display = '';
         step1LoadSection.style.visibility = '';
         step1LoadSection.style.opacity = '';
@@ -240,7 +243,7 @@ function showStepContent(step) {
       }
       break;
     case 2:
-      // Current state dashboard - 52-week overview
+      // Current state command center - 52-week overview + latest week readout
       if (window.location.protocol === 'file:') {
         renderStartupIssue({
           title: 'Open the app through a local server',
@@ -260,6 +263,10 @@ function showStepContent(step) {
 
       const loadSection = document.getElementById('load-data-section');
       const historySection = document.getElementById('current-state-history-section');
+      const weeklyShell = document.getElementById('current-state-weekly-shell');
+      const weeklyAnchor = document.getElementById('current-state-weekly-anchor');
+      const weeklyContent = document.getElementById('weekly-drilldown-content');
+      const weeklyLoading = document.getElementById('wd-loading-state');
       const appDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
 
       if (!window.loadAppData || typeof window.loadAppData !== 'function') {
@@ -277,30 +284,48 @@ function showStepContent(step) {
       if (appDataState === 'loaded') {
         if (loadSection) loadSection.style.display = 'none';
         if (historySection) historySection.style.display = 'block';
+        if (weeklyShell) weeklyShell.style.display = 'block';
+        if (weeklyContent && weeklyAnchor && weeklyContent.parentElement !== weeklyAnchor) {
+          weeklyAnchor.appendChild(weeklyContent);
+        }
+        if (weeklyLoading && weeklyAnchor && weeklyLoading.parentElement !== weeklyAnchor) {
+          weeklyAnchor.appendChild(weeklyLoading);
+        }
+        if (weeklyContent) weeklyContent.style.display = 'block';
+        if (weeklyLoading) weeklyLoading.style.display = 'none';
         if (window.initializeCurrentStateHistoryDashboard && typeof window.initializeCurrentStateHistoryDashboard === 'function') {
           window.initializeCurrentStateHistoryDashboard();
         }
-        break;
-      }
-
-      goToStep(1);
-      break;
-    case 3:
-      // Last week drilldown dashboard - dedicated view
-      const weeklyDataState = window.appDataLoadState || (window.dataLoaded ? 'loaded' : 'idle');
-
-      if (weeklyDataState === 'loaded') {
-        const wdContent = document.getElementById('weekly-drilldown-content');
-        const wdLoading = document.getElementById('wd-loading-state');
-        if (wdContent) wdContent.style.display = 'block';
-        if (wdLoading) wdLoading.style.display = 'none';
         if (window.initializeWeeklyDrilldown && typeof window.initializeWeeklyDrilldown === 'function') {
           window.initializeWeeklyDrilldown();
         }
         break;
       }
 
-      goToStep(1);
+      if (loadSection) {
+        if (loadSection.parentElement !== document.body) {
+          document.body.appendChild(loadSection);
+        }
+        loadSection.style.display = '';
+        loadSection.style.visibility = '';
+        loadSection.style.opacity = '';
+      }
+      document.body.classList.add('app-loading-step');
+
+      if (appDataState !== 'loading') {
+        window.appDataLoadState = 'loading';
+        setTimeout(() => {
+          window.loadAppData().catch(error => {
+            console.error('Failed to load data:', error);
+            window.dataLoaded = false;
+            window.appDataLoadState = 'idle';
+          });
+        }, 100);
+      }
+      break;
+    case 3:
+      // Hidden legacy step; weekly drilldown now lives inside step 2.
+      goToStep(2);
       break;
     case 4:
       // Event Calendar
@@ -1373,9 +1398,9 @@ function renderRoadmapFutureModule(type, contentAreaId) {
       <div class="card border-warning-subtle">
         <div class="card-body">
           <h6 class="mb-2"><i class="bi bi-hourglass-split me-2"></i>Model Input Required</h6>
-          <p class="text-muted mb-2">Run Step 2 first to feed this section with live promotion outputs.</p>
+          <p class="text-muted mb-2">Run Step 1 first to feed this section with live promotion outputs.</p>
           <div class="alert alert-light border mb-0">
-            These sections are model-driven and consume live week, inventory trajectory, competitor shock, social shock, and SKU migration from the Current State Overview in Step 2.
+            These sections are model-driven and consume live week, inventory trajectory, competitor shock, social shock, and SKU migration from the Current Business Overview in Step 1.
           </div>
         </div>
       </div>
@@ -3584,13 +3609,11 @@ function createStepNavigation(prevStep, nextStep, nextLabel = 'Next') {
  */
 function injectStepNavigations() {
   const stepConfigs = [
-    { step: 1, container: 'step-2-data-viewer-container', prev: 0, next: 2, nextLabel: 'Next: Current State Overview' },
-    { step: 3, container: 'step-10-weekly-container', prev: 2, next: 4, nextLabel: 'Next: Event Calendar' },
-    { step: 4, container: 'step-8-calendar-container', prev: 3, next: 5, nextLabel: 'Next: Customer Cohorts' },
-    { step: 5, container: 'step-6-segmentation-container', prev: 4, next: 6, nextLabel: 'Next: Segment Comparison' },
+    { step: 4, container: 'step-8-calendar-container', prev: 2, next: 5, nextLabel: 'Next: Customer Cohorts' },
+    { step: 5, container: 'step-6-segmentation-container', prev: 4, next: 6, nextLabel: 'Next: Segment Response' },
     { step: 6, container: 'step-7-analysis-container', prev: 5, next: 7, nextLabel: 'Next: In-Season Planner Models' },
     { step: 7, container: 'step-3-acquisition-container', prev: 6, next: 8, nextLabel: 'Next: Markdown Decision Models' },
-    { step: 8, container: 'step-4-churn-container', prev: 7, next: 9, nextLabel: 'Next: Migration Model' },
+    { step: 8, container: 'step-4-churn-container', prev: 7, next: 9, nextLabel: 'Next: Portfolio Migration' },
     { step: 9, container: 'step-5-migration-container', prev: 8, next: 10, nextLabel: 'Next: AI Assistant' },
     { step: 10, container: 'step-9-chat-container', prev: 9, next: 0, nextLabel: null }
   ];
@@ -3671,8 +3694,8 @@ function initStepNavigation() {
     return;
   }
 
-  // Auto-load into Step 1 (skip hero splash)
-  goToStep(1);
+  // Keep the hero as the true start of the visible demo flow.
+  goToStep(0);
 }
 
 // Make goToStep available globally before initialization completes.
