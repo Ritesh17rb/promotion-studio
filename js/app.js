@@ -109,6 +109,114 @@ const CURRENT_BUSINESS_OVERVIEW_CHANNEL_LOGOS = {
   ulta: 'assets/logos/ulta.ico'
 };
 
+// Storyline key events for Sales Trend chart annotations
+// pinned=true → always-visible pill label; pinned=false → detail appears in tooltip only
+const STORYLINE_CHART_EVENTS = [
+  {
+    rawDate: '2026-02-23',
+    label: 'Competitor Drop',
+    detail: 'Amazon cut to $19.90 · Mass defensive promo triggered (17.5% off) · Revenue at risk',
+    color: '#dc2626',
+    pinned: true
+  },
+  {
+    rawDate: '2026-03-02',
+    label: 'Memorial Day',
+    detail: 'Sun care demand surge · Social buzz +12 pts · Prestige captured full-price lift',
+    color: '#2563eb',
+    pinned: true
+  },
+  {
+    rawDate: '2026-03-23',
+    label: 'Prime Day',
+    detail: 'Marketplace pressure · Competitor repriced again · Mass gap widened to +9.7%',
+    color: '#f97316',
+    pinned: true
+  },
+  {
+    rawDate: '2026-02-16',
+    label: 'Glow Weekend',
+    detail: '8% selective promo on elastic prestige SKUs · Sephora + Ulta only',
+    color: '#7c3aed',
+    pinned: false
+  },
+  {
+    rawDate: '2026-03-16',
+    label: 'Glow Weekend',
+    detail: '8% selective promo on elastic prestige SKUs · Sephora + Ulta only',
+    color: '#7c3aed',
+    pinned: false
+  },
+  {
+    rawDate: '2026-04-13',
+    label: 'Glow Weekend',
+    detail: '8% selective promo on elastic prestige SKUs · Sephora + Ulta only',
+    color: '#7c3aed',
+    pinned: false
+  },
+];
+
+// Register Chart.js plugin for storyline event annotations — called once before first chart render
+let _storylinePluginRegistered = false;
+function ensureStorylineAnnotationPlugin() {
+  if (_storylinePluginRegistered || !window.Chart) return;
+  _storylinePluginRegistered = true;
+  Chart.register({
+    id: 'storylineAnnotations',
+    afterDraw(chart) {
+      const events = chart.options._storylineEvents;
+      if (!events?.length) return;
+      const { ctx, scales, chartArea } = chart;
+      const xScale = scales.x;
+      if (!xScale || !chartArea) return;
+      ctx.save();
+      events.forEach(event => {
+        const idx = chart.data.labels?.indexOf(event.chartLabel);
+        if (idx == null || idx < 0) return;
+        const x = xScale.getPixelForValue(idx);
+        if (x < chartArea.left - 2 || x > chartArea.right + 2) return;
+        // Vertical rule
+        ctx.beginPath();
+        ctx.strokeStyle = event.color;
+        ctx.lineWidth = event.pinned ? 1.5 : 1;
+        ctx.globalAlpha = event.pinned ? 0.7 : 0.25;
+        ctx.setLineDash(event.pinned ? [] : [4, 3]);
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (event.pinned) {
+          // Pill label anchored just below top of chart area
+          const text = event.label;
+          ctx.font = '600 9.5px Inter, system-ui, sans-serif';
+          const tw = ctx.measureText(text).width;
+          const ph = 16;
+          const px = 5;
+          const pw = tw + px * 2;
+          let rx = x - pw / 2;
+          rx = Math.max(chartArea.left + 2, Math.min(chartArea.right - pw - 2, rx));
+          const ry = chartArea.top + 6;
+          ctx.globalAlpha = 0.93;
+          ctx.fillStyle = event.color;
+          ctx.beginPath();
+          if (ctx.roundRect) {
+            ctx.roundRect(rx, ry, pw, ph, 4);
+          } else {
+            ctx.rect(rx, ry, pw, ph);
+          }
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, rx + pw / 2, ry + ph / 2);
+        }
+      });
+      ctx.restore();
+    }
+  });
+}
+
 const CHANNEL_PRICE = {
   ad_supported: 24.0,
   ad_free: 36.0
@@ -587,16 +695,50 @@ function renderCurrentStateHistoryDashboard() {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   };
+  // Colored change helper: wraps value in a colored span; positiveIsGood=false inverts logic
+  const setChangeHTML = (id, text, positiveIsGood = true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!text || text === '--') { el.textContent = text || '--'; return; }
+    const isPos = text.startsWith('+');
+    const isNeg = /^-[\d]/.test(text);
+    let cls = '';
+    if (isPos) cls = positiveIsGood ? 'text-success' : 'text-danger';
+    else if (isNeg) cls = positiveIsGood ? 'text-danger' : 'text-success';
+    el.innerHTML = cls ? `<span class="${cls} fw-semibold">${text}</span>` : text;
+  };
+  // Color a KPI value element based on a condition (true=green, false=red, null=neutral)
+  const setValueColor = (id, isGood) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('text-success', 'text-danger', 'text-warning');
+    if (isGood === true) el.classList.add('text-success');
+    else if (isGood === false) el.classList.add('text-danger');
+  };
+
   setText('history-total-revenue', formatCompactCurrency(current.revenue, 1));
   setText('history-total-units', formatCompactNumber(current.units, 1));
   setText('history-avg-price', formatCurrency(current.ownPrice));
-  setText('history-gap', `${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%`);
-  setText('history-social', `${current.social >= 0 ? '+' : ''}${current.social.toFixed(1)}`);
-  setText('history-revenue-change', hasComparison ? `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window total');
-  setText('history-units-change', hasComparison ? `${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window volume');
-  setText('history-price-change', hasComparison ? `${priceDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(priceDelta))} vs prior period` : 'Window average');
-  setText('history-gap-change', hasComparison ? `${formatPercentagePointDelta(gapDelta)} vs prior period` : 'Window average');
-  setText('history-social-change', hasComparison ? `${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} pts vs prior period` : 'Window average');
+  // Gap value: positive means we're MORE expensive than competitor → bad (red)
+  const gapText = `${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%`;
+  setText('history-gap', gapText);
+  setValueColor('history-gap', current.gap > 0 ? false : current.gap < 0 ? true : null);
+  // Social value: positive = good (green)
+  const socialText = `${current.social >= 0 ? '+' : ''}${current.social.toFixed(1)}`;
+  setText('history-social', socialText);
+  setValueColor('history-social', current.social >= 0 ? true : false);
+
+  const revChangeText = hasComparison ? `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window total';
+  const unitsChangeText = hasComparison ? `${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window volume';
+  const priceChangeText = hasComparison ? `${priceDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(priceDelta))} vs prior period` : 'Window average';
+  const gapChangeText = hasComparison ? `${formatPercentagePointDelta(gapDelta)} vs prior period` : 'Window average';
+  const socialChangeText = hasComparison ? `${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} pts vs prior period` : 'Window average';
+
+  setChangeHTML('history-revenue-change', revChangeText, true);
+  setChangeHTML('history-units-change', unitsChangeText, true);
+  setText('history-price-change', priceChangeText); // price is neutral
+  setChangeHTML('history-gap-change', gapChangeText, false); // larger gap = bad
+  setChangeHTML('history-social-change', socialChangeText, true);
 
   const riskRevenue = windowScopedRows.reduce((sum, row) => {
     const rowGap = toNumber(row.price_gap_vs_competitor);
@@ -670,8 +812,26 @@ function renderCurrentStateHistoryDashboard() {
     .filter(item => item.revenue > 0 || item.units > 0)
     .sort((a, b) => b.revenue - a.revenue);
 
+  const getChannelAction = (item) => {
+    if (item.gap > 2.5) {
+      return { label: 'Run Promotion', cls: 'cbo-channel-btn-danger' };
+    }
+    if (item.tier === 'prestige' && item.social > 10 && item.gap <= 1.5) {
+      return { label: 'Maintain Price', cls: 'cbo-channel-btn-success' };
+    }
+    if (item.tier === 'prestige') {
+      return { label: 'Maintain Price', cls: 'cbo-channel-btn-outline' };
+    }
+    if (item.social > 8 && item.gap <= 0) {
+      return { label: 'Leverage Buzz', cls: 'cbo-channel-btn-success' };
+    }
+    return { label: 'Continue Support', cls: 'cbo-channel-btn-primary' };
+  };
+
   if (channelCardsHost) {
-    channelCardsHost.innerHTML = channelSummaries.map(item => `
+    channelCardsHost.innerHTML = channelSummaries.map(item => {
+      const action = getChannelAction(item);
+      return `
       <div class="col-lg-6 col-xl-3">
           <div class="cbo-channel-card cbo-channel-${item.tier}">
             <div class="cbo-channel-card-top">
@@ -686,7 +846,7 @@ function renderCurrentStateHistoryDashboard() {
               </div>
             </div>
           <div class="cbo-channel-revenue">${formatCompactCurrency(item.revenue, 1)}</div>
-          <div class="cbo-channel-growth ${item.revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${item.revenueDeltaPct >= 0 ? '+' : ''}${item.revenueDeltaPct.toFixed(1)}% vs prior period</div>
+          <div class="cbo-channel-growth ${item.revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${item.revenueDeltaPct >= 0 ? '+' : ''}${item.revenueDeltaPct.toFixed(1)}% <span class="cbo-channel-growth-label">vs prior period</span></div>
           <div class="cbo-channel-metric-row">
             <span>Price Gap</span>
             <strong class="${item.gap > 1 ? 'text-danger' : 'text-success'}">${item.gap >= 0 ? '+' : ''}${item.gap.toFixed(1)}%</strong>
@@ -699,9 +859,13 @@ function renderCurrentStateHistoryDashboard() {
             <span>Avg Price</span>
             <strong>${formatCurrency(item.ownPrice)}</strong>
           </div>
+          <div class="cbo-channel-action-row">
+            <button class="cbo-channel-action-btn ${action.cls}">${action.label}</button>
+          </div>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   const chartLabels = metrics.weeks.map(row => {
@@ -713,8 +877,23 @@ function renderCurrentStateHistoryDashboard() {
     });
   });
 
+  // Map storyline events to the chart's formatted labels so the annotation plugin can find them
+  const chartEvents = STORYLINE_CHART_EVENTS.map(evt => {
+    const d = new Date(`${evt.rawDate}T00:00:00`);
+    const label = d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...(windowWeeks >= 52 ? { year: '2-digit' } : {})
+    });
+    return { ...evt, chartLabel: label };
+  }).filter(evt => chartLabels.includes(evt.chartLabel));
+
+  // Build a lookup of chartLabel → event for tooltip enhancement
+  const eventByLabel = Object.fromEntries(chartEvents.map(e => [e.chartLabel, e]));
+
   const performanceCanvas = document.getElementById('history-performance-chart');
   if (performanceCanvas && window.Chart) {
+    ensureStorylineAnnotationPlugin();
     currentStateHistoryChart = destroyChartInstance(currentStateHistoryChart);
     currentStateHistoryChart = new Chart(performanceCanvas, {
       type: 'bar',
@@ -725,9 +904,10 @@ function renderCurrentStateHistoryDashboard() {
             type: 'bar',
             label: 'Revenue',
             data: metrics.weeks.map(row => Number(row.revenue.toFixed(2))),
-            backgroundColor: 'rgba(59, 130, 246, 0.35)',
-            borderColor: 'rgba(37, 99, 235, 0.75)',
+            backgroundColor: 'rgba(59, 130, 246, 0.28)',
+            borderColor: 'rgba(37, 99, 235, 0.6)',
             borderWidth: 1,
+            borderRadius: 3,
             yAxisID: 'y'
           },
           {
@@ -735,10 +915,11 @@ function renderCurrentStateHistoryDashboard() {
             label: 'Own price',
             data: metrics.weeks.map(row => Number(row.ownPrice.toFixed(2))),
             borderColor: '#111827',
-            backgroundColor: 'rgba(17, 24, 39, 0.1)',
+            backgroundColor: 'rgba(17, 24, 39, 0.06)',
             borderWidth: 2,
-            pointRadius: 1.5,
-            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            tension: 0.3,
             yAxisID: 'y1'
           },
           {
@@ -746,11 +927,12 @@ function renderCurrentStateHistoryDashboard() {
             label: 'Competitor gap %',
             data: metrics.weeks.map(row => Number((row.gap * 100).toFixed(2))),
             borderColor: '#dc2626',
-            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+            backgroundColor: 'rgba(220, 38, 38, 0.08)',
             borderDash: [6, 4],
             borderWidth: 2,
-            pointRadius: 1.5,
-            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            tension: 0.3,
             yAxisID: 'y2'
           },
           {
@@ -758,10 +940,11 @@ function renderCurrentStateHistoryDashboard() {
             label: 'Social buzz',
             data: metrics.weeks.map(row => Number(row.social.toFixed(1))),
             borderColor: '#8b5cf6',
-            backgroundColor: 'rgba(139, 92, 246, 0.12)',
+            backgroundColor: 'rgba(139, 92, 246, 0.08)',
             borderWidth: 2,
-            pointRadius: 1.5,
-            tension: 0.25,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            tension: 0.3,
             yAxisID: 'y3'
           },
           ...(metrics.weeks.some(row => row.inventory > 0) ? [{
@@ -769,11 +952,11 @@ function renderCurrentStateHistoryDashboard() {
             label: 'Inventory',
             data: metrics.weeks.map(row => row.inventory || 0),
             borderColor: '#059669',
-            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            backgroundColor: 'rgba(5, 150, 105, 0.06)',
             borderWidth: 2,
             borderDash: [4, 3],
             pointRadius: 1.5,
-            tension: 0.25,
+            tension: 0.3,
             fill: true,
             yAxisID: 'y4'
           }] : [])
@@ -783,21 +966,43 @@ function renderCurrentStateHistoryDashboard() {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
+        _storylineEvents: chartEvents,
         plugins: {
-          legend: { position: 'bottom' }
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, padding: 14, font: { size: 11 } }
+          },
+          tooltip: {
+            padding: 10,
+            callbacks: {
+              afterBody: (tooltipItems) => {
+                const label = tooltipItems[0]?.label;
+                const evt = label ? eventByLabel[label] : null;
+                if (!evt) return [];
+                return [`\u00A0`, `\uD83D\uDCCC ${evt.label}`, evt.detail];
+              }
+            }
+          }
         },
         scales: {
+          x: {
+            grid: { display: false },
+            ticks: { maxRotation: 45, font: { size: 10 } }
+          },
           y: {
             position: 'left',
+            grid: { color: 'rgba(148, 163, 184, 0.1)' },
             ticks: {
-              callback: (value) => formatCompactCurrency(Number(value), 0)
+              callback: (value) => formatCompactCurrency(Number(value), 0),
+              font: { size: 10 }
             }
           },
           y1: {
             position: 'right',
             grid: { drawOnChartArea: false },
             ticks: {
-              callback: (value) => `$${Number(value).toFixed(0)}`
+              callback: (value) => `$${Number(value).toFixed(0)}`,
+              font: { size: 10 }
             }
           },
           y2: {
@@ -2941,10 +3146,11 @@ async function loadData() {
   const btn = document.getElementById('load-data-btn');
   const progressContainer = document.getElementById('loading-progress');
   const progressBar = document.getElementById('loading-progress-bar');
-  const progressText = document.getElementById('loading-percentage');
+  // In the new design, percentage lives in .ld-pct; fall back to old id if present
+  const progressText = document.querySelector('.ld-pct') || document.getElementById('loading-percentage');
   const stageText = document.getElementById('loading-stage');
 
-  if (!btn || !progressContainer || !progressBar || !progressText || !stageText) {
+  if (!btn || !progressBar || !stageText) {
     console.error('Loading UI elements not found');
     return;
   }
@@ -2955,9 +3161,8 @@ async function loadData() {
     const progress = Math.max(0, Math.min(100, value));
     const displayProgress = Math.max(progress, 5);
     progressBar.style.width = `${displayProgress}%`;
-    progressBar.style.minWidth = '5%';
     progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
-    progressText.textContent = `${Math.round(progress)}%`;
+    if (progressText) progressText.textContent = `${Math.round(progress)}%`;
   };
   const animateStage = (fromValue, toValue, label, duration = 360) => new Promise(resolve => {
     const start = performance.now();
@@ -2982,8 +3187,9 @@ async function loadData() {
   // Hide button, show progress
   btn.style.display = 'none';
   progressContainer.style.display = 'block';
-  progressBar.classList.remove('bg-success', 'bg-danger');
-  progressBar.classList.add('bg-primary');
+  // Remove Bootstrap color classes — the custom ld-progress-fill uses its own gradient
+  progressBar.classList.remove('bg-success', 'bg-danger', 'bg-primary',
+    'progress-bar', 'progress-bar-striped', 'progress-bar-animated');
 
   // Force visibility
   progressContainer.style.display = 'block';
@@ -3060,7 +3266,7 @@ async function loadData() {
 
       if (stage.progress >= 75) {
         progressBar.classList.remove('bg-primary');
-        progressBar.classList.add('bg-success');
+        progressBar.classList.add('ld-progress-done');
       }
 
       if (stage.task) {

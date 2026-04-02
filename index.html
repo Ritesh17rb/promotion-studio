@@ -213,7 +213,7 @@
         <div class="row g-3">
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
-              <div class="cbo-kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-revenue"><i class="bi bi-currency-dollar"></i></div>
               <div class="cbo-kpi-label">Total Revenue</div>
               <div class="cbo-kpi-value" id="history-total-revenue">--</div>
               <div class="cbo-kpi-change" id="history-revenue-change">--</div>
@@ -221,7 +221,7 @@
           </div>
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
-              <div class="cbo-kpi-icon"><i class="bi bi-box-seam"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-units"><i class="bi bi-box-seam"></i></div>
               <div class="cbo-kpi-label">Units Sold</div>
               <div class="cbo-kpi-value" id="history-total-units">--</div>
               <div class="cbo-kpi-change" id="history-units-change">--</div>
@@ -229,7 +229,7 @@
           </div>
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
-              <div class="cbo-kpi-icon"><i class="bi bi-tag"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-price"><i class="bi bi-tag-fill"></i></div>
               <div class="cbo-kpi-label">Avg Own Price</div>
               <div class="cbo-kpi-value" id="history-avg-price">--</div>
               <div class="cbo-kpi-change" id="history-price-change">--</div>
@@ -237,7 +237,7 @@
           </div>
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
-              <div class="cbo-kpi-icon"><i class="bi bi-scales"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-gap"><i class="bi bi-arrow-left-right"></i></div>
               <div class="cbo-kpi-label">Competitor Gap</div>
               <div class="cbo-kpi-value" id="history-gap">--</div>
               <div class="cbo-kpi-change" id="history-gap-change">--</div>
@@ -245,7 +245,7 @@
           </div>
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
-              <div class="cbo-kpi-icon"><i class="bi bi-chat-left-dots"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-social"><i class="bi bi-megaphone-fill"></i></div>
               <div class="cbo-kpi-label">Social Buzz</div>
               <div class="cbo-kpi-value" id="history-social">--</div>
               <div class="cbo-kpi-change" id="history-social-change">--</div>
@@ -253,7 +253,7 @@
           </div>
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card cbo-kpi-risk">
-              <div class="cbo-kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+              <div class="cbo-kpi-icon cbo-kpi-icon-risk"><i class="bi bi-exclamation-triangle-fill"></i></div>
               <div class="cbo-kpi-label">At Risk Revenue</div>
               <div class="cbo-kpi-value" id="history-risk-revenue">--</div>
               <div class="cbo-kpi-change" id="history-risk-change">--</div>
@@ -1681,32 +1681,95 @@
         <p class="section-subtitle">Start by inspecting the underlying datasets powering the analysis, including SKU-channel performance, competitor pricing, and social buzz signals.</p>
       </div>
     </div>
-    <div class="text-center my-4" id="load-data-section">
-      <div class="glass-card loading-card">
-        <h5 class="mb-3">
-          <i class="bi bi-database me-2"></i>
-          Loading Data
-        </h5>
-        <p class="text-muted">Initializing promotion optimization models and loading season data...</p>
+    <div id="load-data-section" aria-label="Loading" role="status">
 
-        <div id="loading-progress" class="mt-4" style="display: block !important; visibility: visible !important;">
-          <div class="loading-stage-row">
-            <small id="loading-stage" class="fw-semibold text-primary">Initializing...</small>
-          </div>
-          <div class="progress loading-progress-shell">
-            <div id="loading-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary loading-progress-fill"
-                 role="progressbar" style="width: 5%; min-width: 5%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-              <span id="loading-percentage">0%</span>
-            </div>
-          </div>
+      <!-- Aurora blobs (purely decorative) -->
+      <div class="ld-aurora" aria-hidden="true">
+        <div class="ld-blob ld-blob-1"></div>
+        <div class="ld-blob ld-blob-2"></div>
+        <div class="ld-blob ld-blob-3"></div>
+      </div>
+
+      <!-- Thin top progress strip -->
+      <div class="ld-top-strip">
+        <div id="loading-progress-bar" class="ld-top-fill" role="progressbar"
+             style="width:5%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+
+      <!-- Centre content -->
+      <div class="ld-center">
+
+        <!-- Logo mark -->
+        <div class="ld-logo" aria-hidden="true">
+          <i class="bi bi-sun-fill"></i>
         </div>
 
-        <button id="load-data-btn" class="btn btn-primary-custom mt-3" style="display: none;">
-          <i class="bi bi-cloud-download me-2"></i>
-          Load Sample Data
-        </button>
+        <!-- Word mark -->
+        <div class="ld-wordmark">Promotion Studio</div>
+        <div class="ld-sub">Supergoop · Seasonal Intelligence</div>
+
+        <!-- Typewriter stage label -->
+        <div class="ld-stage-wrap">
+          <span id="loading-stage" class="ld-stage-text">Initializing...</span>
+          <span class="ld-cursor" aria-hidden="true"></span>
+        </div>
+
+        <!-- Segmented progress dots -->
+        <div class="ld-segs" aria-hidden="true">
+          <div class="ld-seg" data-stage-key="Opening"></div>
+          <div class="ld-seg" data-stage-key="Building"></div>
+          <div class="ld-seg" data-stage-key="Loading pricing"></div>
+          <div class="ld-seg" data-stage-key="Preparing"></div>
+          <div class="ld-seg" data-stage-key="Connecting AI"></div>
+          <div class="ld-seg" data-stage-key="Finalizing"></div>
+        </div>
+
+        <!-- Percentage -->
+        <div id="loading-percentage" class="ld-pct">0%</div>
+
       </div>
+
+      <!-- Hidden progress container (keeps JS working) -->
+      <div id="loading-progress" style="display:none;visibility:hidden;" aria-hidden="true"></div>
+
+      <button id="load-data-btn" class="btn btn-primary-custom" style="display:none;">
+        <i class="bi bi-cloud-download me-2"></i>Load Sample Data
+      </button>
+
     </div>
+
+    <script>
+    (function () {
+      // Segment watcher — watches loading-stage text changes and advances segments
+      function initSegWatcher() {
+        const segs = Array.from(document.querySelectorAll('.ld-seg'));
+        const stageEl = document.getElementById('loading-stage');
+        if (!stageEl || !segs.length) return;
+
+        function sync(text) {
+          let activeIdx = -1;
+          segs.forEach(function (seg, i) {
+            const key = seg.dataset.stageKey || '';
+            if (key && text.toLowerCase().includes(key.toLowerCase())) activeIdx = i;
+          });
+          if (activeIdx < 0) return;
+          segs.forEach(function (seg, i) {
+            seg.classList.remove('ld-seg-active', 'ld-seg-done');
+            if (i < activeIdx) seg.classList.add('ld-seg-done');
+            else if (i === activeIdx) seg.classList.add('ld-seg-active');
+          });
+        }
+
+        segs[0] && segs[0].classList.add('ld-seg-active');
+
+        new MutationObserver(function () {
+          sync(stageEl.textContent || '');
+        }).observe(stageEl, { childList: true, characterData: true, subtree: true });
+      }
+
+      document.addEventListener('DOMContentLoaded', initSegWatcher);
+    })();
+    </script>
 
     <!-- Data Viewer will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
