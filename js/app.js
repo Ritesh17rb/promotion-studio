@@ -39,7 +39,9 @@ import {
   isLLMConfigured,
   generateLiveCopilot,
   generateScenarioPlanFromText,
-  generateEventAnalyst
+  generateEventAnalyst,
+  generateBusinessOverviewAnalysis,
+  generateGuidedStorylines
 } from './chat.js';
 import { initializeDataViewer } from './data-viewer.js';
 import { renderSegmentKPICards, renderSegmentElasticityHeatmap, render3AxisRadialChart, renderSegmentScatterPlot, exportSVG } from './segment-charts.js';
@@ -102,6 +104,10 @@ let liveCopilotDebounceTimer = null;
 let liveCopilotInFlight = false;
 let selectedEventForLlm = null;
 let llmBusinessContext = {};
+let step1OverviewAiRequestId = 0;
+let step2StoryAiRequestId = 0;
+let eventAnalystAiRequestId = 0;
+let step2LatestAiContext = null;
 
 const CURRENT_BUSINESS_OVERVIEW_CHANNEL_LOGOS = {
   target: 'assets/logos/target.ico',
@@ -455,6 +461,22 @@ function formatHistoryPeriodLabel(windowWeeks) {
   return `last ${windowWeeks} weeks`;
 }
 
+function addDaysToIsoDate(dateString, days = 0) {
+  if (!dateString) return null;
+  const match = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return dateString;
+  const [, year, month, day] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatHistoryWindowDateRange(windowStart, windowEnd) {
+  if (!windowStart || !windowEnd) return null;
+  const resolvedEnd = addDaysToIsoDate(windowEnd, 6);
+  return `${windowStart} to ${resolvedEnd || windowEnd}`;
+}
+
 function getBuzzSentimentScore(row = {}) {
   const direct = Number(row.sentiment_score);
   if (Number.isFinite(direct)) return direct;
@@ -711,13 +733,18 @@ function renderCurrentStateHistoryDashboard() {
   const tableNoteEl = document.getElementById('history-table-note');
 
   if (historyNoteEl) {
-    const dateRangeText = windowStart && windowEnd ? `${windowStart} to ${windowEnd}` : formatHistoryPeriodLabel(effectiveWindowWeeks);
+    const dateRangeText = formatHistoryWindowDateRange(windowStart, windowEnd) || formatHistoryPeriodLabel(effectiveWindowWeeks);
     historyNoteEl.textContent = `${selectedLabel} across ${formatHistoryPeriodLabel(effectiveWindowWeeks)} (${dateRangeText}).`;
   }
   if (trendBadgeEl) trendBadgeEl.textContent = trendSelectedLabel;
   if (snapshotTitleEl) snapshotTitleEl.innerHTML = `<i class="bi bi-moon-stars-fill me-2"></i>Business Snapshot (${formatHistoryPeriodLabel(effectiveWindowWeeks)})`;
   if (rangeChipEl) {
     rangeChipEl.innerHTML = `<i class="bi bi-calendar-week me-2"></i>${formatHistoryPeriodLabel(effectiveWindowWeeks)} • ${windowStart && windowEnd ? `${windowStart} – ${windowEnd}` : 'Date range unavailable'}`;
+  }
+
+  if (rangeChipEl) {
+    const displayRange = formatHistoryWindowDateRange(windowStart, windowEnd);
+    rangeChipEl.innerHTML = `<i class="bi bi-calendar-week me-2"></i>${formatHistoryPeriodLabel(effectiveWindowWeeks)} • ${displayRange || 'Date range unavailable'}`;
   }
 
   const current = metrics.current;
@@ -1328,7 +1355,8 @@ function renderCurrentStateHistoryDashboard() {
       .sort((a, b) => b.social - a.social)[0];
     const trendWindowStart = trendWeeksData[0]?.date || null;
     const trendWindowEnd = trendWeeksData[trendWeeksData.length - 1]?.date || null;
-    const baseNote = `${trendSelectedLabel} generated ${formatCompactCurrency(trendCurrent.revenue, 1)} across ${formatHistoryPeriodLabel(effectiveTrendLocalWeeks)}${trendWindowStart && trendWindowEnd ? ` (${trendWindowStart} to ${trendWindowEnd})` : ''}. Revenue is moving ${trendRevenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(trendRevenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(trendCurrent.ownPrice)} and competitor gap sits at ${trendCurrent.gap >= 0 ? '+' : ''}${(trendCurrent.gap * 100).toFixed(1)}%.`;
+    const trendDisplayRange = formatHistoryWindowDateRange(trendWindowStart, trendWindowEnd);
+    const baseNote = `${trendSelectedLabel} generated ${formatCompactCurrency(trendCurrent.revenue, 1)} across ${formatHistoryPeriodLabel(effectiveTrendLocalWeeks)}${trendDisplayRange ? ` (${trendDisplayRange})` : ''}. Revenue is moving ${trendRevenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(trendRevenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(trendCurrent.ownPrice)} and competitor gap sits at ${trendCurrent.gap >= 0 ? '+' : ''}${(trendCurrent.gap * 100).toFixed(1)}%.`;
     const opportunityNote = opportunityTrendWeek
       ? ` Strongest pricing opportunity in the selected trend view: ${opportunityTrendWeek.date} had ${opportunityTrendWeek.social >= 0 ? '+' : ''}${opportunityTrendWeek.social.toFixed(1)} sentiment while we were ${Math.abs(opportunityTrendWeek.gap * 100).toFixed(1)}% below competitor, which supports a hold-price or lighter-promo story.`
       : '';
@@ -3782,6 +3810,198 @@ function renderList(el, items, fallbackText) {
   el.innerHTML = list.slice(0, 4).map(item => `<li>${item}</li>`).join('');
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderAiLoadingBlock(label = 'AI is analyzing the current view...') {
+  return `
+    <div class="step-chat-loading ai-insight-loading">
+      <div class="ai-loading-mark" aria-hidden="true">
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+      </div>
+      <div>
+        <div class="step-chat-loading-title">${escapeHtml(label)}</div>
+        <div class="step-chat-loading-copy">Grounding the response in the current screen filters, events, pricing, and social signals.</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStep1AiLoadingState() {
+  const summaryEl = document.getElementById('history-ai-summary');
+  const issuesEl = document.getElementById('step1-top-issues-list');
+  const actionsEl = document.getElementById('step1-recommended-actions-list');
+  if (summaryEl) summaryEl.innerHTML = renderAiLoadingBlock('Generating AI business summary...');
+  if (issuesEl) {
+    issuesEl.innerHTML = Array.from({ length: 3 }).map(() => `
+      <div class="cbo-issue-item cbo-issue-loading">
+        <div class="cbo-issue-row">
+          <div class="ai-skeleton ai-skeleton-icon"></div>
+          <div class="flex-grow-1">
+            <div class="ai-skeleton ai-skeleton-title"></div>
+            <div class="ai-skeleton ai-skeleton-line"></div>
+            <div class="ai-skeleton ai-skeleton-line short"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  if (actionsEl) {
+    actionsEl.innerHTML = Array.from({ length: 3 }).map(() => `
+      <div class="cbo-action-item cbo-action-loading">
+        <div class="ai-skeleton ai-skeleton-action-number"></div>
+        <div class="flex-grow-1">
+          <div class="ai-skeleton ai-skeleton-title"></div>
+          <div class="ai-skeleton ai-skeleton-line"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function renderStep1AiIssueCards(issueCards = []) {
+  const issuesEl = document.getElementById('step1-top-issues-list');
+  if (!issuesEl) return;
+  const cards = Array.isArray(issueCards) ? issueCards.filter(Boolean).slice(0, 3) : [];
+  issuesEl.innerHTML = cards.length ? cards.map(item => `
+    <div class="cbo-issue-item cbo-issue-${escapeHtml(item.tone || 'info')}">
+      <div class="cbo-issue-row">
+        <div class="cbo-issue-icon cbo-issue-icon-${escapeHtml(item.tone || 'info')}">
+          <i class="bi ${item.tone === 'danger' ? 'bi-exclamation-triangle' : item.tone === 'success' ? 'bi-check-circle' : 'bi-info-circle'}"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="cbo-issue-title">${escapeHtml(item.title || 'Issue')}</div>
+          <div class="cbo-issue-body">${escapeHtml(item.body || '')}</div>
+          <div class="cbo-issue-action">${escapeHtml(item.action || '')}</div>
+        </div>
+        <div class="cbo-issue-chevron"><i class="bi bi-chevron-right"></i></div>
+      </div>
+    </div>
+  `).join('') : '<div class="text-muted small">No acute issues detected in the latest-week selection.</div>';
+}
+
+function renderStep1AiActions(actions = []) {
+  const actionsEl = document.getElementById('step1-recommended-actions-list');
+  if (!actionsEl) return;
+  const cards = Array.isArray(actions) ? actions.filter(Boolean).slice(0, 3) : [];
+  actionsEl.innerHTML = cards.length ? cards.map((item, index) => `
+    <div class="cbo-action-item cbo-action-${escapeHtml(item.tone || 'info')}">
+      <div class="cbo-action-number">${index + 1}</div>
+      <div>
+        <div class="cbo-action-title">${escapeHtml(item.title || 'Action')}</div>
+        <div class="cbo-action-body">${escapeHtml(item.body || '')}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="text-muted small">No immediate action is required for the current latest-week selection.</div>';
+}
+
+function renderStep2StorylinesLoading() {
+  const container = document.getElementById('event-storyline-examples');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="step2-story-grid">
+      ${Array.from({ length: 3 }).map(() => `
+        <article class="step2-story-card step2-story-card-loading">
+          <div class="ai-skeleton ai-skeleton-pill"></div>
+          <div class="ai-skeleton ai-skeleton-title"></div>
+          <div class="ai-skeleton ai-skeleton-line"></div>
+          <div class="ai-skeleton ai-skeleton-line short"></div>
+          <div class="step2-story-meta">
+            <div class="ai-skeleton ai-skeleton-meta"></div>
+            <div class="ai-skeleton ai-skeleton-meta"></div>
+            <div class="ai-skeleton ai-skeleton-meta"></div>
+          </div>
+        </article>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderStep2StorylineCards(stories = [], events = []) {
+  const container = document.getElementById('event-storyline-examples');
+  if (!container) return;
+  const list = Array.isArray(stories) ? stories.filter(Boolean).slice(0, 4) : [];
+  if (!list.length) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(story => `
+    <article class="step2-story-card" data-story-tone="${escapeHtml(story.tone || 'promo')}"${story.eventId ? ` data-event-id="${escapeHtml(story.eventId)}"` : ''}>
+      <div class="step2-story-badge">${escapeHtml(story.badge || 'Story')}</div>
+      <div class="step2-story-title">${escapeHtml(story.title || '')}</div>
+      <div class="step2-story-copy">${escapeHtml(story.copy || '')}</div>
+      <div class="step2-story-meta">
+        ${(story.metaItems || []).slice(0, 3).map(item => `
+          <div class="step2-story-meta-row">
+            <span class="step2-story-meta-label">${escapeHtml(item.label || '')}</span>
+            <span class="step2-story-meta-value">${escapeHtml(item.value || '')}</span>
+          </div>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+
+  container.querySelectorAll('[data-event-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const eventId = card.dataset.eventId;
+      document.querySelectorAll('#event-timeline [data-event-id]').forEach(node => {
+        node.classList.toggle('is-selected', node.dataset.eventId === eventId);
+      });
+      const event = events.find(item => item.event_id === eventId);
+      if (!event) return;
+      if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+        window.onEventCalendarEventSelected(event);
+      }
+    });
+  });
+}
+
+function renderEventAnalystLoading() {
+  const selectedEl = document.getElementById('event-llm-selected');
+  const summaryEl = document.getElementById('event-llm-summary');
+  const impactEl = document.getElementById('event-llm-impact');
+  const actionsEl = document.getElementById('event-llm-actions');
+  if (selectedEl) {
+    selectedEl.innerHTML = `
+      <div class="step-chat-loading ai-insight-loading">
+        <div class="ai-loading-mark" aria-hidden="true">
+          <span class="ai-loading-dot"></span>
+          <span class="ai-loading-dot"></span>
+          <span class="ai-loading-dot"></span>
+        </div>
+        <div>
+          <div class="step-chat-loading-title">AI event analyst is working...</div>
+          <div class="step-chat-loading-copy">Evaluating the selected event against pricing, social, inventory, and channel context.</div>
+        </div>
+      </div>
+    `;
+  }
+  if (summaryEl) summaryEl.innerHTML = renderAiLoadingBlock('Analyzing selected event...');
+  if (impactEl) {
+    impactEl.innerHTML = `
+      <li><span class="ai-skeleton ai-skeleton-list-line"></span></li>
+      <li><span class="ai-skeleton ai-skeleton-list-line"></span></li>
+      <li><span class="ai-skeleton ai-skeleton-list-line short"></span></li>
+    `;
+  }
+  if (actionsEl) {
+    actionsEl.innerHTML = `
+      <li><span class="ai-skeleton ai-skeleton-list-line"></span></li>
+      <li><span class="ai-skeleton ai-skeleton-list-line"></span></li>
+      <li><span class="ai-skeleton ai-skeleton-list-line short"></span></li>
+    `;
+  }
+}
+
 async function getLlmReady(force = false) {
   const now = Date.now();
   if (!force && llmStatusCached !== null && (now - llmStatusLastCheckedAt) < 30000) {
@@ -3813,6 +4033,122 @@ async function refreshLlmStatuses(force = false) {
   setLlmBadgeState('channel-promo-llm-status', ready);
   setLlmBadgeState('event-llm-status', ready);
   return ready;
+}
+
+function normalizeAiTone(value, fallback = 'info') {
+  const tone = String(value || '').toLowerCase();
+  if (tone === 'neutral') return fallback;
+  return ['danger', 'success', 'info', 'neutral', 'competitor', 'social', 'promo', 'caution', 'seasonal'].includes(tone)
+    ? tone
+    : fallback;
+}
+
+async function runStep1OverviewAiAnalysis({ payload, fallbackSummary, fallbackIssues, fallbackActions, latestWeekLabel }) {
+  const requestId = ++step1OverviewAiRequestId;
+  const summaryEl = document.getElementById('history-ai-summary');
+  const updatedEl = document.getElementById('history-ai-updated');
+  const actionsNoteEl = document.getElementById('step1-recommended-actions-note');
+
+  renderStep1AiLoadingState();
+  if (updatedEl) {
+    updatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${escapeHtml(latestWeekLabel || '--')}`;
+  }
+
+  const ready = await getLlmReady();
+  if (requestId !== step1OverviewAiRequestId) return;
+
+  if (!ready) {
+    if (summaryEl) summaryEl.textContent = fallbackSummary;
+    renderStep1AiIssueCards(fallbackIssues);
+    renderStep1AiActions(fallbackActions);
+    if (actionsNoteEl) actionsNoteEl.textContent = `Rules-based analysis for ${latestWeekLabel}. Connect an LLM to enable live AI analysis.`;
+    return;
+  }
+
+  try {
+    const result = await generateBusinessOverviewAnalysis({
+      ...payload,
+      businessContext: llmBusinessContext
+    });
+    if (requestId !== step1OverviewAiRequestId) return;
+
+    if (summaryEl) {
+      summaryEl.textContent = result.summary || fallbackSummary;
+    }
+    renderStep1AiIssueCards((result.top_issues || []).map(item => ({
+      tone: normalizeAiTone(item.tone, 'info'),
+      title: item.title,
+      body: item.body,
+      action: item.action
+    })));
+    renderStep1AiActions((result.recommended_actions || []).map(item => ({
+      tone: normalizeAiTone(item.tone, 'info'),
+      title: item.title,
+      body: item.body
+    })));
+    if (actionsNoteEl) actionsNoteEl.textContent = `AI-generated from the ${latestWeekLabel} operating readout and the current filter selection.`;
+  } catch (error) {
+    if (requestId !== step1OverviewAiRequestId) return;
+    if (summaryEl) summaryEl.textContent = fallbackSummary;
+    renderStep1AiIssueCards(fallbackIssues);
+    renderStep1AiActions(fallbackActions);
+    if (actionsNoteEl) actionsNoteEl.textContent = `Fell back to rules-based analysis for ${latestWeekLabel} because AI analysis failed: ${error.message}`;
+  }
+}
+
+async function renderStep2AiStorylines({ stories, visibleEvents, selectedScope, signalSnapshot }) {
+  const requestId = ++step2StoryAiRequestId;
+  step2LatestAiContext = {
+    stories: Array.isArray(stories) ? stories : [],
+    visibleEvents: Array.isArray(visibleEvents) ? visibleEvents : [],
+    selectedScope: selectedScope || null,
+    signalSnapshot: signalSnapshot || null
+  };
+  renderStep2StorylinesLoading();
+
+  const ready = await getLlmReady();
+  if (requestId !== step2StoryAiRequestId) return;
+
+  const fallbackStories = (stories || []).map(story => ({
+    tone: normalizeAiTone(story.tone, 'promo'),
+    badge: story.badge,
+    title: story.title,
+    copy: story.copy,
+    eventId: story.eventId || '',
+    metaItems: Array.isArray(story.metaItems) ? story.metaItems.slice(0, 3) : []
+  }));
+
+  if (!ready) {
+    renderStep2StorylineCards(fallbackStories, visibleEvents || []);
+    return;
+  }
+
+  try {
+    const result = await generateGuidedStorylines({
+      selectedScope,
+      visibleEvents: visibleEvents || [],
+      storyCandidates: fallbackStories,
+      signalSnapshot,
+      businessContext: llmBusinessContext
+    });
+    if (requestId !== step2StoryAiRequestId) return;
+
+    const aiStories = Array.isArray(result.stories) ? result.stories.map(story => ({
+      tone: normalizeAiTone(story.tone, 'promo'),
+      badge: story.badge,
+      title: story.title,
+      copy: story.copy,
+      eventId: (visibleEvents || []).some(event => event.event_id === story.event_id) ? story.event_id : '',
+      metaItems: Array.isArray(story.meta)
+        ? story.meta.slice(0, 3).map(item => ({ label: item.label, value: item.value }))
+        : []
+    })) : [];
+
+    renderStep2StorylineCards(aiStories.length ? aiStories : fallbackStories, visibleEvents || []);
+  } catch {
+    if (requestId !== step2StoryAiRequestId) return;
+    renderStep2StorylineCards(fallbackStories, visibleEvents || []);
+  }
 }
 
 function getLivePromoSnapshotSafe() {
@@ -4055,19 +4391,31 @@ async function applyLlmPlanFromText() {
 
 function setSelectedEventForLlmAnalysis(event) {
   selectedEventForLlm = event || null;
-  const selectedEl = document.getElementById('event-llm-selected');
-  if (!selectedEl) return;
-  if (!selectedEventForLlm) {
-    selectedEl.textContent = 'Select an event from timeline to analyze impact and recommended pivot.';
-    return;
+  if (window.renderEventAnalystSelection && typeof window.renderEventAnalystSelection === 'function') {
+    window.renderEventAnalystSelection(selectedEventForLlm);
+  } else {
+    const selectedEl = document.getElementById('event-llm-selected');
+    if (!selectedEl) return;
+    if (!selectedEventForLlm) {
+      selectedEl.textContent = 'Select an event from timeline to analyze impact and recommended pivot.';
+      return;
+    }
+    const eventDate = selectedEventForLlm.date
+      ? new Date(selectedEventForLlm.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : 'N/A';
+    selectedEl.textContent = `Selected: ${selectedEventForLlm.event_type} (${eventDate}) - ${selectedEventForLlm.notes || 'No notes'}`;
   }
-  const eventDate = selectedEventForLlm.date
-    ? new Date(selectedEventForLlm.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    : 'N/A';
-  selectedEl.textContent = `Selected: ${selectedEventForLlm.event_type} (${eventDate}) - ${selectedEventForLlm.notes || 'No notes'}`;
 }
 
-async function runEventLlmAnalysis() {
+function buildEventAnalystContext() {
+  return {
+    selectedScope: step2LatestAiContext?.selectedScope || null,
+    visibleEvents: (step2LatestAiContext?.visibleEvents || []).slice(0, 8),
+    signalSnapshot: step2LatestAiContext?.signalSnapshot || null
+  };
+}
+
+async function runEventLlmAnalysis({ auto = false } = {}) {
   const summaryEl = document.getElementById('event-llm-summary');
   const impactEl = document.getElementById('event-llm-impact');
   const actionsEl = document.getElementById('event-llm-actions');
@@ -4078,28 +4426,48 @@ async function runEventLlmAnalysis() {
     return;
   }
 
-  const stopEventLoading = startButtonLoading('event-llm-analyze-btn', 'Analyzing...');
+  const requestId = ++eventAnalystAiRequestId;
+  const stopEventLoading = auto ? () => {} : startButtonLoading('event-llm-analyze-btn', 'Analyzing...');
+  renderEventAnalystLoading();
   const ready = await refreshLlmStatuses();
+  if (requestId !== eventAnalystAiRequestId) {
+    stopEventLoading();
+    return;
+  }
   if (!ready) {
-    summaryEl.textContent = 'LLM not configured. Connect API first.';
+    if (window.renderEventAnalystSelection && typeof window.renderEventAnalystSelection === 'function') {
+      window.renderEventAnalystSelection(selectedEventForLlm);
+    }
+    if (!auto) {
+      summaryEl.textContent = 'LLM not configured. Connect API first.';
+    }
     stopEventLoading();
     return;
   }
 
-  summaryEl.textContent = 'Analyzing selected event...';
+  const eventContext = buildEventAnalystContext();
   try {
     const result = await generateEventAnalyst({
       event: selectedEventForLlm,
       liveSnapshot: getLivePromoSnapshotSafe(),
-      businessContext: llmBusinessContext
+      businessContext: llmBusinessContext,
+      eventContext,
+      visibleEvents: eventContext.visibleEvents,
+      signalSnapshot: eventContext.signalSnapshot
     });
+    if (requestId !== eventAnalystAiRequestId) return;
     summaryEl.textContent = result.summary || 'Event analysis ready.';
     renderList(impactEl, result.impact, 'No major measurable impact detected.');
     renderList(actionsEl, result.actions, 'No immediate pivot needed.');
   } catch (error) {
-    summaryEl.textContent = `Event analysis failed: ${error.message}`;
-    renderList(impactEl, [], 'Unable to compute impact.');
-    renderList(actionsEl, [], 'Unable to compute actions.');
+    if (requestId !== eventAnalystAiRequestId) return;
+    if (auto && window.renderEventAnalystSelection && typeof window.renderEventAnalystSelection === 'function') {
+      window.renderEventAnalystSelection(selectedEventForLlm);
+    } else {
+      summaryEl.textContent = `Event analysis failed: ${error.message}`;
+      renderList(impactEl, [], 'Unable to compute impact.');
+      renderList(actionsEl, [], 'Unable to compute actions.');
+    }
   } finally {
     stopEventLoading();
   }
@@ -4126,13 +4494,14 @@ function initializeLlmAssistPanels() {
     }
   });
 
-  document.getElementById('event-llm-analyze-btn')?.addEventListener('click', runEventLlmAnalysis);
+  document.getElementById('event-llm-analyze-btn')?.addEventListener('click', () => runEventLlmAnalysis({ auto: false }));
 
   window.onChannelPromoSnapshotUpdated = () => {
     scheduleLiveCopilotAnalysis({ force: false });
   };
   window.onEventCalendarEventSelected = (event) => {
     setSelectedEventForLlmAnalysis(event);
+    runEventLlmAnalysis({ auto: true });
   };
 }
 
@@ -5960,6 +6329,7 @@ async function init() {
   window.initializeCurrentStateHistoryDashboard = initializeCurrentStateHistoryDashboard;
   window.renderCurrentBusinessOverviewLatestWeek = renderCurrentBusinessOverviewLatestWeek;
   window.initializeWeeklyDrilldown = initializeWeeklyDrilldown;
+  window.renderStep2AiStorylines = renderStep2AiStorylines;
   // Make loadData available globally so it can be called when navigating to step 1
   window.loadAppData = loadData;
   window.dataLoaded = false;
@@ -6028,6 +6398,12 @@ async function renderCurrentBusinessOverviewLatestWeek() {
       : String(row.sales_channel || '').toLowerCase() === selectedChannel;
     return productMatch && channelMatch;
   });
+  const selectedWindowWeeks = Number(document.getElementById('history-window-filter')?.value || 52);
+  const selectedWindowMetrics = buildHistoryWindowMetrics(scopedHistory, selectedWindowWeeks);
+  const selectedWindowCurrent = selectedWindowMetrics.current;
+  const selectedWindowPrevious = selectedWindowMetrics.previous;
+  const selectedWindowStart = selectedWindowMetrics.weeks[0]?.date || null;
+  const selectedWindowEnd = selectedWindowMetrics.weeks[selectedWindowMetrics.weeks.length - 1]?.date || null;
 
   const weeks = [...new Set(scopedHistory.map(row => String(row.week_start || row.date || '')).filter(Boolean))].sort();
   const latestWeek = weeks[weeks.length - 1];
@@ -6340,21 +6716,6 @@ async function renderCurrentBusinessOverviewLatestWeek() {
       action: 'Action: avoid unnecessary discounting while prestige momentum remains intact.'
     });
   }
-  issuesEl.innerHTML = (issueCards.slice(0, 3).length ? issueCards.slice(0, 3).map(item => `
-    <div class="cbo-issue-item cbo-issue-${item.tone}">
-      <div class="cbo-issue-row">
-        <div class="cbo-issue-icon cbo-issue-icon-${item.tone}">
-          <i class="bi ${item.tone === 'danger' ? 'bi-exclamation-triangle' : item.tone === 'success' ? 'bi-check-circle' : 'bi-info-circle'}"></i>
-        </div>
-        <div class="flex-grow-1">
-          <div class="cbo-issue-title">${item.title}</div>
-          <div class="cbo-issue-body">${item.body}</div>
-          <div class="cbo-issue-action">${item.action}</div>
-        </div>
-        <div class="cbo-issue-chevron"><i class="bi bi-chevron-right"></i></div>
-      </div>
-    </div>
-  `).join('') : '<div class="text-muted small">No acute issues detected in the latest-week selection.</div>');
 
   const actions = [];
   if (atRiskChannel && atRiskChannel.gap > 2) {
@@ -6381,18 +6742,6 @@ async function renderCurrentBusinessOverviewLatestWeek() {
       body: `Prestige remains healthy at ${fmtPct(strongPrestigeChannel.revenueDeltaPct)} revenue trend with supportive sentiment.`
     });
   }
-  actionsEl.innerHTML = (actions.slice(0, 3).length ? actions.slice(0, 3).map(item => `
-    <div class="cbo-action-item cbo-action-${item.tone}">
-      <div class="cbo-action-number">${item.number}</div>
-      <div>
-        <div class="cbo-action-title">${item.title}</div>
-        <div class="cbo-action-body">${item.body}</div>
-      </div>
-    </div>
-  `).join('') : '<div class="text-muted small">No immediate action is required for the current latest-week selection.</div>');
-  if (actionsNoteEl) {
-    actionsNoteEl.textContent = `Generated from the ${latestWeekLabel} operating readout for the current selection.`;
-  }
 
   const sortedSocialRows = currentBusinessOverviewSocialSignals
     .slice()
@@ -6409,23 +6758,104 @@ async function renderCurrentBusinessOverviewLatestWeek() {
     latestSocialRow = sortedSocialRows[sortedSocialRows.length - 1];
   }
 
-  if (aiSummaryEl) {
-    const narrative = [];
-    narrative.push(`Revenue is ${latestAgg.revenue >= priorAgg.revenue ? 'holding' : 'softening'} in the latest week at ${formatCompactCurrency(latestAgg.revenue, 1)} (${fmtPct(priorAgg.revenue > 0 ? ((latestAgg.revenue - priorAgg.revenue) / priorAgg.revenue) * 100 : 0)} vs last week).`);
-    if (pressuredCompetitorRow) {
-      narrative.push(`${CHANNEL_LABELS[pressuredCompetitorRow.channel] || pressuredCompetitorRow.channel} is under the clearest competitor pressure on ${pressuredCompetitorRow.skuName} at ${pressuredCompetitorRow.gap >= 0 ? '+' : ''}${pressuredCompetitorRow.gap.toFixed(1)}% versus competitor.`);
-    }
-    if (buzzOpportunity) {
-      narrative.push(`Social buzz for ${buzzOpportunity.skuName} remains elevated at ${fmtSigned(buzzOpportunity.social)}, indicating a demand-capture opportunity.`);
-    }
-    if (strongPrestigeChannel) {
-      narrative.push(`Premium channels like ${strongPrestigeChannel.label} still read strong enough to protect margin.`);
-    }
-    aiSummaryEl.textContent = narrative.join(' ');
+  const narrative = [];
+  narrative.push(`Revenue is ${latestAgg.revenue >= priorAgg.revenue ? 'holding' : 'softening'} in the latest week at ${formatCompactCurrency(latestAgg.revenue, 1)} (${fmtPct(priorAgg.revenue > 0 ? ((latestAgg.revenue - priorAgg.revenue) / priorAgg.revenue) * 100 : 0)} vs last week).`);
+  if (pressuredCompetitorRow) {
+    narrative.push(`${CHANNEL_LABELS[pressuredCompetitorRow.channel] || pressuredCompetitorRow.channel} is under the clearest competitor pressure on ${pressuredCompetitorRow.skuName} at ${pressuredCompetitorRow.gap >= 0 ? '+' : ''}${pressuredCompetitorRow.gap.toFixed(1)}% versus competitor.`);
   }
-  if (aiUpdatedEl) {
-    aiUpdatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${latestWeekLabel}`;
+  if (buzzOpportunity) {
+    narrative.push(`Social buzz for ${buzzOpportunity.skuName} remains elevated at ${fmtSigned(buzzOpportunity.social)}, indicating a demand-capture opportunity.`);
   }
+  if (strongPrestigeChannel) {
+    narrative.push(`Premium channels like ${strongPrestigeChannel.label} still read strong enough to protect margin.`);
+  }
+
+  const fallbackSummary = narrative.join(' ');
+  const fallbackIssues = issueCards.slice(0, 3);
+  const fallbackActions = actions.slice(0, 3).map(item => ({
+    tone: item.tone,
+    title: item.title,
+    body: item.body
+  }));
+
+  runStep1OverviewAiAnalysis({
+    payload: {
+      selectedScope: {
+        product: selectedProduct,
+        channel: selectedChannel,
+        latestWeek,
+        latestWeekLabel
+      },
+      lookbackSummary: {
+        label: formatHistoryPeriodLabel(selectedWindowWeeks),
+        start: selectedWindowStart,
+        end: selectedWindowEnd,
+        revenue: selectedWindowCurrent.revenue,
+        units: selectedWindowCurrent.units,
+        avgPrice: selectedWindowCurrent.ownPrice,
+        avgGapPct: (selectedWindowCurrent.gap || 0) * 100,
+        avgSocial: selectedWindowCurrent.social,
+        priorRevenue: selectedWindowPrevious.revenue,
+        priorUnits: selectedWindowPrevious.units
+      },
+      latestWeekSummary: {
+        revenue: latestAgg.revenue,
+        units: latestAgg.units,
+        avgPrice: latestAgg.avgPrice,
+        avgComp: latestAgg.avgComp,
+        avgGapPct: latestAgg.avgGap,
+        avgSocial: latestAgg.avgSocial,
+        weekLabel: latestWeekLabel
+      },
+      channelSummaries: channelRollups.map(item => ({
+        channel: item.channel,
+        label: item.label,
+        tier: item.tier,
+        revenue: item.revenue,
+        units: item.units,
+        revenueDeltaPct: item.revenueDeltaPct,
+        unitsDeltaPct: item.unitsDeltaPct,
+        gapPct: item.gap,
+        social: item.social
+      })),
+      competitorAlerts: displayedAlerts.slice(0, 6).map(item => ({
+        skuId: item.skuId,
+        skuName: item.skuName,
+        channel: CHANNEL_LABELS[item.channel] || item.channel,
+        competitorPrice: item.competitorPrice,
+        ourPrice: item.ourPrice,
+        move: item.move,
+        gapPct: item.gap,
+        social: item.social,
+        revenue: item.revenue
+      })),
+      skuSnapshot: skuSnapshot.slice(0, 6).map(item => ({
+        skuId: item.skuId,
+        skuName: item.skuName,
+        topChannel: item.topChannel,
+        revenue: item.revenue,
+        units: item.units,
+        unitsDeltaPct: item.unitsDeltaPct,
+        ownPrice: item.ownPrice,
+        compPrice: item.compPrice,
+        gapPct: item.gap,
+        social: item.social,
+        insight: item.insight
+      })),
+      candidateIssues: fallbackIssues,
+      candidateActions: fallbackActions,
+      socialSignal: latestSocialRow ? {
+        weekStart: latestSocialRow.week_start || latestSocialRow.date || latestWeek,
+        brandSocialIndex: Number(latestSocialRow.brand_social_index ?? latestSocialRow.social_sentiment ?? 0),
+        sentimentScore: Number(latestSocialRow.sentiment_score ?? 0),
+        totalMentions: Number(latestSocialRow.total_social_mentions ?? 0)
+      } : null
+    },
+    fallbackSummary,
+    fallbackIssues,
+    fallbackActions,
+    latestWeekLabel
+  });
 }
 
 // ==================== Weekly Drilldown (Step 3) ====================

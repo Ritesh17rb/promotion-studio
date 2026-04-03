@@ -1218,6 +1218,106 @@ Use conservative defaults if unclear.`;
   return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.1, maxTokens: 600 });
 }
 
+export async function generateBusinessOverviewAnalysis(payload = {}) {
+  const businessContext = payload.businessContext || dataContext?.businessContext || {};
+
+  const systemPrompt = `You are the AI business analyst for Step 1 (Current Business Overview) in the Supergoop Seasonal Promotion Studio.
+Return ONLY valid JSON with schema:
+{
+  "summary": "string <= 320 chars",
+  "top_issues": [
+    {
+      "tone": "danger|success|info|neutral",
+      "title": "string <= 100 chars",
+      "body": "string <= 180 chars",
+      "action": "string <= 180 chars"
+    }
+  ],
+  "recommended_actions": [
+    {
+      "tone": "danger|success|info|neutral",
+      "title": "string <= 100 chars",
+      "body": "string <= 200 chars"
+    }
+  ]
+}
+
+Rules:
+- Ground every point in the provided data only.
+- Keep the business summary executive-ready and specific.
+- Prefer 2-3 issues and 2-3 actions.
+- Mention exact channels, products, price gaps, social signals, and revenue exposure when present.
+- Do not fabricate metrics or dates.
+- Use the language of the application: Top Issues & Opportunities, Recommended Next Actions, pricing pressure, buzz, prestige, mass, competitor gap.`;
+
+  const userPrompt = JSON.stringify({
+    task: 'Generate the Step 1 AI business summary, top issues, and recommended next actions for the current selection.',
+    selected_scope: payload.selectedScope || null,
+    lookback_summary: payload.lookbackSummary || null,
+    latest_week_summary: payload.latestWeekSummary || null,
+    channel_summaries: payload.channelSummaries || [],
+    competitor_alerts: payload.competitorAlerts || [],
+    sku_snapshot: payload.skuSnapshot || [],
+    candidate_issues: payload.candidateIssues || [],
+    candidate_actions: payload.candidateActions || [],
+    social_signal: payload.socialSignal || null,
+    application_context: {
+      currentSeasonWeek: businessContext.currentSeasonWeek || null,
+      seasonWeeks: businessContext.seasonWeeks || null,
+      competitorSignals: businessContext.competitorSignals || null,
+      socialSignal: businessContext.socialSignal || null
+    }
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.15, maxTokens: 1200 });
+}
+
+export async function generateGuidedStorylines(payload = {}) {
+  const businessContext = payload.businessContext || dataContext?.businessContext || {};
+
+  const systemPrompt = `You are the AI narrative strategist for Step 2 (Drivers & Signals) in the Supergoop Seasonal Promotion Studio.
+Return ONLY valid JSON with schema:
+{
+  "stories": [
+    {
+      "tone": "competitor|social|promo|caution|seasonal",
+      "badge": "string <= 24 chars",
+      "title": "string <= 100 chars",
+      "copy": "string <= 220 chars",
+      "event_id": "string from provided candidates or empty string",
+      "meta": [
+        { "label": "string <= 18 chars", "value": "string <= 100 chars" },
+        { "label": "string <= 18 chars", "value": "string <= 100 chars" },
+        { "label": "string <= 18 chars", "value": "string <= 100 chars" }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Pick the 3-4 strongest storyline cards from the provided evidence.
+- Tie each storyline to a real promo/event candidate from the input.
+- If an event_id is used, it must exactly match one of the provided candidate event IDs.
+- Make each card business-impactful, not generic.
+- Use the application’s language: defend selectively, protect prestige pricing, creator/social momentum, promo clutter, competitor move.
+- Do not invent metrics or relationships not present in the input.`;
+
+  const userPrompt = JSON.stringify({
+    task: 'Generate the Guided Storylines & Implications cards for Step 2.',
+    selected_scope: payload.selectedScope || null,
+    visible_event_candidates: payload.visibleEvents || [],
+    story_candidates: payload.storyCandidates || [],
+    current_signal_snapshot: payload.signalSnapshot || null,
+    application_context: {
+      currentSeasonWeek: businessContext.currentSeasonWeek || null,
+      competitorSignals: businessContext.competitorSignals || null,
+      socialSignal: businessContext.socialSignal || null
+    }
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.2, maxTokens: 1200 });
+}
+
 export async function generateEventAnalyst(payload = {}) {
   const event = payload.event || null;
   if (!event) throw new Error('No event provided');
@@ -1226,7 +1326,7 @@ export async function generateEventAnalyst(payload = {}) {
     || null;
   const businessContext = payload.businessContext || dataContext?.businessContext || {};
 
-  const systemPrompt = `You are an in-season event analyst for promotion optimization.
+  const systemPrompt = `You are the AI Event Analyst for Step 2 in the Supergoop Seasonal Promotion Studio.
 Return ONLY valid JSON with schema:
 {
   "summary": "string <= 220 chars",
@@ -1234,7 +1334,8 @@ Return ONLY valid JSON with schema:
   "actions": ["string", "string", "string"],
   "urgency": "low|medium|high"
 }
-Tie analysis to competitor delta, social momentum, inventory runway, and channel context when available.`;
+Tie analysis to competitor delta, social momentum, inventory runway, promo history, and channel context when available.
+Do not fabricate metrics. Use only the provided event and context.`;
 
   const userPrompt = JSON.stringify({
     selected_event: event,
@@ -1242,8 +1343,12 @@ Tie analysis to competitor delta, social momentum, inventory runway, and channel
     context: {
       competitorSignals: businessContext.competitorSignals || null,
       socialSignal: businessContext.socialSignal || null,
-      currentSeasonWeek: businessContext.currentSeasonWeek || null
-    }
+      currentSeasonWeek: businessContext.currentSeasonWeek || null,
+      seasonWeeks: businessContext.seasonWeeks || null
+    },
+    event_context: payload.eventContext || null,
+    visible_events: payload.visibleEvents || [],
+    signal_snapshot: payload.signalSnapshot || null
   });
 
   return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.2, maxTokens: 700 });

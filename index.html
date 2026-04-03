@@ -150,7 +150,7 @@
       <div class="section-header-citation">
         <div class="cbo-range-chip" id="current-business-overview-range">
           <i class="bi bi-calendar-week me-2"></i>
-          Last 1 Week • --
+          Last 1 Year • --
         </div>
       </div>
     </div>
@@ -1966,45 +1966,31 @@
 
   </section>
 
-  <!-- Section 8: Event Calendar -->
+  <!-- Section 8: Drivers & Signals -->
   <section class="section" id="section-8">
   <div class="container">
-    <div class="section-header section-header-split">
+    <div class="section-header section-header-split step2-drivers-header">
       <div class="section-header-main">
         <div class="section-number">Step 2</div>
-        <h2 class="section-title">Event Calendar</h2>
-        <p class="section-subtitle">Track promotion starts, competitor price changes, social spikes, and seasonal tentpoles that drive in-season optimization pivots.</p>
+        <h2 class="section-title d-flex align-items-center gap-2">
+          Drivers &amp; Signals
+          <i class="bi bi-info-circle section-title-info"></i>
+        </h2>
+        <p class="section-subtitle">Understand the external and internal factors influencing performance. See competitor actions, social demand, and key events to diagnose root cause and decide the right response.</p>
+      </div>
+      <div class="step2-range-pill" id="step-2-range-pill">
+        <i class="bi bi-calendar-event"></i>
+        <span>Loading date range...</span>
       </div>
     </div>
 
-    <!-- Event calendar content will be shown here by step-navigation.js -->
+    <!-- Drivers & Signals content will be shown here by step-navigation.js -->
     <!-- Navigation buttons will be injected by step-navigation.js -->
     <div id="step-8-calendar-container">
       <div id="step-8-calendar-container-content">
-        <!-- Event calendar content will be injected here -->
+        <!-- Drivers & Signals content will be injected here -->
       </div>
     </div>
-
-    <!-- AI Chat Widget for Event Calendar -->
-    <div class="wd-panel mt-4 mb-4">
-      <div class="wd-panel-header">
-        <h6 class="wd-panel-title"><i class="bi bi-chat-dots me-2"></i>AI Assistant <span class="badge bg-info-subtle text-info small ms-2">Ask about events & promotions</span></h6>
-      </div>
-      <div style="padding: 0.75rem 1.25rem;">
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="Which past promotions had negative ROI and should not be repeated?">Which promos had negative ROI?</button>
-          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="Show me examples where social buzz was high and we could have increased prices instead of discounting.">Missed pricing opportunities during social spikes?</button>
-          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="What happened during Thanksgiving and Black Friday? Did sales naturally go up without promotions?">Thanksgiving & Black Friday impact?</button>
-          <button class="btn btn-sm btn-outline-secondary step-chat-sample" data-step="4" data-q="How did competitor price drops affect our sales? Show positive and negative examples.">Competitor price change impact?</button>
-        </div>
-        <div class="input-group">
-          <input type="text" class="form-control step-chat-input" data-step="4" placeholder="Ask about events, promotions, and their impact...">
-          <button class="btn btn-primary step-chat-send" data-step="4"><i class="bi bi-send"></i></button>
-        </div>
-        <div class="step-chat-response mt-2 small" id="step-4-chat-response" style="display:none;"></div>
-      </div>
-    </div>
-
   </div>
 
   </section>
@@ -3852,136 +3838,142 @@
     </div>
   </div>
 
-  <!-- Event Calendar Section (RFP-aligned) -->
+  <!-- Drivers & Signals Section -->
   <div id="event-calendar-section" style="display: none;">
-    <div class="container my-4">
-        <div class="card">
-          <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-              <h2 class="h5 mb-0">
-                <i class="bi bi-calendar-event me-2"></i>
-                Event Calendar & Promo Performance
-              </h2>
-              <span class="badge text-white" id="event-count-badge">Loading...</span>
-            </div>
+    <div class="step2-drivers-shell">
+      <section class="step2-card step2-snapshot-card">
+        <div class="step2-card-header">
+          <div class="step2-card-title-wrap">
+            <div class="step2-card-kicker">Signal Snapshot <span>(What's Driving the Business Right Now)</span></div>
           </div>
-        <div class="card-body">
-
-          <!-- Market Signals & Listening Dashboard -->
-          <div class="row mb-4" id="market-signals-dashboard-row">
-            <div class="col-lg-6">
-              <div class="card h-100">
-                <div class="card-body py-3">
-                  <h6 class="small text-uppercase text-muted mb-2">
-                    <i class="bi bi-bullseye me-1"></i> Competitive Price Delta Trend (Our vs Competitor)
-                  </h6>
-                  <div class="chart-container" style="height: 280px;">
-                    <canvas id="event-competitive-signals-chart"></canvas>
-                  </div>
-                  <div id="market-signals-competitive" class="small text-muted mt-2"></div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-6">
-              <div class="card h-100">
-                <div class="card-body py-3">
-                  <h6 class="small text-uppercase text-muted mb-2">
-                    <i class="bi bi-megaphone me-1"></i> Social Momentum and Elasticity Signal
-                  </h6>
-                  <div class="chart-container" style="height: 220px;">
-                    <canvas id="event-social-signals-chart"></canvas>
-                  </div>
-                  <div id="market-signals-social" class="small text-muted mt-2"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card border-0 bg-body-tertiary mb-4">
-            <div class="card-body py-3">
-              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                <h6 class="small text-uppercase text-muted mb-0">
-                  <i class="bi bi-cpu me-1"></i> Event Analyst (LLM)
-                </h6>
-                <div class="d-flex gap-2 align-items-center">
-                  <span class="badge text-bg-secondary" id="event-llm-status">Not Connected</span>
-                  <button type="button" class="btn btn-sm btn-outline-primary" id="event-llm-analyze-btn">Analyze Selected Event</button>
-                </div>
-              </div>
-              <div class="small text-muted mb-2" id="event-llm-selected">
-                Select an event from timeline to analyze impact and recommended pivot.
-              </div>
-              <div class="small mb-2" id="event-llm-summary">
-                LLM event analysis is available after configuring API credentials in settings.
-              </div>
-              <div class="row g-2 small">
-                <div class="col-md-6">
-                  <div class="border rounded p-2 h-100 bg-body">
-                    <div class="text-muted text-uppercase mb-1">Expected Impact</div>
-                    <ul class="mb-0 ps-3" id="event-llm-impact">
-                      <li>Awaiting event selection.</li>
-                    </ul>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="border rounded p-2 h-100 bg-body">
-                    <div class="text-muted text-uppercase mb-1">Recommended Pivot</div>
-                    <ul class="mb-0 ps-3" id="event-llm-actions">
-                      <li>Awaiting event selection.</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Event Type Filters -->
-          <div class="row mb-4 align-items-end">
-            <div class="col-md-8">
-              <div class="btn-group flex-wrap" role="group" aria-label="Event type filters">
-                <input type="checkbox" class="btn-check" id="filter-all" checked autocomplete="off">
-                <label class="btn btn-outline-primary btn-sm" for="filter-all">
-                  <i class="bi bi-check-all me-1"></i>All Events
-                </label>
-
-                <input type="checkbox" class="btn-check" id="filter-competitor-price-change" checked autocomplete="off">
-                <label class="btn btn-outline-danger btn-sm" for="filter-competitor-price-change">
-                  <i class="bi bi-arrow-left-right me-1"></i>Competitor Price Changes
-                </label>
-
-                <input type="checkbox" class="btn-check" id="filter-promo" checked autocomplete="off">
-                <label class="btn btn-outline-info btn-sm" for="filter-promo">
-                  <i class="bi bi-tag me-1"></i>Promos
-                </label>
-
-                <input type="checkbox" class="btn-check" id="filter-tentpole" checked autocomplete="off">
-                <label class="btn btn-outline-warning btn-sm" for="filter-tentpole">
-                  <i class="bi bi-star me-1"></i>Seasonal Tentpoles
-                </label>
-              </div>
-            </div>
-            <div class="col-md-4 col-lg-3 ms-auto">
-              <label class="form-label small text-muted mb-1" for="event-calendar-product-filter">
-                <i class="bi bi-box-seam me-1"></i>Product Filter
-              </label>
-              <select id="event-calendar-product-filter" class="form-select form-select-sm">
-                <option value="all" selected>All Products</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Timeline Visualization -->
-          <div class="mb-4">
-            <h6 class="fw-bold mb-3">
-              <i class="bi bi-clock-history me-2"></i>Event Timeline (12M History + 12M Forward)
-            </h6>
-            <div id="event-timeline" class="p-3 rounded" style="min-height: 300px;">
-              <!-- Timeline will be rendered here -->
-            </div>
-          </div>
-
+          <span id="event-count-badge" class="step2-count-badge">Loading...</span>
         </div>
+        <div class="step2-snapshot-layout">
+          <div class="step2-snapshot-grid" id="step2-snapshot-grid">
+            <div class="step2-snapshot-loading">Loading signal snapshot...</div>
+          </div>
+          <aside class="step2-analysis-feed">
+            <div class="step2-analysis-feed-title">Signals Feeding This Analysis</div>
+            <div id="step2-analysis-feed" class="step2-analysis-feed-list"></div>
+          </aside>
+        </div>
+      </section>
+
+      <div class="step2-panel-grid">
+        <section class="step2-card">
+          <div class="step2-card-header step2-card-header-split">
+            <div>
+              <div class="step2-panel-title"><span class="step2-panel-number">1</span>Market Price Drivers</div>
+              <div class="step2-panel-subtitle">Competitive Price Delta Trend (Our Price vs Competitor)</div>
+            </div>
+            <div class="step2-inline-filter" id="sku-price-filter-container"></div>
+          </div>
+          <div id="market-signals-competitive-legend" class="ec-chart-legend step2-chart-legend"></div>
+          <div class="step2-chart-wrap step2-chart-wrap-lg step2-chart-wrap-with-callout">
+            <canvas id="event-competitive-signals-chart"></canvas>
+            <div id="step2-current-gap-callout" class="step2-current-gap-callout"></div>
+          </div>
+          <div id="market-signals-competitive" class="step2-panel-metrics"></div>
+        </section>
+
+        <section class="step2-card">
+          <div class="step2-card-header">
+            <div>
+              <div class="step2-panel-title"><span class="step2-panel-number">2</span>Demand &amp; Sentiment Signals</div>
+              <div class="step2-panel-subtitle">Social Momentum &amp; Elasticity</div>
+            </div>
+          </div>
+          <div class="step2-chart-wrap step2-chart-wrap-md">
+            <canvas id="event-social-signals-chart"></canvas>
+          </div>
+          <div id="market-signals-social" class="step2-panel-metrics"></div>
+        </section>
       </div>
+
+      <section class="step2-card">
+        <div class="step2-card-header">
+          <div class="step2-panel-title"><span class="step2-panel-number">3</span>Event Timeline (12M History + 12M Forward)</div>
+        </div>
+        <div class="step2-timeline-toolbar">
+          <div class="step2-filter-pills" role="group" aria-label="Event type filters">
+            <input type="checkbox" class="btn-check" id="filter-all" checked autocomplete="off">
+            <label class="step2-filter-pill step2-filter-pill-all" for="filter-all">
+              <i class="bi bi-check-lg"></i>
+              <span>All Events</span>
+            </label>
+
+            <input type="checkbox" class="btn-check" id="filter-competitor-price-change" checked autocomplete="off">
+            <label class="step2-filter-pill step2-filter-pill-competitor" for="filter-competitor-price-change">
+              <i class="bi bi-arrow-left-right"></i>
+              <span>Competitor Price Changes</span>
+            </label>
+
+            <input type="checkbox" class="btn-check" id="filter-promo" checked autocomplete="off">
+            <label class="step2-filter-pill step2-filter-pill-promo" for="filter-promo">
+              <i class="bi bi-tag"></i>
+              <span>Promos</span>
+            </label>
+
+            <input type="checkbox" class="btn-check" id="filter-tentpole" checked autocomplete="off">
+            <label class="step2-filter-pill step2-filter-pill-seasonal" for="filter-tentpole">
+              <i class="bi bi-balloon-heart"></i>
+              <span>Seasonal Tentpoles</span>
+            </label>
+          </div>
+          <div class="step2-inline-filter">
+            <label class="step2-filter-label" for="event-calendar-product-filter">Product Filter:</label>
+            <select id="event-calendar-product-filter" class="form-select form-select-sm">
+              <option value="all" selected>All Products</option>
+            </select>
+          </div>
+        </div>
+        <div id="event-timeline" class="step2-timeline-shell">
+          <!-- Timeline will be rendered here -->
+        </div>
+      </section>
+
+      <div class="step2-bottom-grid">
+        <section class="step2-card">
+          <div class="step2-card-header">
+            <div>
+              <div class="step2-panel-title"><span class="step2-panel-number">4</span>Guided Storylines &amp; Implications</div>
+              <div class="step2-panel-subtitle">Proven playbooks that translate signals into business action.</div>
+            </div>
+          </div>
+          <div id="event-storyline-examples"></div>
+        </section>
+
+        <section class="step2-card step2-analyst-card">
+          <div class="step2-card-header step2-card-header-split">
+            <div class="step2-panel-title"><span class="step2-panel-number">5</span>Event Analyst (AI)</div>
+            <span class="step2-llm-status" id="event-llm-status">Not Connected</span>
+          </div>
+          <div id="event-llm-selected" class="step2-analyst-selected">Select an event from the timeline to analyze impact and recommended pivot.</div>
+          <div id="event-llm-summary" class="step2-analyst-summary">The analyst panel will summarize the selected event and can run a deeper AI diagnosis when credentials are connected.</div>
+          <div class="step2-analyst-grid">
+            <div class="step2-analyst-column">
+              <div class="step2-analyst-column-title">Expected Impact</div>
+              <ul id="event-llm-impact" class="step2-analyst-list">
+                <li>Awaiting event selection.</li>
+              </ul>
+            </div>
+            <div class="step2-analyst-column">
+              <div class="step2-analyst-column-title">Recommended Pivot</div>
+              <ul id="event-llm-actions" class="step2-analyst-list">
+                <li>Awaiting event selection.</li>
+              </ul>
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline-primary btn-sm step2-analyst-button" id="event-llm-analyze-btn">Analyze Another Event</button>
+        </section>
+      </div>
+
+      <div class="step2-tip-row">
+        <i class="bi bi-lightbulb"></i>
+        <span>Tip: Use the signal snapshot and timeline together. If the price gap widens while buzz stays high, that is typically a selective defense trigger on mass channels rather than a portfolio-wide markdown.</span>
+      </div>
+
+      <div id="promo-drilldown-panel" style="display: none;"></div>
     </div>
   </div>
 

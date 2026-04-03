@@ -783,6 +783,304 @@ function formatSignedPointText(delta) {
   return `${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
 }
 
+function formatStep2Date(dateLike, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
+  const date = new Date(dateLike);
+  if (!Number.isFinite(date.getTime())) return 'N/A';
+  return date.toLocaleDateString('en-US', options);
+}
+
+function getStep2DriversRange() {
+  const endDate = startOfWeek(CALENDAR_TODAY) || new Date(CALENDAR_TODAY);
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - (51 * 7));
+  return { startDate, endDate };
+}
+
+function renderStep2DateRange() {
+  const pill = document.getElementById('step-2-range-pill');
+  if (!pill) return;
+  const textNode = pill.querySelector('span') || pill;
+  const { startDate, endDate } = getStep2DriversRange();
+  textNode.textContent = `Last 52 Weeks • ${formatStep2Date(startDate)} - ${formatStep2Date(endDate)}`;
+}
+
+function isProductGroupFilter(value) {
+  return value === 'Sunscreen' || value === 'Moisturizer';
+}
+
+function getCurrentStep2ProductFilter() {
+  return activeSkuPriceFilter && activeSkuPriceFilter !== 'all'
+    ? activeSkuPriceFilter
+    : (activeProductFilter || 'all');
+}
+
+function formatProductSelectionLabel(value) {
+  if (!value || value === 'all') return 'All Products';
+  if (isProductGroupFilter(value)) return value;
+  return getSkuName(value, value);
+}
+
+function rowMatchesProductSelection(row, selected = getCurrentStep2ProductFilter()) {
+  if (!selected || selected === 'all') return true;
+  if (isProductGroupFilter(selected)) {
+    return String(row?.product_group || '').trim().toLowerCase() === selected.toLowerCase();
+  }
+  return normalizeSkuId(row?.sku_id) === normalizeSkuId(selected);
+}
+
+function buildUnifiedStep2ProductOptions() {
+  const groups = new Set();
+  const skuOptions = new Map();
+  const addSku = (skuId, label, productGroup = '') => {
+    const normalized = normalizeSkuId(skuId);
+    if (!normalized) return;
+    const groupLabel = String(productGroup || '').trim().toLowerCase();
+    if (groupLabel === 'sunscreen') groups.add('Sunscreen');
+    if (groupLabel === 'moisturizer') groups.add('Moisturizer');
+    if (!skuOptions.has(normalized)) {
+      skuOptions.set(normalized, {
+        value: normalized,
+        label: `${normalized} - ${label || getSkuName(normalized, normalized)}`
+      });
+    }
+  };
+
+  (productCatalog || []).forEach(entry => {
+    addSku(entry.sku_id, entry.official_name || entry.short_name || entry.sku_id, entry.product_group);
+  });
+  (skuCatalog instanceof Map ? [...skuCatalog.values()] : []).forEach(entry => {
+    addSku(entry.sku_id, entry.sku_name || entry.sku_id, entry.product_group);
+  });
+  Object.values(promoMetadata || {}).forEach(promo => {
+    (promo.promoted_skus || []).forEach(skuId => addSku(skuId, getSkuName(skuId, skuId)));
+    (promo.sku_results || []).forEach(row => {
+      addSku(row.sku_id, row.sku_name || row.sku_id, row.sku_id?.startsWith('SUN') ? 'sunscreen' : row.sku_id?.startsWith('MOI') ? 'moisturizer' : '');
+    });
+  });
+
+  const options = [{ value: 'all', label: 'All Products' }];
+  ['Sunscreen', 'Moisturizer'].forEach(group => {
+    if (groups.has(group)) {
+      options.push({ value: group, label: group, isGroup: true });
+    }
+  });
+  return options.concat([...skuOptions.values()].sort((a, b) => a.label.localeCompare(b.label)));
+}
+
+function setSelectValueIfPresent(id, value) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const exists = [...select.options].some(option => option.value === value);
+  if (exists) {
+    select.value = value;
+  }
+}
+
+function syncStep2ProductSelection(value) {
+  const nextValue = value || 'all';
+  activeProductFilter = nextValue;
+  activeSkuPriceFilter = nextValue;
+  setSelectValueIfPresent('event-calendar-product-filter', nextValue);
+  setSelectValueIfPresent('sku-price-filter', nextValue);
+  renderMarketSignalsDashboardV2();
+  renderEventTimelineV2();
+}
+
+function promoMatchesActiveProductFilter(promo, selected = getCurrentStep2ProductFilter()) {
+  if (!promo || !selected || selected === 'all') return true;
+  const skuIds = [
+    ...(promo.promoted_skus || []),
+    ...(promo.sku_results || []).map(row => row.sku_id)
+  ].map(normalizeSkuId);
+  if (isProductGroupFilter(selected)) {
+    const prefix = selected === 'Sunscreen' ? 'SUN_' : 'MOI_';
+    return skuIds.some(skuId => skuId.startsWith(prefix));
+  }
+  return skuIds.includes(normalizeSkuId(selected));
+}
+
+function getEventDisplayConfig(event) {
+  switch (event?.event_type) {
+    case 'Competitor Price Change':
+      return { type: 'competitor', label: 'Competitor Cut', icon: 'bi-arrow-down-left', color: '#ef4444' };
+    case 'Social Spike':
+      return { type: 'social', label: 'Social Spike', icon: 'bi-megaphone', color: '#3b82f6' };
+    case 'Tentpole':
+      return { type: 'seasonal', label: 'Seasonal', icon: 'bi-balloon-heart', color: '#f59e0b' };
+    default:
+      return { type: 'promo', label: 'Promo', icon: 'bi-tag', color: '#8b5cf6' };
+  }
+}
+
+function getRecentVisibleEvent(events = []) {
+  const pastEvents = events
+    .filter(event => new Date(event.date) <= CALENDAR_TODAY)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (pastEvents.length) return pastEvents[0];
+  return [...events].sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null;
+}
+
+function buildTimelineHighlights(events = [], limit = 6) {
+  if (!Array.isArray(events) || !events.length) return [];
+  const selected = [];
+  const addEvent = event => {
+    if (!event) return;
+    if (selected.some(item => item.event_id === event.event_id)) return;
+    selected.push(event);
+  };
+  const nearestByType = predicate => [...events]
+    .filter(predicate)
+    .sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0];
+
+  addEvent(nearestByType(event => event.event_type === 'Competitor Price Change'));
+  addEvent(nearestByType(event => event.event_type === 'Promo Start'));
+  addEvent(nearestByType(event => event.event_type === 'Social Spike'));
+  addEvent(nearestByType(event => event.event_type === 'Tentpole'));
+
+  [...events]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .forEach(event => {
+      if (selected.length >= limit) return;
+      const eventTime = new Date(event.date).getTime();
+      const tooClose = selected.some(item => Math.abs(new Date(item.date).getTime() - eventTime) < (18 * DAY_MS));
+      if (!tooClose) addEvent(event);
+    });
+
+  return selected
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, limit);
+}
+
+function getEventMetricSnapshot(event) {
+  if (!event || !Array.isArray(productHistoryRows) || !productHistoryRows.length) return null;
+  const eventDate = new Date(event.date);
+  const productInfo = getEventProductInfo(event);
+  const weekKeys = extractSortedWeekKeys(productHistoryRows, 'week_start');
+  const resolvedWeek = resolveComparableWeekKey(eventDate, weekKeys);
+  const previousWeekKey = getPreviousAvailableWeekKey(resolvedWeek.weekKey, weekKeys);
+  const scope = buildEventScope(event, productInfo);
+  const currentSummary = finalizeScopedSummary(summarizeScopedRows(getScopedRowsForWeek(productHistoryRows, resolvedWeek.weekKey, scope)));
+  const previousSummary = finalizeScopedSummary(summarizeScopedRows(getScopedRowsForWeek(productHistoryRows, previousWeekKey, scope)));
+  const pctChange = (current, previous) => (Number.isFinite(current) && Number.isFinite(previous) && previous !== 0)
+    ? ((current - previous) / previous)
+    : null;
+  const promo = event.promo_id && promoMetadata ? promoMetadata[event.promo_id] : null;
+  return {
+    productInfo,
+    promo,
+    resolvedWeek,
+    currentSummary,
+    previousSummary,
+    unitsDelta: currentSummary.units - previousSummary.units,
+    revenueDelta: currentSummary.revenue - previousSummary.revenue,
+    ownPriceDeltaPct: pctChange(currentSummary.ownPrice, previousSummary.ownPrice),
+    competitorPriceDeltaPct: pctChange(currentSummary.competitorPrice, previousSummary.competitorPrice),
+    socialDelta: Number.isFinite(currentSummary.social) && Number.isFinite(previousSummary.social)
+      ? currentSummary.social - previousSummary.social
+      : null
+  };
+}
+
+function buildEventAnalystFallback(event) {
+  if (!event) {
+    return {
+      selectedHtml: 'Select an event from the timeline to analyze impact and recommended pivot.',
+      summary: 'The analyst panel summarizes the selected event using the same Step 2 storyline and weekly scope used elsewhere on this screen.',
+      impact: ['Awaiting event selection.'],
+      actions: ['Awaiting event selection.']
+    };
+  }
+
+  const metrics = getEventMetricSnapshot(event);
+  const productInfo = metrics?.productInfo || getEventProductInfo(event);
+  const promo = metrics?.promo || (event.promo_id && promoMetadata ? promoMetadata[event.promo_id] : null);
+  const channels = String(event.affected_channel || event.affected_cohort || 'all')
+    .split('|')
+    .map(channel => CHANNEL_LABELS[channel] || channel)
+    .filter(Boolean);
+  const channelLabel = channels.length ? channels.join(', ') : 'All channels';
+  const headline = buildEventHeadline(event, promo, productInfo);
+  const selectionMeta = `${formatStep2Date(event.date)} • ${channelLabel}`;
+  let summary = event.notes || 'Signal selected for analyst review.';
+  const impact = [];
+  const actions = [];
+
+  if (event.event_type === 'Competitor Price Change') {
+    summary = `Competitor pressure is active on ${channelLabel}. The right response is selective defense only where the gap widened and volume exposure is visible.`;
+    if (Number.isFinite(metrics?.competitorPriceDeltaPct)) {
+      impact.push(`Competitor benchmark moved ${formatSignedPercentText(metrics.competitorPriceDeltaPct)} versus the prior comparable week.`);
+    }
+    if (Number.isFinite(metrics?.unitsDelta)) {
+      impact.push(`Scoped unit change versus baseline: ${metrics.unitsDelta >= 0 ? '+' : ''}${formatNumber(metrics.unitsDelta, 0)} units.`);
+    }
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      impact.push(`Revenue swing versus baseline: ${formatSignedCurrency(metrics.revenueDelta)}.`);
+    }
+    actions.push(`Defend only the exposed SKUs in ${channelLabel}, not the full portfolio.`);
+    actions.push('Hold depth shallow where social pull remains positive.');
+  } else if (event.event_type === 'Social Spike') {
+    summary = `Demand is being supported by social momentum, which usually lowers elasticity and reduces the need for broad discounting.`;
+    if (Number.isFinite(metrics?.socialDelta)) {
+      impact.push(`Social signal moved ${formatSignedPointText(metrics.socialDelta)} versus the prior comparable week.`);
+    }
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      impact.push(`Revenue response in scope: ${formatSignedCurrency(metrics.revenueDelta)}.`);
+    }
+    actions.push('Use creator momentum to hold or trim discount depth.');
+    actions.push('Prioritize premium SPF where conversion remains healthy.');
+  } else if (event.event_type === 'Tentpole') {
+    summary = `${extractTentpoleHolidayName(event) || 'This seasonal window'} is a demand-shaping event. The implication is readiness, inventory coverage, and selective promo depth by channel.`;
+    if (Number.isFinite(metrics?.unitsDelta)) {
+      impact.push(`Scoped unit change versus baseline: ${metrics.unitsDelta >= 0 ? '+' : ''}${formatNumber(metrics.unitsDelta, 0)} units.`);
+    }
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      impact.push(`Revenue swing versus baseline: ${formatSignedCurrency(metrics.revenueDelta)}.`);
+    }
+    actions.push('Anchor inventory and promo readiness around the seasonal window.');
+    actions.push('Use channel-specific depth rather than portfolio-wide markdowns.');
+  } else {
+    summary = promo?.story_summary || event.notes || 'Promotion window selected for analyst review.';
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      impact.push(`Revenue swing versus baseline: ${formatSignedCurrency(metrics.revenueDelta)}.`);
+    }
+    if (Number.isFinite(promo?.actual_roi)) {
+      impact.push(`Campaign ROI: ${promo.actual_roi.toFixed(2)}x.`);
+    }
+    actions.push(`Keep the response focused on ${productInfo.label || 'the affected products'} only.`);
+    if (Number.isFinite(promo?.discount_pct)) {
+      actions.push(`Use ${promo.discount_pct.toFixed(0)}% as the current modeled discount reference point.`);
+    }
+  }
+
+  if (!impact.length && metrics?.resolvedWeek?.basis) {
+    impact.push(`Signals are based on ${metrics.resolvedWeek.basis.toLowerCase()}.`);
+  }
+  if (!actions.length) {
+    actions.push('Review this event alongside the timeline and signal snapshot before changing depth.');
+  }
+
+  return {
+    selectedHtml: `<strong>Top Event:</strong> ${headline}<div class="small text-muted mt-1">${selectionMeta}</div>`,
+    summary,
+    impact: impact.slice(0, 3),
+    actions: actions.slice(0, 3)
+  };
+}
+
+function renderEventAnalystSelection(event) {
+  const selectedEl = document.getElementById('event-llm-selected');
+  const summaryEl = document.getElementById('event-llm-summary');
+  const impactEl = document.getElementById('event-llm-impact');
+  const actionsEl = document.getElementById('event-llm-actions');
+  if (!selectedEl || !summaryEl || !impactEl || !actionsEl) return;
+
+  const fallback = buildEventAnalystFallback(event);
+  selectedEl.innerHTML = fallback.selectedHtml;
+  summaryEl.textContent = fallback.summary;
+  impactEl.innerHTML = fallback.impact.map(item => `<li>${item}</li>`).join('');
+  actionsEl.innerHTML = fallback.actions.map(item => `<li>${item}</li>`).join('');
+}
+
 /**
  * Extract a short holiday name from tentpole event notes or ID.
  */
@@ -993,11 +1291,12 @@ function getEventProductInfo(event) {
 function eventMatchesProductFilter(event) {
   if (activeProductFilter === 'all') return true;
   const info = getEventProductInfo(event);
+  const normalizedFilter = String(activeProductFilter || '').toLowerCase();
 
   // Filter by product group name
   if (activeProductFilter === 'Sunscreen' || activeProductFilter === 'Moisturizer') {
-    if (info.productGroup === activeProductFilter) return true;
-    return info.skus.some(s => s.product_group === activeProductFilter);
+    if (String(info.productGroup || '').toLowerCase() === normalizedFilter) return true;
+    return info.skus.some(s => String(s.product_group || '').toLowerCase() === normalizedFilter);
   }
 
   // Filter by specific SKU id (e.g. "SUN_S1")
@@ -1068,18 +1367,20 @@ export async function initializeEventCalendar() {
     productCatalogMap = buildProductCatalogMap(productCatalog);
     allEvents = augmentEvents(allEvents);
     hydrateSkuCatalog(skuWeeklyData || []);
+    window.renderEventAnalystSelection = renderEventAnalystSelection;
+    renderStep2DateRange();
 
     // Update event count badge
     updateEventCountBadge();
 
-    // Render all components
-    renderMarketSignalsDashboard();
-    renderEventTimeline();
-    renderValidationWindows();
-
     // Setup event listeners
-    setupEventFilters();
     initializeProductFilter();
+    setupEventFilters();
+
+    // Render all components
+    renderMarketSignalsDashboardV2();
+    renderEventTimelineV2();
+    renderValidationWindows();
 
     console.log('Event Calendar initialized successfully');
   } catch (error) {
@@ -1186,23 +1487,50 @@ function renderPromoMethodology() {
 /**
  * Update event count badge
  */
-function updateEventCountBadge() {
+function updateEventCountBadge(visibleCount = null) {
   const badge = document.getElementById('event-count-badge');
-  if (badge) {
-    const events = Array.isArray(allEvents) ? allEvents : [];
-    const counts = {
-      competitorPriceChange: events.filter(e => e.event_type === 'Competitor Price Change').length,
-      promo: events.filter(e => (e.event_type || '').includes('Promo') || e.event_type === 'Social Spike').length,
-      tentpole: events.filter(e => e.event_type === 'Tentpole').length
-    };
-    badge.textContent = `${events.length} Events (${counts.competitorPriceChange} Competitor Moves, ${counts.promo} Promos & Social, ${counts.tentpole} Tentpoles)`;
-  }
+  if (!badge) return;
+  const events = Array.isArray(allEvents) ? allEvents : [];
+  const total = Number.isFinite(visibleCount) ? visibleCount : events.length;
+  badge.textContent = `${total} visible signals`;
 }
 
 /**
  * Render Market Signals & Listening dashboard (competitive + social)
  * Uses direct weekly data only: market_signals.csv, social_signals.csv, sku_channel_weekly.csv.
  */
+function renderSignalSnapshot({ cards = [], feedItems = [] } = {}) {
+  const grid = document.getElementById('step2-snapshot-grid');
+  const feed = document.getElementById('step2-analysis-feed');
+  if (!grid || !feed) return;
+
+  grid.innerHTML = cards.length
+    ? cards.map(card => `
+      <article class="step2-snapshot-card-item" data-tone="${card.tone}">
+        <div class="step2-snapshot-label">
+          <i class="bi ${card.icon}"></i>
+          <span>${card.label}</span>
+        </div>
+        ${card.value ? `<div class="step2-snapshot-value ${card.valueClass || ''}">${card.value}</div>` : ''}
+        ${card.headline ? `<div class="step2-snapshot-headline">${card.headline}</div>` : ''}
+        ${card.subvalue ? `<div class="step2-snapshot-subvalue">${card.subvalue}</div>` : ''}
+        ${card.chip ? `<div class="step2-snapshot-chip" data-tone="${card.tone}">${card.chip}</div>` : ''}
+        ${card.footnote ? `<div class="step2-snapshot-footnote">${card.footnote}</div>` : ''}
+      </article>
+    `).join('')
+    : '<div class="step2-snapshot-loading">Signal snapshot is not available for the current filter selection.</div>';
+
+  feed.innerHTML = feedItems.map(item => `
+    <div class="step2-analysis-feed-item">
+      <div class="step2-analysis-feed-icon"><i class="bi ${item.icon}"></i></div>
+      <div>
+        <div class="step2-analysis-feed-label">${item.label}</div>
+        <div class="step2-analysis-feed-copy">${item.copy}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
 async function renderMarketSignalsDashboard() {
   const compContainer = document.getElementById('market-signals-competitive');
   const socialContainer = document.getElementById('market-signals-social');
@@ -1368,10 +1696,10 @@ async function renderMarketSignalsDashboard() {
           data: {
             labels: compLabels,
             datasets: [
-              { label: 'Supergoop Mass Price', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
-              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
-              { label: 'Supergoop Prestige Price', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
-              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
+              { label: 'Supergoop Mass Price', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
+              { label: 'Supergoop Prestige Price', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
             ]
           },
           options: {
@@ -1655,6 +1983,711 @@ async function renderMarketSignalsDashboard() {
   }
 }
 
+async function renderMarketSignalsDashboardV2() {
+  const compContainer = document.getElementById('market-signals-competitive');
+  const socialContainer = document.getElementById('market-signals-social');
+  const compCanvas = document.getElementById('event-competitive-signals-chart');
+  const socialCanvas = document.getElementById('event-social-signals-chart');
+  const gapCallout = document.getElementById('step2-current-gap-callout');
+  if (!compContainer || !socialContainer || !compCanvas || !socialCanvas) return;
+
+  try {
+    const [externalFactors, socialSignals, skuWeekly] = await Promise.all([
+      loadExternalFactors(),
+      loadSocialSignals(),
+      loadSkuWeeklyData()
+    ]);
+
+    if (!externalFactors?.length || !socialSignals?.length || !skuWeekly?.length) {
+      compContainer.textContent = 'Market signals not available.';
+      socialContainer.textContent = 'Social listening data not available.';
+      if (gapCallout) gapCallout.innerHTML = '';
+      renderSignalSnapshot();
+      return;
+    }
+
+    const toNum = value => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    };
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const socialModifier = scoreRaw => {
+      const score = toNum(scoreRaw);
+      if (!Number.isFinite(score)) return 1;
+      const normalized = score <= 1.5 && score >= -1.5 ? score * 100 : score;
+      const clipped = clamp(normalized, 35, 95);
+      return clamp(1.18 - ((clipped - 35) * 0.0075), 0.72, 1.26);
+    };
+    const normalizeSocialScore = (scoreRaw, sentimentRaw) =>
+      getEventSocialScore({ brand_social_index: scoreRaw, sentiment_score: sentimentRaw });
+
+    const selectedFilter = getCurrentStep2ProductFilter();
+    const selectionLabel = formatProductSelectionLabel(selectedFilter);
+    const filteredSkuWeekly = skuWeekly.filter(row => rowMatchesProductSelection(row, selectedFilter));
+    const { startDate, endDate } = getTimelineWindow();
+    const filteredEvents = filterEvents().filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate >= startDate && eventDate <= endDate;
+    });
+
+    const skuFilterContainer = document.getElementById('sku-price-filter-container');
+    if (skuFilterContainer) {
+      skuFilterContainer.innerHTML = `
+        <label for="sku-price-filter" class="form-label mb-0">Product/SKU:</label>
+        <select id="sku-price-filter" class="form-select form-select-sm">
+          ${buildUnifiedStep2ProductOptions().map(opt => `<option value="${opt.value}"${opt.value === selectedFilter ? ' selected' : ''}>${opt.label}</option>`).join('')}
+        </select>
+      `;
+      document.getElementById('sku-price-filter')?.addEventListener('change', event => {
+        syncStep2ProductSelection(event.target.value || 'all');
+      });
+    }
+
+    const compLegendContainer = document.getElementById('market-signals-competitive-legend');
+    if (compLegendContainer) {
+      compLegendContainer.innerHTML = `
+        <div class="ec-legend-item">
+          <span class="ec-legend-dot" style="background:#3b82f6; --legend-color:#3b82f6;"></span>
+          <span>Supergoop Mass Price</span>
+        </div>
+        <div class="ec-legend-item">
+          <span class="ec-legend-dot ec-legend-dot-dashed" style="background:#ef4444; --legend-color:#ef4444;"></span>
+          <span>Competitor Mass Price</span>
+        </div>
+        <div class="ec-legend-item">
+          <span class="ec-legend-dot" style="background:#10b981; --legend-color:#10b981;"></span>
+          <span>Supergoop Prestige Price</span>
+        </div>
+        <div class="ec-legend-item">
+          <span class="ec-legend-dot ec-legend-dot-dashed" style="background:#f59e0b; --legend-color:#f59e0b;"></span>
+          <span>Competitor Prestige Price</span>
+        </div>
+      `;
+    }
+
+    const competitiveByWeek = new Map();
+    filteredSkuWeekly.forEach(row => {
+      const week = row.week_start || row.date;
+      if (!week) return;
+      if (!competitiveByWeek.has(week)) {
+        competitiveByWeek.set(week, {
+          massOwnSum: 0,
+          massOwnCount: 0,
+          massCompSum: 0,
+          massCompCount: 0,
+          prestigeOwnSum: 0,
+          prestigeOwnCount: 0,
+          prestigeCompSum: 0,
+          prestigeCompCount: 0,
+          revenue: 0,
+          engagementSum: 0,
+          engagementCount: 0
+        });
+      }
+      const bucket = competitiveByWeek.get(week);
+      const ownPrice = toNum(row.effective_price);
+      const competitorPrice = toNum(row.competitor_price);
+      const engagement = toNum(row.social_engagement_score);
+      const channelGroup = String(row.channel_group || '').toLowerCase();
+
+      if (channelGroup === 'mass') {
+        if (Number.isFinite(ownPrice)) {
+          bucket.massOwnSum += ownPrice;
+          bucket.massOwnCount += 1;
+        }
+        if (Number.isFinite(competitorPrice)) {
+          bucket.massCompSum += competitorPrice;
+          bucket.massCompCount += 1;
+        }
+      } else if (channelGroup === 'prestige') {
+        if (Number.isFinite(ownPrice)) {
+          bucket.prestigeOwnSum += ownPrice;
+          bucket.prestigeOwnCount += 1;
+        }
+        if (Number.isFinite(competitorPrice)) {
+          bucket.prestigeCompSum += competitorPrice;
+          bucket.prestigeCompCount += 1;
+        }
+      }
+
+      if (Number.isFinite(engagement)) {
+        bucket.engagementSum += engagement;
+        bucket.engagementCount += 1;
+      }
+      bucket.revenue += toNum(row.revenue) || 0;
+    });
+
+    const externalByWeek = new Map(externalFactors.map(row => [row.week_start || row.date, row]));
+    const socialByWeek = new Map(socialSignals.map(row => [row.week_start || row.date, row]));
+    const weekKeys = [...competitiveByWeek.keys()].sort();
+    const compLabels = [];
+    const compWeeks = [];
+    const ourMassSeries = [];
+    const compMassSeries = [];
+    const ourPrestigeSeries = [];
+    const compPrestigeSeries = [];
+    const revenueSeries = [];
+    const engagementSeries = [];
+
+    weekKeys.forEach(week => {
+      const bucket = competitiveByWeek.get(week);
+      if (!bucket) return;
+      const ownMass = bucket.massOwnCount > 0 ? bucket.massOwnSum / bucket.massOwnCount : null;
+      const compMass = bucket.massCompCount > 0 ? bucket.massCompSum / bucket.massCompCount : null;
+      const ownPrestige = bucket.prestigeOwnCount > 0 ? bucket.prestigeOwnSum / bucket.prestigeOwnCount : null;
+      const compPrestige = bucket.prestigeCompCount > 0 ? bucket.prestigeCompSum / bucket.prestigeCompCount : null;
+      if (![ownMass, compMass, ownPrestige, compPrestige].some(Number.isFinite)) return;
+
+      compLabels.push(formatStep2Date(`${week}T00:00:00`, { month: 'short', day: 'numeric' }));
+      compWeeks.push(week);
+      ourMassSeries.push(Number.isFinite(ownMass) ? Number(ownMass.toFixed(2)) : null);
+      compMassSeries.push(Number.isFinite(compMass) ? Number(compMass.toFixed(2)) : null);
+      ourPrestigeSeries.push(Number.isFinite(ownPrestige) ? Number(ownPrestige.toFixed(2)) : null);
+      compPrestigeSeries.push(Number.isFinite(compPrestige) ? Number(compPrestige.toFixed(2)) : null);
+      revenueSeries.push(Number((bucket.revenue || 0).toFixed(0)));
+      engagementSeries.push(bucket.engagementCount > 0 ? Number((bucket.engagementSum / bucket.engagementCount).toFixed(1)) : null);
+    });
+
+    const findLastFinitePair = (left, right) => {
+      for (let index = Math.min(left.length, right.length) - 1; index >= 0; index -= 1) {
+        if (Number.isFinite(left[index]) && Number.isFinite(right[index])) return index;
+      }
+      return -1;
+    };
+
+    if (compLabels.length) {
+      if (eventCompetitiveSignalsChart) {
+        eventCompetitiveSignalsChart.data.labels = compLabels;
+        eventCompetitiveSignalsChart.data.datasets[0].data = ourMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[1].data = compMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[2].data = ourPrestigeSeries;
+        eventCompetitiveSignalsChart.data.datasets[3].data = compPrestigeSeries;
+        eventCompetitiveSignalsChart.options.layout = { padding: { top: 4, right: 160, bottom: 0, left: 0 } };
+        eventCompetitiveSignalsChart.update();
+      } else if (window.Chart) {
+        const compIsDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const compGridColor = compIsDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.07)';
+        const compTextColor = compIsDark ? 'rgba(226,232,240,0.7)' : '#64748b';
+        eventCompetitiveSignalsChart = new Chart(compCanvas, {
+          type: 'line',
+          data: {
+            labels: compLabels,
+            datasets: [
+              { label: 'Supergoop Mass Price', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
+              { label: 'Supergoop Prestige Price', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.3, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', tension: 0.3, fill: true, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: compIsDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                titleColor: compIsDark ? '#e2e8f0' : '#1e293b',
+                bodyColor: compIsDark ? '#94a3b8' : '#64748b',
+                borderColor: compIsDark ? 'rgba(148,163,184,0.15)' : 'rgba(15,23,42,0.1)',
+                borderWidth: 1,
+                padding: 12,
+                callbacks: {
+                  label: ctx => Number.isFinite(ctx.parsed.y) ? `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}` : `${ctx.dataset.label}: N/A`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: compGridColor, drawBorder: false },
+                ticks: { color: compTextColor, font: { size: 10 }, maxRotation: 0 }
+              },
+              y: {
+                grid: { color: compGridColor, drawBorder: false },
+                ticks: { color: compTextColor, font: { size: 10 }, callback: value => `$${value}` },
+                title: { display: true, text: 'Avg Price ($)', color: compTextColor, font: { size: 11, weight: '600' } }
+              }
+            }
+          },
+          layout: { padding: { top: 4, right: 160, bottom: 0, left: 0 } }
+        });
+      }
+
+      const latestMassIdx = findLastFinitePair(ourMassSeries, compMassSeries);
+      const latestPrestigeIdx = findLastFinitePair(ourPrestigeSeries, compPrestigeSeries);
+      const prevMassIdx = latestMassIdx > 0 ? findLastFinitePair(ourMassSeries.slice(0, latestMassIdx), compMassSeries.slice(0, latestMassIdx)) : -1;
+      const prevPrestigeIdx = latestPrestigeIdx > 0 ? findLastFinitePair(ourPrestigeSeries.slice(0, latestPrestigeIdx), compPrestigeSeries.slice(0, latestPrestigeIdx)) : -1;
+      const calcGapPct = (ownSeries, compSeries, idx) => idx >= 0 && compSeries[idx] > 0
+        ? ((ownSeries[idx] - compSeries[idx]) / compSeries[idx]) * 100
+        : null;
+      const massDeltaPct = calcGapPct(ourMassSeries, compMassSeries, latestMassIdx);
+      const prestigeDeltaPct = calcGapPct(ourPrestigeSeries, compPrestigeSeries, latestPrestigeIdx);
+      const prevMassGapPct = calcGapPct(ourMassSeries, compMassSeries, prevMassIdx);
+      const prevPrestigeGapPct = calcGapPct(ourPrestigeSeries, compPrestigeSeries, prevPrestigeIdx);
+      const averageGap = (ownSeries, compSeries) => {
+        const gaps = ownSeries
+          .map((value, index) => (Number.isFinite(value) && Number.isFinite(compSeries[index]) ? value - compSeries[index] : null))
+          .filter(Number.isFinite);
+        return gaps.length ? gaps.reduce((sum, value) => sum + value, 0) / gaps.length : null;
+      };
+
+      const massAvgGapValue = averageGap(ourMassSeries, compMassSeries);
+      const prestigeAvgGapValue = averageGap(ourPrestigeSeries, compPrestigeSeries);
+      const dominantGap = [
+        { tier: 'Mass', pct: massDeltaPct, absolute: latestMassIdx >= 0 ? ourMassSeries[latestMassIdx] - compMassSeries[latestMassIdx] : null, previousPct: prevMassGapPct },
+        { tier: 'Prestige', pct: prestigeDeltaPct, absolute: latestPrestigeIdx >= 0 ? ourPrestigeSeries[latestPrestigeIdx] - compPrestigeSeries[latestPrestigeIdx] : null, previousPct: prevPrestigeGapPct }
+      ]
+        .filter(item => Number.isFinite(item.pct))
+        .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))[0] || null;
+      const dominantGapChange = dominantGap && Number.isFinite(dominantGap.previousPct)
+        ? dominantGap.pct - dominantGap.previousPct
+        : null;
+
+      const latestWeek = compWeeks[compWeeks.length - 1];
+      const latestRevenue = revenueSeries[revenueSeries.length - 1] || 0;
+      const latestEngagement = engagementSeries[engagementSeries.length - 1];
+      const latestExternal = externalByWeek.get(latestWeek) || {};
+      const latestSocialRow = socialByWeek.get(latestWeek) || socialSignals[socialSignals.length - 1] || {};
+      const totalMentions = toNum(latestSocialRow.total_social_mentions) || 0;
+      const promoEventsInWindow = filteredEvents.filter(event => String(event.event_type || '').includes('Promo')).length;
+      const recentPromos = filteredEvents.filter(event => {
+        const distance = Math.abs(new Date(event.date) - CALENDAR_TODAY);
+        return distance <= (56 * DAY_MS)
+          && (event.event_type === 'Promo Start' || event.event_type === 'Social Spike' || event.event_type === 'Competitor Price Change');
+      }).length;
+      const promoClutterIndex = toNum(latestExternal.promo_clutter_index) || 0;
+      const promoIntensity = recentPromos >= 6 || promoClutterIndex >= 0.3 ? 'High' : recentPromos >= 3 || promoClutterIndex >= 0.22 ? 'Moderate' : 'Low';
+      const currentEvent = getPriorityCurrentEvent(filteredEvents);
+      const currentEventConfig = getEventDisplayConfig(currentEvent);
+      const latestCompetitorEvent = [...filteredEvents]
+        .filter(event => event.event_type === 'Competitor Price Change')
+        .sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0] || null;
+      const latestWeekRows = filteredSkuWeekly.filter(row => (row.week_start || row.date) === latestWeek);
+      const demandLeader = [...latestWeekRows]
+        .filter(row => Number.isFinite(toNum(row.social_engagement_score)))
+        .sort((a, b) => {
+          const scoreDiff = (toNum(b.social_engagement_score) || 0) - (toNum(a.social_engagement_score) || 0);
+          if (scoreDiff !== 0) return scoreDiff;
+          return (toNum(b.net_units_sold) || 0) - (toNum(a.net_units_sold) || 0);
+        })[0] || null;
+
+      if (gapCallout) {
+        gapCallout.innerHTML = `
+          <div class="step2-current-gap-title">Current Gap</div>
+          <div class="step2-current-gap-week">${formatStep2Date(`${latestWeek}T00:00:00`, { month: 'short', day: 'numeric' })}</div>
+          <div class="step2-current-gap-stack">
+            <div class="step2-current-gap-stat">
+              <span class="step2-current-gap-stat-label" data-tone="mass">Mass</span>
+              <strong class="step2-current-gap-stat-value">${Number.isFinite(massDeltaPct) ? `${massDeltaPct >= 0 ? '+' : ''}${massDeltaPct.toFixed(1)}%` : 'N/A'}</strong>
+              <span class="step2-current-gap-stat-copy">${latestMassIdx >= 0 ? `${formatSignedCurrency(ourMassSeries[latestMassIdx] - compMassSeries[latestMassIdx])} vs competitor` : selectionLabel}</span>
+            </div>
+            <div class="step2-current-gap-stat">
+              <span class="step2-current-gap-stat-label" data-tone="prestige">Prestige</span>
+              <strong class="step2-current-gap-stat-value">${Number.isFinite(prestigeDeltaPct) ? `${prestigeDeltaPct >= 0 ? '+' : ''}${prestigeDeltaPct.toFixed(1)}%` : 'N/A'}</strong>
+              <span class="step2-current-gap-stat-copy">${latestPrestigeIdx >= 0 ? `${formatSignedCurrency(ourPrestigeSeries[latestPrestigeIdx] - compPrestigeSeries[latestPrestigeIdx])} vs competitor` : selectionLabel}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const competitorMoveText = latestCompetitorEvent ? formatStep2Date(latestCompetitorEvent.date) : 'No direct competitor move';
+      const competitorMoveCopy = latestCompetitorEvent && Number.isFinite(toNum(latestCompetitorEvent.price_before)) && Number.isFinite(toNum(latestCompetitorEvent.price_after))
+        ? `${formatEventChannelLabel(latestCompetitorEvent.affected_channel)} moved from ${formatCurrency(toNum(latestCompetitorEvent.price_before))} to ${formatCurrency(toNum(latestCompetitorEvent.price_after))}.`
+        : (latestCompetitorEvent?.notes || 'Competitive pricing is currently stable.');
+
+      compContainer.innerHTML = `
+        <div class="ec-signal-grid">
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">Latest Competitor Move</div>
+            <div class="ec-signal-card-value ${dominantGap && dominantGap.pct >= 1 ? 'text-danger' : 'text-success'}">
+              ${dominantGap ? `${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}%` : 'N/A'}
+            </div>
+            <div class="ec-signal-card-sub">${competitorMoveText}</div>
+            <div class="ec-signal-card-meta">${competitorMoveCopy}</div>
+          </div>
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">${compWeeks.length}-Week Seasonal Avg Gap</div>
+            <div class="ec-signal-card-stack">
+              <div class="ec-signal-card-line">
+                <span>Mass</span>
+                <strong class="${Number.isFinite(massAvgGapValue) && massAvgGapValue >= 0 ? 'text-danger' : 'text-success'}">${Number.isFinite(massAvgGapValue) ? formatSignedCurrency(massAvgGapValue) : 'N/A'}</strong>
+              </div>
+              <div class="ec-signal-card-line">
+                <span>Prestige</span>
+                <strong class="${Number.isFinite(prestigeAvgGapValue) && prestigeAvgGapValue >= 0 ? 'text-danger' : 'text-success'}">${Number.isFinite(prestigeAvgGapValue) ? formatSignedCurrency(prestigeAvgGapValue) : 'N/A'}</strong>
+              </div>
+            </div>
+            <div class="ec-signal-card-meta">${selectionLabel} pricing is typically above competitor in both tiers.</div>
+          </div>
+        </div>
+      `;
+
+      const currentEventProductInfo = currentEvent ? getEventProductInfo(currentEvent) : null;
+      const currentEventPromo = currentEvent?.promo_id ? promoMetadata[currentEvent.promo_id] : null;
+      const currentEventSubvalue = !currentEvent
+        ? 'No event selected'
+        : currentEvent.event_type === 'Competitor Price Change' && Number.isFinite(toNum(currentEvent.price_after))
+          ? `${formatEventChannelLabel(currentEvent.affected_channel)} cut to ${formatCurrency(toNum(currentEvent.price_after))}`
+          : currentEvent.event_type === 'Social Spike'
+            ? `${currentEventProductInfo?.productGroup || selectionLabel} buzz is carrying conversion`
+            : currentEvent.event_type === 'Tentpole'
+              ? `${extractTentpoleHolidayName(currentEvent) || 'Seasonal demand window'} is inside the planning view`
+              : `${currentEventPromo?.campaign_name || 'Promo window'} is active in ${formatEventChannelLabel(currentEvent.affected_channel)}`;
+      const currentEventFootnote = !currentEvent
+        ? selectionLabel
+        : currentEvent.event_type === 'Competitor Price Change'
+          ? `Recommended pivot: defend exposed ${currentEventProductInfo?.label || selectionLabel} only.`
+          : currentEvent.event_type === 'Social Spike'
+            ? 'Recommended pivot: protect margin while creator demand stays supportive.'
+            : currentEvent.event_type === 'Tentpole'
+              ? 'Recommended pivot: align inventory and selective depth by channel.'
+              : 'Recommended pivot: keep the offer narrow to the responsive products and channels.';
+
+      renderSignalSnapshot({
+        cards: [
+          {
+            tone: 'pricing',
+            icon: 'bi-tag',
+            label: 'Pricing Pressure',
+            value: dominantGap ? `${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}%` : 'N/A',
+            valueClass: dominantGap && dominantGap.pct >= 1 ? 'is-negative' : dominantGap && dominantGap.pct <= -1 ? 'is-positive' : 'is-neutral',
+            subvalue: dominantGap ? `vs competitor (${dominantGap.tier})` : selectionLabel,
+            chip: Number.isFinite(dominantGapChange) ? (dominantGapChange > 0.3 ? 'Gap Widening' : dominantGapChange < -0.3 ? 'Gap Compressing' : 'Gap Stable') : 'Gap Stable',
+            footnote: dominantGap && dominantGap.pct >= 1 ? 'Risk to margin and volume' : 'Pricing position remains manageable'
+          },
+          {
+            tone: 'demand',
+            icon: 'bi-chat-square-heart',
+            label: 'Demand Momentum',
+            headline: Number.isFinite(latestEngagement) && latestEngagement >= 72 ? 'High' : Number.isFinite(latestEngagement) && latestEngagement >= 63 ? 'Solid' : 'Mixed',
+            subvalue: Number.isFinite(latestEngagement) ? `${selectionLabel} engagement ${latestEngagement.toFixed(1)}` : 'Demand trend not available',
+            chip: demandLeader ? 'Demand Leader' : 'Demand Steady',
+            footnote: demandLeader ? `Led by ${getSkuName(demandLeader.sku_id)} in ${CHANNEL_LABELS[demandLeader.sales_channel] || demandLeader.sales_channel}` : `Watching ${selectionLabel}`
+          },
+          {
+            tone: 'promo',
+            icon: 'bi-tags',
+            label: 'Promo Intensity',
+            headline: promoIntensity,
+            subvalue: `${promoEventsInWindow} promo starts in the last 52 weeks`,
+            chip: promoIntensity === 'High' ? 'Tight Market' : promoIntensity === 'Moderate' ? 'Room to Optimize' : 'Promo Light',
+            footnote: `Promo clutter index ${promoClutterIndex.toFixed(3)}`
+          },
+          {
+            tone: 'event',
+            icon: currentEventConfig.icon,
+            label: 'Recent Market Event',
+            headline: currentEvent?.event_type === 'Competitor Price Change' ? 'Competitor active' : currentEvent?.event_type === 'Social Spike' ? 'Buzz rising' : currentEvent?.event_type === 'Tentpole' ? 'Seasonal window' : 'Promo in flight',
+            subvalue: currentEventSubvalue,
+            chip: currentEvent?.event_type === 'Competitor Price Change' ? 'Action Recommended' : currentEvent ? 'Monitor Closely' : 'No Trigger',
+            footnote: currentEventFootnote
+          }
+        ],
+        feedItems: [
+          {
+            icon: 'bi-distribute-horizontal',
+            label: 'Pricing Data',
+            copy: dominantGap ? `${selectionLabel} gap is ${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}% versus competitor.` : `Monitoring ${selectionLabel} price position.`
+          },
+          {
+            icon: 'bi-calendar3-event',
+            label: 'Event Data',
+            copy: `${filteredEvents.length} visible signals are shaping the current Step 2 view.`
+          },
+          {
+            icon: 'bi-megaphone',
+            label: 'Marketing/Social Data',
+            copy: `Brand buzz is at ${formatNumber(totalMentions)} mentions and blended with ${selectionLabel.toLowerCase()} engagement.`
+          },
+          {
+            icon: 'bi-bar-chart',
+            label: 'Sales Performance Data',
+            copy: `Latest scoped weekly revenue is ${formatCurrency(latestRevenue)} with engagement at ${Number.isFinite(latestEngagement) ? latestEngagement.toFixed(1) : 'N/A'}.`
+          }
+        ]
+      });
+
+    } else {
+      compContainer.textContent = 'Insufficient competitive price history for chart rendering.';
+      renderSignalSnapshot();
+    }
+
+    const socialLabels = [];
+    const socialScoreSeries = [];
+    const socialElasticitySeries = [];
+    const socialWeekKeys = [...socialByWeek.keys()].sort();
+    socialWeekKeys.forEach(week => {
+      const row = socialByWeek.get(week);
+      if (!row) return;
+      const score = normalizeSocialScore(row.brand_social_index ?? row.social_sentiment, row.sentiment_score);
+      if (!Number.isFinite(score)) return;
+      socialLabels.push(formatStep2Date(`${week}T00:00:00`, { month: 'short', day: 'numeric' }));
+      socialScoreSeries.push(Number(score.toFixed(2)));
+      socialElasticitySeries.push(Number(socialModifier(score).toFixed(3)));
+    });
+
+    if (socialLabels.length) {
+      if (eventSocialSignalsChart) {
+        eventSocialSignalsChart.data.labels = socialLabels;
+        eventSocialSignalsChart.data.datasets[0].data = socialScoreSeries;
+        eventSocialSignalsChart.data.datasets[1].data = socialElasticitySeries;
+        eventSocialSignalsChart.update();
+      } else if (window.Chart) {
+        const socIsDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const socGridColor = socIsDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.07)';
+        const socTextColor = socIsDark ? 'rgba(226,232,240,0.7)' : '#64748b';
+        eventSocialSignalsChart = new Chart(socialCanvas, {
+          type: 'line',
+          data: {
+            labels: socialLabels,
+            datasets: [
+              {
+                label: 'Social Sentiment',
+                data: socialScoreSeries,
+                borderColor: '#0ea5e9',
+                backgroundColor: socIsDark ? 'rgba(14,165,233,0.12)' : 'rgba(14,165,233,0.08)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: '#0ea5e9',
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#0ea5e9',
+                yAxisID: 'y'
+              },
+              {
+                label: 'Elasticity Modifier',
+                data: socialElasticitySeries,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0.35,
+                borderWidth: 2,
+                borderDash: [6, 4],
+                pointRadius: 2.5,
+                pointBackgroundColor: '#8b5cf6',
+                pointHoverRadius: 5,
+                yAxisID: 'y1'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: socTextColor, font: { size: 11, weight: '500' }, boxWidth: 14, padding: 16, usePointStyle: true, pointStyle: 'circle' }
+              },
+              tooltip: {
+                backgroundColor: socIsDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.97)',
+                titleColor: socIsDark ? '#e2e8f0' : '#1e293b',
+                bodyColor: socIsDark ? '#94a3b8' : '#64748b',
+                borderColor: socIsDark ? 'rgba(148,163,184,0.15)' : 'rgba(15,23,42,0.1)',
+                borderWidth: 1,
+                padding: 12,
+                callbacks: {
+                  label: ctx => ctx.datasetIndex === 0
+                    ? `Social Sentiment: ${ctx.parsed.y.toFixed(1)}`
+                    : `Elasticity Mod: ${ctx.parsed.y.toFixed(3)}x`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: socGridColor, drawBorder: false },
+                ticks: { color: socTextColor, font: { size: 10 }, maxRotation: 0 }
+              },
+              y: {
+                min: -100,
+                max: 100,
+                grid: { color: socGridColor, drawBorder: false },
+                ticks: { color: socTextColor, font: { size: 10 }, stepSize: 25 },
+                title: { display: true, text: 'Social Sentiment (-100 to +100)', color: '#0ea5e9', font: { size: 11, weight: '600' } }
+              },
+              y1: {
+                position: 'right',
+                grid: { drawOnChartArea: false },
+                ticks: { color: socTextColor, font: { size: 10 }, callback: value => `${value}x` },
+                title: { display: true, text: 'Elasticity Modifier', color: '#8b5cf6', font: { size: 11, weight: '600' } }
+              }
+            }
+          }
+        });
+      }
+
+      const latestSocialIdx = socialScoreSeries.length - 1;
+      const prevSocialIdx = Math.max(latestSocialIdx - 1, 0);
+      const socialScoreWoW = socialScoreSeries[latestSocialIdx] - socialScoreSeries[prevSocialIdx];
+      const elasticityWoW = socialElasticitySeries[latestSocialIdx] - socialElasticitySeries[prevSocialIdx];
+      const latestRow = socialByWeek.get(socialWeekKeys[socialWeekKeys.length - 1]) || {};
+      const totalMentions = toNum(latestRow.total_social_mentions) || 0;
+      const tiktokMentions = toNum(latestRow.tiktok_mentions) || 0;
+      const instagramMentions = toNum(latestRow.instagram_mentions) || 0;
+      const tiktokPct = totalMentions > 0 ? ((tiktokMentions / totalMentions) * 100).toFixed(0) : '0';
+      const instaPct = totalMentions > 0 ? ((instagramMentions / totalMentions) * 100).toFixed(0) : '0';
+      const peakScore = Math.max(...socialScoreSeries);
+      const troughScore = Math.min(...socialScoreSeries);
+
+      socialContainer.innerHTML = `
+        <div class="d-flex flex-wrap gap-3 mt-2">
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">Social Sentiment</div>
+            <div class="ec-signal-card-value ${socialScoreWoW >= 2 ? 'text-success' : socialScoreWoW <= -2 ? 'text-danger' : ''}">${formatSignedScoreText(socialScoreSeries[latestSocialIdx])}</div>
+            <div class="ec-signal-card-sub">${formatSignedPointText(socialScoreWoW)} WoW</div>
+          </div>
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">Elasticity Modifier</div>
+            <div class="ec-signal-card-value ${elasticityWoW < -0.01 ? 'text-success' : elasticityWoW > 0.01 ? 'text-danger' : ''}">${socialElasticitySeries[latestSocialIdx]?.toFixed(3) || 'N/A'}x</div>
+            <div class="ec-signal-card-sub">${elasticityWoW >= 0 ? '+' : ''}${elasticityWoW.toFixed(3)} WoW</div>
+          </div>
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">Total Mentions</div>
+            <div class="ec-signal-card-value">${formatNumber(totalMentions)}</div>
+            <div class="ec-signal-card-sub">TikTok ${tiktokPct}% · Insta ${instaPct}%</div>
+          </div>
+          <div class="ec-signal-card">
+            <div class="ec-signal-card-label">Season Range</div>
+            <div class="ec-signal-card-value">${troughScore.toFixed(0)} to ${peakScore.toFixed(0)}</div>
+            <div class="ec-signal-card-sub">Peak ${peakScore.toFixed(1)} · Low ${troughScore.toFixed(1)}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      socialContainer.textContent = 'Insufficient social history for chart rendering.';
+    }
+  } catch (error) {
+    console.error('Error rendering Market Signals dashboard:', error);
+    compContainer.textContent = 'Error loading market signals.';
+    socialContainer.textContent = 'Error loading social listening data.';
+    renderSignalSnapshot();
+  }
+}
+
+function renderEventTimelineV2() {
+  const container = document.getElementById('event-timeline');
+  if (!container) return;
+
+  const { startDate, endDate } = getTimelineWindow();
+  const filteredEvents = filterEvents().filter(event => {
+    const eventDate = new Date(event.date);
+    return eventDate >= startDate && eventDate <= endDate;
+  });
+
+  updateEventCountBadge(filteredEvents.length);
+  renderStep2DateRange();
+
+  if (!filteredEvents.length) {
+    container.innerHTML = '<div class="step2-timeline-frame text-center text-muted">No events match the current filters.</div>';
+    renderGuidedStorylineExamplesV2([]);
+    renderEventAnalystSelection(null);
+    return;
+  }
+
+  const totalDays = Math.max(1, Math.floor((endDate - startDate) / DAY_MS));
+  const todayPosition = Math.max(0, Math.min(100, ((CALENDAR_TODAY - startDate) / DAY_MS / totalDays) * 100));
+  const monthMarkers = buildTimelineMonthMarkers(startDate, endDate);
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  const yearSpan = Math.max(1, endYear - startYear);
+  const highlightEvents = buildTimelineHighlights(filteredEvents, 6);
+
+  let html = `
+    <div class="step2-timeline-frame">
+      <div class="step2-timeline-legend">
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#ef4444;"></span>Competitor Price Cut</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#8b5cf6;"></span>Promo</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#3b82f6;"></span>Social Spike</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#f59e0b;"></span>Seasonal</span>
+      </div>
+      <div class="step2-timeline-meta">
+        <div><i class="bi bi-clock-history me-1"></i>History: Last 12 Months</div>
+        <div class="step2-timeline-meta-center">Today: ${formatStep2Date(CALENDAR_TODAY)}</div>
+        <div class="text-md-end"><i class="bi bi-calendar2-week me-1"></i>Future: Next 12 Months</div>
+      </div>
+      <div class="step2-timeline-ruler">
+        <div class="step2-timeline-year-row">
+  `;
+
+  for (let i = 0; i <= yearSpan; i += 1) {
+    const year = startYear + i;
+    const position = (i / yearSpan) * 100;
+    html += `<div class="step2-timeline-year" style="left:${position}%;">${year}</div>`;
+  }
+
+  html += `
+        </div>
+        <div class="step2-timeline-month-row">
+          ${monthMarkers.map(marker => `<div class="step2-timeline-month" style="left:${marker.position}%;">${marker.label}</div>`).join('')}
+        </div>
+        <div class="step2-timeline-track">
+          ${monthMarkers.map(marker => `<div class="step2-timeline-guide${marker.isMajor ? ' is-major' : ''}" style="left:${marker.position}%;"></div>`).join('')}
+          <div class="step2-timeline-today" style="left:${todayPosition}%;"><span>Today</span></div>
+          ${filteredEvents.map(event => {
+            const eventDate = new Date(event.date);
+            const position = ((eventDate - startDate) / DAY_MS / totalDays) * 100;
+            const config = getEventDisplayConfig(event);
+            return `<button type="button" class="step2-timeline-dot" data-event-id="${event.event_id}" data-type="${config.type}" style="left:${position}%;"></button>`;
+          }).join('')}
+        </div>
+  `;
+
+  const laneEnds = [-100, -100];
+  html += '<div class="step2-timeline-highlight-row">';
+  highlightEvents.forEach(event => {
+    const eventDate = new Date(event.date);
+    const position = ((eventDate - startDate) / DAY_MS / totalDays) * 100;
+    const config = getEventDisplayConfig(event);
+    const laneIndex = laneEnds[0] + 16 <= position ? 0 : laneEnds[1] + 16 <= position ? 1 : 0;
+    laneEnds[laneIndex] = position;
+    const top = laneIndex * 58;
+    const title = event.event_type === 'Tentpole'
+      ? (extractTentpoleHolidayName(event) || 'Seasonal Window')
+      : event.event_type === 'Competitor Price Change'
+        ? 'Competitor Cut'
+        : event.event_type === 'Social Spike'
+          ? 'Social Spike'
+          : 'Promo Start';
+    const copy = (event.notes || buildEventHeadline(event, event.promo_id ? promoMetadata[event.promo_id] : null, getEventProductInfo(event)))
+      .replace(/\.$/, '')
+      .slice(0, 60);
+    html += `
+      <button type="button" class="step2-timeline-highlight" data-event-id="${event.event_id}" data-type="${config.type}" style="left:${position}%; top:${top}px;">
+        <span class="step2-timeline-chip">${formatStep2Date(event.date, { month: 'short', day: 'numeric' })}</span>
+        <div class="step2-timeline-highlight-title">${title}</div>
+        <div class="step2-timeline-highlight-copy">${copy}</div>
+      </button>
+    `;
+  });
+  html += '</div></div></div>';
+
+  container.innerHTML = html;
+
+  const selectEvent = eventId => {
+    const selectedEvent = filteredEvents.find(event => event.event_id === eventId);
+    if (!selectedEvent) return;
+    container.querySelectorAll('[data-event-id]').forEach(node => {
+      node.classList.toggle('is-selected', node.dataset.eventId === eventId);
+    });
+    renderEventAnalystSelection(selectedEvent);
+    if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+      window.onEventCalendarEventSelected(selectedEvent);
+    }
+  };
+
+  container.querySelectorAll('.step2-timeline-dot, .step2-timeline-highlight').forEach(node => {
+    node.addEventListener('click', () => selectEvent(node.dataset.eventId));
+  });
+
+  const defaultEvent = getRecentVisibleEvent(filteredEvents) || highlightEvents[0];
+  if (defaultEvent) {
+    selectEvent(defaultEvent.event_id);
+  }
+
+  renderGuidedStorylineExamplesV2(filteredEvents);
+}
+
 /**
  * Render event timeline visualization
  */
@@ -1826,6 +2859,141 @@ function buildPromoStoryMetrics(promo) {
     bestChannel: bestChannel ? (CHANNEL_LABELS[bestChannel[0]] || bestChannel[0]) : null,
     bestChannelLift: bestChannel ? safeNumber(bestChannel[1]?.sales_uplift_pct, null) : null
   };
+}
+
+function renderGuidedStorylineExamplesV2(filteredEvents = []) {
+  const container = document.getElementById('event-storyline-examples');
+  if (!container) return;
+
+  const visibleEvents = Array.isArray(filteredEvents) ? filteredEvents : [];
+  const visiblePromos = Object.values(promoMetadata || {})
+    .filter(promo => promoMatchesActiveProductFilter(promo))
+    .map(promo => ({ promo, metrics: buildPromoStoryMetrics(promo) }));
+
+  if (!visibleEvents.length && !visiblePromos.length) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+
+  const nearestEvent = predicate => [...visibleEvents]
+    .filter(predicate)
+    .sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0];
+  const rankPromos = list => list.sort((a, b) => {
+    const revenueDiff = safeNumber(b.metrics.revenue, 0) - safeNumber(a.metrics.revenue, 0);
+    if (revenueDiff !== 0) return revenueDiff;
+    return safeNumber(b.metrics.roi, 0) - safeNumber(a.metrics.roi, 0);
+  });
+
+  const competitorEvent = nearestEvent(event => event.event_type === 'Competitor Price Change');
+  const socialEvent = nearestEvent(event => event.event_type === 'Social Spike');
+  const seasonalEvent = nearestEvent(event => event.event_type === 'Tentpole');
+  const usedPromoIds = new Set();
+
+  const pickPromo = candidates => {
+    const match = candidates.find(item => !usedPromoIds.has(item.promo.promo_id));
+    if (match) usedPromoIds.add(match.promo.promo_id);
+    return match || null;
+  };
+
+  const competitorPromo = pickPromo(rankPromos(visiblePromos.filter(({ promo }) =>
+    (promo.eligible_channels || []).some(channel => ['target', 'amazon'].includes(String(channel).toLowerCase()))
+  )));
+  const socialPromo = pickPromo(rankPromos(visiblePromos.filter(({ promo, metrics }) =>
+    safeNumber(promo.discount_pct, 99) <= 8 && safeNumber(metrics.roi, 0) >= 1.5
+  )));
+  const selectivePromo = pickPromo(rankPromos(visiblePromos.filter(({ promo }) =>
+    (promo.eligible_channels || []).some(channel => ['sephora', 'ulta'].includes(String(channel).toLowerCase()))
+  )));
+  const cautionPromo = pickPromo([...visiblePromos].sort((a, b) => {
+    const downDiff = (b.metrics.downCount || 0) - (a.metrics.downCount || 0);
+    if (downDiff !== 0) return downDiff;
+    return safeNumber(a.metrics.roi, 99) - safeNumber(b.metrics.roi, 99);
+  }));
+
+  const stories = [
+    {
+      tone: 'competitor',
+      badge: 'Competitor Move',
+      title: 'Defend only where the competitor cuts price',
+      copy: competitorPromo
+        ? `${competitorPromo.promo.campaign_name} is the clearest selective-defense example in the current storyline. Keep the response concentrated in exposed mass channels instead of promoting the full portfolio.`
+        : 'The latest competitor move supports a selective defense response instead of a portfolio-wide markdown.',
+      meta: [
+        competitorPromo ? `Best Channel: ${competitorPromo.metrics.bestChannel || 'Mass retail'}` : null,
+        competitorPromo && Number.isFinite(competitorPromo.metrics.revenue) ? `Projected Impact: ${formatSignedCurrency(competitorPromo.metrics.revenue)}` : null,
+        competitorEvent ? `Current Trigger: ${formatStep2Date(competitorEvent.date)} ${competitorEvent.notes || ''}` : null
+      ].filter(Boolean),
+      eventId: competitorEvent?.event_id || null
+    },
+    {
+      tone: 'social',
+      badge: 'Social-Led Hold',
+      title: 'When social momentum is high, stay shallow on discount',
+      copy: socialPromo
+        ? `${socialPromo.promo.campaign_name} shows the highest-quality hold-price story. Buzz is doing demand work, so discount depth can stay shallow while premium SPF keeps margin.`
+        : 'Use high social momentum as evidence to protect margin before reaching for deeper discounting.',
+      meta: [
+        socialPromo ? `Best Channel: ${socialPromo.metrics.bestChannel || 'Prestige retail'}` : null,
+        socialPromo && Number.isFinite(socialPromo.metrics.roi) ? `ROI: ${socialPromo.metrics.roi.toFixed(2)}x` : null,
+        socialEvent ? `Current Trigger: ${formatStep2Date(socialEvent.date)} ${socialEvent.notes || ''}` : null
+      ].filter(Boolean),
+      eventId: socialEvent?.event_id || null
+    },
+    {
+      tone: 'promo',
+      badge: 'Selective Promo',
+      title: 'Prestige should be selective, not broad',
+      copy: selectivePromo
+        ? `${selectivePromo.promo.campaign_name} is the cleanest example of selective promo depth on responsive prestige SKUs and channels.`
+        : 'Favor selective promo depth on the few channels and products that actually respond.',
+      meta: [
+        selectivePromo ? `Best Channel: ${selectivePromo.metrics.bestChannel || 'Sephora / Ulta'}` : null,
+        selectivePromo && Number.isFinite(selectivePromo.metrics.avgUplift) ? `Avg Uplift: ${selectivePromo.metrics.avgUplift >= 0 ? '+' : ''}${selectivePromo.metrics.avgUplift.toFixed(1)}%` : null,
+        selectivePromo && Number.isFinite(selectivePromo.metrics.revenue) ? `Projected Impact: ${formatSignedCurrency(selectivePromo.metrics.revenue)}` : null
+      ].filter(Boolean),
+      eventId: nearestEvent(event => event.promo_id === selectivePromo?.promo.promo_id)?.event_id || null
+    },
+    {
+      tone: 'caution',
+      badge: 'Caution',
+      title: 'Mixed promo results need tighter SKU selection',
+      copy: cautionPromo
+        ? `${cautionPromo.promo.campaign_name} is the warning case. It still creates lift, but the downside count shows where broad promo logic needs to be narrowed before the next cycle.`
+        : 'Use the weak cases to exclude down-SKUs and tighten future promo composition.',
+      meta: [
+        cautionPromo ? `Down SKUs: ${cautionPromo.metrics.downCount || 0}` : null,
+        cautionPromo && Number.isFinite(cautionPromo.metrics.roi) ? `ROI: ${cautionPromo.metrics.roi.toFixed(2)}x` : null,
+        seasonalEvent ? `Seasonal Context: ${extractTentpoleHolidayName(seasonalEvent) || formatStep2Date(seasonalEvent.date)}` : null
+      ].filter(Boolean),
+      eventId: nearestEvent(event => event.promo_id === cautionPromo?.promo.promo_id)?.event_id || seasonalEvent?.event_id || null
+    }
+  ].filter(story => story.copy);
+
+  container.innerHTML = stories.map(story => `
+    <article class="step2-story-card" data-story-tone="${story.tone}"${story.eventId ? ` data-event-id="${story.eventId}"` : ''}>
+      <div class="step2-story-badge">${story.badge}</div>
+      <div class="step2-story-title">${story.title}</div>
+      <div class="step2-story-copy">${story.copy}</div>
+      <div class="step2-story-meta">
+        ${story.meta.map(line => `<div>${line}</div>`).join('')}
+      </div>
+    </article>
+  `).join('');
+
+  container.querySelectorAll('[data-event-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const eventId = card.dataset.eventId;
+      document.querySelectorAll('#event-timeline [data-event-id]').forEach(node => {
+        node.classList.toggle('is-selected', node.dataset.eventId === eventId);
+      });
+      const event = visibleEvents.find(item => item.event_id === eventId) || (allEvents || []).find(item => item.event_id === eventId);
+      if (!event) return;
+      renderEventAnalystSelection(event);
+      if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+        window.onEventCalendarEventSelected(event);
+      }
+    });
+  });
 }
 
 function renderGuidedStorylineExamples(filteredEvents = []) {
@@ -4321,35 +5489,35 @@ function setupEventFilters() {
       if (filterPromo) filterPromo.checked = checked;
       if (filterTentpole) filterTentpole.checked = checked;
 
-      renderEventTimeline();
+      renderEventTimelineV2();
     });
   }
 
   if (filterPriceChange) {
     filterPriceChange.addEventListener('change', (e) => {
       activeFilters.priceChange = e.target.checked;
-      renderEventTimeline();
+      renderEventTimelineV2();
     });
   }
 
   if (filterCompetitorPriceChange) {
     filterCompetitorPriceChange.addEventListener('change', (e) => {
       activeFilters.competitorPriceChange = e.target.checked;
-      renderEventTimeline();
+      renderEventTimelineV2();
     });
   }
 
   if (filterPromo) {
     filterPromo.addEventListener('change', (e) => {
       activeFilters.promo = e.target.checked;
-      renderEventTimeline();
+      renderEventTimelineV2();
     });
   }
 
   if (filterTentpole) {
     filterTentpole.addEventListener('change', (e) => {
       activeFilters.tentpole = e.target.checked;
-      renderEventTimeline();
+      renderEventTimelineV2();
     });
   }
 }
@@ -4361,8 +5529,8 @@ function initializeProductFilter() {
   const select = document.getElementById('event-calendar-product-filter');
   if (!select) return;
 
-  const options = buildProductFilterOptions();
-  select.innerHTML = '<option value="all" selected>All Products</option>';
+  const options = buildUnifiedStep2ProductOptions();
+  select.innerHTML = '';
   options.forEach(opt => {
     const el = document.createElement('option');
     el.value = opt.value;
@@ -4373,11 +5541,10 @@ function initializeProductFilter() {
     select.appendChild(el);
   });
 
-  select.value = activeProductFilter;
+  select.value = getCurrentStep2ProductFilter();
 
   select.addEventListener('change', () => {
-    activeProductFilter = select.value || 'all';
-    renderEventTimeline();
+    syncStep2ProductSelection(select.value || 'all');
   });
 }
 
@@ -4475,4 +5642,854 @@ function formatDate(dateStr) {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderStep2DateRangeLegacy() {
+  const pill = document.getElementById('step-2-range-pill');
+  if (!pill) return;
+  const textNode = pill.querySelector('span') || pill;
+  const { startDate, endDate } = getStep2DriversRange();
+  textNode.textContent = `Last 52 Weeks - ${formatStep2Date(startDate)} - ${formatStep2Date(endDate)}`;
+}
+
+function formatEventChannelLabel(rawValue = 'all') {
+  const channels = String(rawValue || 'all')
+    .split('|')
+    .map(channel => channel.trim().toLowerCase())
+    .filter(channel => channel && channel !== 'all')
+    .map(channel => CHANNEL_LABELS[channel] || channel.charAt(0).toUpperCase() + channel.slice(1));
+  return channels.length ? channels.join(', ') : 'All channels';
+}
+
+function getPriorityCurrentEvent(events = []) {
+  if (!Array.isArray(events) || !events.length) return null;
+  const typePriority = {
+    'Competitor Price Change': 0,
+    'Social Spike': 1,
+    'Promo Start': 2,
+    Tentpole: 3
+  };
+  const nearbyEvents = events.filter(event => Math.abs(new Date(event.date) - CALENDAR_TODAY) <= (28 * DAY_MS));
+  const pool = nearbyEvents.length ? nearbyEvents : events;
+  return [...pool].sort((a, b) => {
+    const aPriority = typePriority[a.event_type] ?? 4;
+    const bPriority = typePriority[b.event_type] ?? 4;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    const aDistance = Math.abs(new Date(a.date) - CALENDAR_TODAY);
+    const bDistance = Math.abs(new Date(b.date) - CALENDAR_TODAY);
+    if (aDistance !== bDistance) return aDistance - bDistance;
+    return new Date(a.date) - new Date(b.date);
+  })[0] || null;
+}
+
+function buildTimelineEventTitle(event, promo, productInfo) {
+  if (event.event_type === 'Competitor Price Change') {
+    const channelLabel = formatEventChannelLabel(event.affected_channel || event.affected_cohort || 'all').split(',')[0];
+    return `${channelLabel} price cut`;
+  }
+  if (event.event_type === 'Social Spike') {
+    return `${productInfo.productGroup || 'Market'} social spike`;
+  }
+  if (event.event_type === 'Tentpole') {
+    return extractTentpoleHolidayName(event) || 'Seasonal window';
+  }
+  if (promo?.campaign_name) {
+    return promo.campaign_name;
+  }
+  return buildEventHeadline(event, promo, productInfo);
+}
+
+function buildTimelineEventCopy(event, promo, productInfo) {
+  const baseCopy = String(promo?.story_summary || event.notes || productInfo.label || 'Signal in focus').replace(/\.$/, '');
+  return baseCopy.length > 82 ? `${baseCopy.slice(0, 79).trimEnd()}...` : baseCopy;
+}
+
+function buildTimelineEventMeta(event, productInfo) {
+  const channelLabel = formatEventChannelLabel(event.affected_channel || event.affected_cohort || 'all');
+  return productInfo?.label ? `${channelLabel} | ${productInfo.label}` : channelLabel;
+}
+
+function buildStep2DemandSeries(filteredSkuWeekly = [], socialByWeek = new Map()) {
+  const demandByWeek = new Map();
+  filteredSkuWeekly.forEach(row => {
+    const week = row.week_start || row.date;
+    if (!week) return;
+    if (!demandByWeek.has(week)) {
+      demandByWeek.set(week, {
+        momentumWeighted: 0,
+        momentumWeight: 0,
+        modifierWeighted: 0,
+        modifierWeight: 0
+      });
+    }
+
+    const bucket = demandByWeek.get(week);
+    const units = Math.max(safeNumber(row.net_units_sold, 0), safeNumber(row.own_units_sold, 0), 1);
+    const engagementScore = safeNumber(row.social_engagement_score, null);
+    const baseElasticity = Math.abs(safeNumber(row.base_elasticity, null));
+    const effectiveElasticity = Math.abs(safeNumber(row.effective_elasticity, null));
+
+    if (Number.isFinite(engagementScore)) {
+      bucket.momentumWeighted += ((engagementScore - 50) * 2) * units;
+      bucket.momentumWeight += units;
+    }
+    if (Number.isFinite(baseElasticity) && baseElasticity > 0 && Number.isFinite(effectiveElasticity)) {
+      bucket.modifierWeighted += (effectiveElasticity / baseElasticity) * units;
+      bucket.modifierWeight += units;
+    }
+  });
+
+  const weekKeys = [...new Set([...demandByWeek.keys(), ...socialByWeek.keys()])].sort();
+  const labels = [];
+  const scoreSeries = [];
+  const modifierSeries = [];
+  const usedWeekKeys = [];
+
+  weekKeys.forEach(week => {
+    const bucket = demandByWeek.get(week);
+    const brandRow = socialByWeek.get(week) || null;
+    const brandScore = brandRow ? getEventSocialScore(brandRow) : null;
+    const productScore = bucket?.momentumWeight ? (bucket.momentumWeighted / bucket.momentumWeight) : null;
+    const combinedScore = Number.isFinite(brandScore) && Number.isFinite(productScore)
+      ? ((brandScore * 0.6) + (productScore * 0.4))
+      : (Number.isFinite(brandScore) ? brandScore : productScore);
+    const modifier = bucket?.modifierWeight ? (bucket.modifierWeighted / bucket.modifierWeight) : null;
+    if (!Number.isFinite(combinedScore) && !Number.isFinite(modifier)) return;
+    usedWeekKeys.push(week);
+    labels.push(formatStep2Date(`${week}T00:00:00`, { month: 'short', day: 'numeric' }));
+    scoreSeries.push(Number.isFinite(combinedScore) ? Number(combinedScore.toFixed(1)) : null);
+    modifierSeries.push(Number.isFinite(modifier) ? Number(modifier.toFixed(3)) : null);
+  });
+
+  return { labels, scoreSeries, modifierSeries, weekKeys: usedWeekKeys };
+}
+
+function buildEventAnalystFallbackLegacy(event) {
+  if (!event) {
+    return {
+      selectedHtml: `
+        <div class="step2-analyst-event-kicker">Top Event</div>
+        <div class="step2-analyst-event-title">Select an event from the timeline</div>
+        <div class="step2-analyst-event-meta">The analyst panel will translate the selected signal into impact and pivot guidance.</div>
+      `,
+      summary: 'The analyst panel summarizes the selected event using the same Step 2 storyline and weekly scope used elsewhere on this screen.',
+      impact: ['Awaiting event selection.'],
+      actions: ['Awaiting event selection.']
+    };
+  }
+
+  const metrics = getEventMetricSnapshot(event);
+  const productInfo = metrics?.productInfo || getEventProductInfo(event);
+  const promo = metrics?.promo || (event.promo_id && promoMetadata ? promoMetadata[event.promo_id] : null);
+  const channelLabel = formatEventChannelLabel(event.affected_channel || event.affected_cohort || 'all');
+  const headline = buildEventHeadline(event, promo, productInfo);
+  const selectionMeta = `${formatStep2Date(event.date)} | ${channelLabel}`;
+  let summary = event.notes || 'Signal selected for analyst review.';
+  const impact = [];
+  const actions = [];
+  const toplineItems = [];
+
+  if (event.event_type === 'Competitor Price Change') {
+    summary = `Competitor pressure is active on ${channelLabel}. This is a selective defense case: protect the exposed SKUs, but avoid dragging the full portfolio into discounting.`;
+    if (Number.isFinite(metrics?.competitorPriceDeltaPct)) {
+      const moveText = formatSignedPercentText(metrics.competitorPriceDeltaPct);
+      impact.push(`Competitor benchmark moved ${moveText} versus the prior comparable week.`);
+      toplineItems.push({ label: 'Competitor Move', value: moveText });
+    }
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      const revenueText = formatSignedCurrency(metrics.revenueDelta);
+      impact.push(`Revenue swing versus baseline: ${revenueText}.`);
+      toplineItems.push({ label: 'Revenue', value: revenueText });
+    }
+    if (Number.isFinite(metrics?.unitsDelta)) {
+      const unitsText = `${metrics.unitsDelta >= 0 ? '+' : ''}${formatNumber(metrics.unitsDelta, 0)}`;
+      impact.push(`Scoped unit change versus baseline: ${unitsText} units.`);
+      toplineItems.push({ label: 'Units', value: unitsText });
+    }
+    actions.push(`Defend only the exposed SKUs in ${channelLabel}, not the full portfolio.`);
+    actions.push('Hold depth shallow where social pull remains positive.');
+    if (promo?.notes) actions.push(promo.notes);
+  } else if (event.event_type === 'Social Spike') {
+    summary = 'Demand is being supported by social momentum, which lowers elasticity and makes broad discounting unnecessary if premium conversion is holding.';
+    if (Number.isFinite(metrics?.socialDelta)) {
+      const socialText = formatSignedPointText(metrics.socialDelta);
+      impact.push(`Social signal moved ${socialText} versus the prior comparable week.`);
+      toplineItems.push({ label: 'Social Shift', value: socialText });
+    }
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      const revenueText = formatSignedCurrency(metrics.revenueDelta);
+      impact.push(`Revenue response in scope: ${revenueText}.`);
+      toplineItems.push({ label: 'Revenue', value: revenueText });
+    }
+    if (Number.isFinite(promo?.actual_roi)) {
+      toplineItems.push({ label: 'ROI', value: `${promo.actual_roi.toFixed(2)}x` });
+    }
+    actions.push('Use creator momentum to hold or trim discount depth.');
+    actions.push('Prioritize premium SPF where conversion remains healthy.');
+  } else if (event.event_type === 'Tentpole') {
+    summary = `${extractTentpoleHolidayName(event) || 'This seasonal window'} is a demand-shaping event. The implication is readiness, inventory coverage, and selective promo depth by channel.`;
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      const revenueText = formatSignedCurrency(metrics.revenueDelta);
+      impact.push(`Revenue swing versus baseline: ${revenueText}.`);
+      toplineItems.push({ label: 'Revenue', value: revenueText });
+    }
+    if (Number.isFinite(metrics?.unitsDelta)) {
+      const unitsText = `${metrics.unitsDelta >= 0 ? '+' : ''}${formatNumber(metrics.unitsDelta, 0)}`;
+      impact.push(`Scoped unit change versus baseline: ${unitsText} units.`);
+      toplineItems.push({ label: 'Units', value: unitsText });
+    }
+    actions.push('Anchor inventory and promo readiness around the seasonal window.');
+    actions.push('Use channel-specific depth rather than portfolio-wide markdowns.');
+  } else {
+    summary = promo?.story_summary || event.notes || 'Promotion window selected for analyst review.';
+    if (Number.isFinite(metrics?.revenueDelta)) {
+      const revenueText = formatSignedCurrency(metrics.revenueDelta);
+      impact.push(`Revenue swing versus baseline: ${revenueText}.`);
+      toplineItems.push({ label: 'Revenue', value: revenueText });
+    }
+    if (Number.isFinite(promo?.actual_roi)) {
+      const roiText = `${promo.actual_roi.toFixed(2)}x`;
+      impact.push(`Campaign ROI: ${roiText}.`);
+      toplineItems.push({ label: 'ROI', value: roiText });
+    }
+    if (Number.isFinite(promo?.discount_pct)) {
+      toplineItems.push({ label: 'Depth', value: `${promo.discount_pct.toFixed(0)}%` });
+      actions.push(`Use ${promo.discount_pct.toFixed(0)}% as the current modeled discount reference point.`);
+    }
+    actions.push(`Keep the response focused on ${productInfo.label || 'the affected products'} only.`);
+  }
+
+  if (!impact.length && metrics?.resolvedWeek?.basis) {
+    impact.push(`Signals are based on ${metrics.resolvedWeek.basis.toLowerCase()}.`);
+  }
+  if (!actions.length) {
+    actions.push('Review this event alongside the timeline and signal snapshot before changing depth.');
+  }
+
+  return {
+    selectedHtml: `
+      <div class="step2-analyst-event-kicker">Top Event | Top This Week</div>
+      <div class="step2-analyst-event-title">${headline}</div>
+      <div class="step2-analyst-event-meta">${selectionMeta}</div>
+      ${toplineItems.length ? `
+        <div class="step2-analyst-topline">
+          ${toplineItems.slice(0, 3).map(item => `
+            <div class="step2-analyst-topline-item">
+              <span class="step2-analyst-topline-label">${item.label}</span>
+              <strong class="step2-analyst-topline-value">${item.value}</strong>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    `,
+    summary,
+    impact: impact.slice(0, 3),
+    actions: actions.slice(0, 3)
+  };
+}
+
+function buildPromoStoryMetricsLegacy(promo) {
+  const skuResults = Array.isArray(promo?.sku_results) ? promo.sku_results : [];
+  const avgUplift = skuResults.length
+    ? skuResults.reduce((sum, row) => sum + Number(row.sales_uplift_pct || 0), 0) / skuResults.length
+    : null;
+  const downCount = skuResults.filter(row => Number(row.sales_uplift_pct || 0) < 0 || row.outcome === 'down').length;
+  const bestSku = [...skuResults].sort((a, b) => Number(b.sales_uplift_pct || 0) - Number(a.sales_uplift_pct || 0))[0];
+  const worstSku = [...skuResults].sort((a, b) => Number(a.sales_uplift_pct || 0) - Number(b.sales_uplift_pct || 0))[0];
+  const channelEntries = Object.entries(promo?.channel_results || {});
+  const bestChannel = channelEntries
+    .sort(([, a], [, b]) => Number(b.sales_uplift_pct || 0) - Number(a.sales_uplift_pct || 0))[0];
+  return {
+    avgUplift,
+    downCount,
+    roi: safeNumber(promo?.actual_roi, null),
+    revenue: safeNumber(promo?.incremental_revenue_usd, null),
+    bestChannel: bestChannel ? (CHANNEL_LABELS[bestChannel[0]] || bestChannel[0]) : null,
+    bestChannelLift: bestChannel ? safeNumber(bestChannel[1]?.sales_uplift_pct, null) : null,
+    bestSku: bestSku?.sku_name || bestSku?.sku_id || null,
+    bestSkuLift: bestSku ? safeNumber(bestSku.sales_uplift_pct, null) : null,
+    worstSku: worstSku?.sku_name || worstSku?.sku_id || null,
+    worstSkuLift: worstSku ? safeNumber(worstSku.sales_uplift_pct, null) : null,
+    discountPct: safeNumber(promo?.discount_pct, null),
+    repeatLossExpected: Boolean(promo?.repeat_loss_expected)
+  };
+}
+async function renderMarketSignalsDashboardV2Legacy() {
+  const compContainer = document.getElementById('market-signals-competitive');
+  const socialContainer = document.getElementById('market-signals-social');
+  const compCanvas = document.getElementById('event-competitive-signals-chart');
+  const socialCanvas = document.getElementById('event-social-signals-chart');
+  const gapCallout = document.getElementById('step2-current-gap-callout');
+  if (!compContainer || !socialContainer || !compCanvas || !socialCanvas) return;
+
+  try {
+    const [externalFactors, socialSignals, skuWeekly] = await Promise.all([
+      loadExternalFactors(),
+      loadSocialSignals(),
+      loadSkuWeeklyData()
+    ]);
+    if (!externalFactors?.length || !socialSignals?.length || !skuWeekly?.length) {
+      compContainer.textContent = 'Market signals not available.';
+      socialContainer.textContent = 'Social listening data not available.';
+      if (gapCallout) gapCallout.innerHTML = '';
+      renderSignalSnapshot();
+      return;
+    }
+
+    const toNum = value => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : null;
+    };
+    const selectedFilter = getCurrentStep2ProductFilter();
+    const selectionLabel = formatProductSelectionLabel(selectedFilter);
+    const filteredSkuWeekly = skuWeekly.filter(row => rowMatchesProductSelection(row, selectedFilter));
+    const { startDate, endDate } = getTimelineWindow();
+    const filteredEvents = filterEvents().filter(event => {
+      const eventDate = new Date(event.date);
+      return eventDate >= startDate && eventDate <= endDate;
+    });
+
+    const skuFilterContainer = document.getElementById('sku-price-filter-container');
+    if (skuFilterContainer) {
+      skuFilterContainer.innerHTML = `
+        <label for="sku-price-filter" class="form-label mb-0">Product/SKU:</label>
+        <select id="sku-price-filter" class="form-select form-select-sm">
+          ${buildUnifiedStep2ProductOptions().map(opt => `<option value="${opt.value}"${opt.value === selectedFilter ? ' selected' : ''}>${opt.label}</option>`).join('')}
+        </select>
+      `;
+      document.getElementById('sku-price-filter')?.addEventListener('change', event => {
+        syncStep2ProductSelection(event.target.value || 'all');
+      });
+    }
+
+    const compLegendContainer = document.getElementById('market-signals-competitive-legend');
+    if (compLegendContainer) {
+      compLegendContainer.innerHTML = `
+        <div class="ec-legend-item"><span class="ec-legend-dot" style="background:#3b82f6; --legend-color:#3b82f6;"></span><span>Supergoop Mass Price</span></div>
+        <div class="ec-legend-item"><span class="ec-legend-dot ec-legend-dot-dashed" style="background:#ef4444; --legend-color:#ef4444;"></span><span>Competitor Mass Price</span></div>
+        <div class="ec-legend-item"><span class="ec-legend-dot" style="background:#10b981; --legend-color:#10b981;"></span><span>Supergoop Prestige Price</span></div>
+        <div class="ec-legend-item"><span class="ec-legend-dot ec-legend-dot-dashed" style="background:#f59e0b; --legend-color:#f59e0b;"></span><span>Competitor Prestige Price</span></div>
+      `;
+    }
+
+    const competitiveByWeek = new Map();
+    filteredSkuWeekly.forEach(row => {
+      const week = row.week_start || row.date;
+      if (!week) return;
+      if (!competitiveByWeek.has(week)) competitiveByWeek.set(week, { massOwnSum: 0, massOwnCount: 0, massCompSum: 0, massCompCount: 0, prestigeOwnSum: 0, prestigeOwnCount: 0, prestigeCompSum: 0, prestigeCompCount: 0, revenue: 0, engagementSum: 0, engagementCount: 0 });
+      const bucket = competitiveByWeek.get(week);
+      const ownPrice = toNum(row.effective_price);
+      const competitorPrice = toNum(row.competitor_price);
+      const engagement = toNum(row.social_engagement_score);
+      const channelGroup = String(row.channel_group || '').toLowerCase();
+      if (channelGroup === 'mass') {
+        if (Number.isFinite(ownPrice)) { bucket.massOwnSum += ownPrice; bucket.massOwnCount += 1; }
+        if (Number.isFinite(competitorPrice)) { bucket.massCompSum += competitorPrice; bucket.massCompCount += 1; }
+      } else if (channelGroup === 'prestige') {
+        if (Number.isFinite(ownPrice)) { bucket.prestigeOwnSum += ownPrice; bucket.prestigeOwnCount += 1; }
+        if (Number.isFinite(competitorPrice)) { bucket.prestigeCompSum += competitorPrice; bucket.prestigeCompCount += 1; }
+      }
+      if (Number.isFinite(engagement)) { bucket.engagementSum += engagement; bucket.engagementCount += 1; }
+      bucket.revenue += toNum(row.revenue) || 0;
+    });
+
+    const externalByWeek = new Map(externalFactors.map(row => [row.week_start || row.date, row]));
+    const socialByWeek = new Map(socialSignals.map(row => [row.week_start || row.date, row]));
+    const weekKeys = [...competitiveByWeek.keys()].sort();
+    const compLabels = [];
+    const compWeeks = [];
+    const ourMassSeries = [];
+    const compMassSeries = [];
+    const ourPrestigeSeries = [];
+    const compPrestigeSeries = [];
+    const revenueSeries = [];
+    const engagementSeries = [];
+    weekKeys.forEach(week => {
+      const bucket = competitiveByWeek.get(week);
+      if (!bucket) return;
+      const ownMass = bucket.massOwnCount > 0 ? bucket.massOwnSum / bucket.massOwnCount : null;
+      const compMass = bucket.massCompCount > 0 ? bucket.massCompSum / bucket.massCompCount : null;
+      const ownPrestige = bucket.prestigeOwnCount > 0 ? bucket.prestigeOwnSum / bucket.prestigeOwnCount : null;
+      const compPrestige = bucket.prestigeCompCount > 0 ? bucket.prestigeCompSum / bucket.prestigeCompCount : null;
+      if (![ownMass, compMass, ownPrestige, compPrestige].some(Number.isFinite)) return;
+      compLabels.push(formatStep2Date(`${week}T00:00:00`, { month: 'short', day: 'numeric' }));
+      compWeeks.push(week);
+      ourMassSeries.push(Number.isFinite(ownMass) ? Number(ownMass.toFixed(2)) : null);
+      compMassSeries.push(Number.isFinite(compMass) ? Number(compMass.toFixed(2)) : null);
+      ourPrestigeSeries.push(Number.isFinite(ownPrestige) ? Number(ownPrestige.toFixed(2)) : null);
+      compPrestigeSeries.push(Number.isFinite(compPrestige) ? Number(compPrestige.toFixed(2)) : null);
+      revenueSeries.push(Number((bucket.revenue || 0).toFixed(0)));
+      engagementSeries.push(bucket.engagementCount > 0 ? Number((bucket.engagementSum / bucket.engagementCount).toFixed(1)) : null);
+    });
+
+    const findLastFinitePair = (left, right) => {
+      for (let index = Math.min(left.length, right.length) - 1; index >= 0; index -= 1) {
+        if (Number.isFinite(left[index]) && Number.isFinite(right[index])) return index;
+      }
+      return -1;
+    };
+    const findLastFiniteIndex = series => {
+      for (let index = series.length - 1; index >= 0; index -= 1) {
+        if (Number.isFinite(series[index])) return index;
+      }
+      return -1;
+    };
+
+    if (compLabels.length) {
+      if (eventCompetitiveSignalsChart) {
+        eventCompetitiveSignalsChart.data.labels = compLabels;
+        eventCompetitiveSignalsChart.data.datasets[0].data = ourMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[1].data = compMassSeries;
+        eventCompetitiveSignalsChart.data.datasets[2].data = ourPrestigeSeries;
+        eventCompetitiveSignalsChart.data.datasets[3].data = compPrestigeSeries;
+        eventCompetitiveSignalsChart.options.layout = { padding: { top: 4, right: 160, bottom: 0, left: 0 } };
+        eventCompetitiveSignalsChart.update();
+      } else if (window.Chart) {
+        const compIsDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const compGridColor = compIsDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.07)';
+        const compTextColor = compIsDark ? 'rgba(226,232,240,0.7)' : '#64748b';
+        eventCompetitiveSignalsChart = new Chart(compCanvas, {
+          type: 'line',
+          data: {
+            labels: compLabels,
+            datasets: [
+              { label: 'Supergoop Mass Price', data: ourMassSeries, borderColor: '#3b82f6', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#3b82f6', pointHoverRadius: 5 },
+              { label: 'Competitor Mass Price', data: compMassSeries, borderColor: '#ef4444', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#ef4444', pointHoverRadius: 4, borderDash: [5, 3] },
+              { label: 'Supergoop Prestige Price', data: ourPrestigeSeries, borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#10b981', pointHoverRadius: 5 },
+              { label: 'Competitor Prestige Price', data: compPrestigeSeries, borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.3, fill: false, borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#f59e0b', pointHoverRadius: 4, borderDash: [5, 3] }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 4, right: 160, bottom: 0, left: 0 } },
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: compGridColor, drawBorder: false }, ticks: { color: compTextColor, font: { size: 10 }, maxRotation: 0 } },
+              y: { grid: { color: compGridColor, drawBorder: false }, ticks: { color: compTextColor, font: { size: 10 }, callback: value => `$${value}` }, title: { display: true, text: 'Avg Price ($)', color: compTextColor, font: { size: 11, weight: '600' } } }
+            }
+          }
+        });
+      }
+
+      const latestMassIdx = findLastFinitePair(ourMassSeries, compMassSeries);
+      const latestPrestigeIdx = findLastFinitePair(ourPrestigeSeries, compPrestigeSeries);
+      const prevMassIdx = latestMassIdx > 0 ? findLastFinitePair(ourMassSeries.slice(0, latestMassIdx), compMassSeries.slice(0, latestMassIdx)) : -1;
+      const prevPrestigeIdx = latestPrestigeIdx > 0 ? findLastFinitePair(ourPrestigeSeries.slice(0, latestPrestigeIdx), compPrestigeSeries.slice(0, latestPrestigeIdx)) : -1;
+      const calcGapPct = (ownSeries, compSeries, idx) => idx >= 0 && compSeries[idx] > 0 ? ((ownSeries[idx] - compSeries[idx]) / compSeries[idx]) * 100 : null;
+      const massDeltaPct = calcGapPct(ourMassSeries, compMassSeries, latestMassIdx);
+      const prestigeDeltaPct = calcGapPct(ourPrestigeSeries, compPrestigeSeries, latestPrestigeIdx);
+      const prevMassGapPct = calcGapPct(ourMassSeries, compMassSeries, prevMassIdx);
+      const prevPrestigeGapPct = calcGapPct(ourPrestigeSeries, compPrestigeSeries, prevPrestigeIdx);
+      const averageGap = (ownSeries, compSeries) => {
+        const gaps = ownSeries.map((value, index) => (Number.isFinite(value) && Number.isFinite(compSeries[index]) ? value - compSeries[index] : null)).filter(Number.isFinite);
+        return gaps.length ? gaps.reduce((sum, value) => sum + value, 0) / gaps.length : null;
+      };
+      const massAvgGapValue = averageGap(ourMassSeries, compMassSeries);
+      const prestigeAvgGapValue = averageGap(ourPrestigeSeries, compPrestigeSeries);
+      const dominantGap = [
+        { tier: 'Mass', pct: massDeltaPct, absolute: latestMassIdx >= 0 ? ourMassSeries[latestMassIdx] - compMassSeries[latestMassIdx] : null, previousPct: prevMassGapPct },
+        { tier: 'Prestige', pct: prestigeDeltaPct, absolute: latestPrestigeIdx >= 0 ? ourPrestigeSeries[latestPrestigeIdx] - compPrestigeSeries[latestPrestigeIdx] : null, previousPct: prevPrestigeGapPct }
+      ].filter(item => Number.isFinite(item.pct)).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))[0] || null;
+      const dominantGapChange = dominantGap && Number.isFinite(dominantGap.previousPct) ? dominantGap.pct - dominantGap.previousPct : null;
+      const latestWeek = compWeeks[compWeeks.length - 1];
+      const latestRevenue = revenueSeries[revenueSeries.length - 1] || 0;
+      const latestEngagement = engagementSeries[engagementSeries.length - 1];
+      const latestExternal = externalByWeek.get(latestWeek) || {};
+      const latestSocialRow = socialByWeek.get(latestWeek) || socialSignals[socialSignals.length - 1] || {};
+      const totalMentions = toNum(latestSocialRow.total_social_mentions) || 0;
+      const promoEventsInWindow = filteredEvents.filter(event => String(event.event_type || '').includes('Promo')).length;
+      const recentPromos = filteredEvents.filter(event => {
+        const distance = Math.abs(new Date(event.date) - CALENDAR_TODAY);
+        return distance <= (56 * DAY_MS) && (event.event_type === 'Promo Start' || event.event_type === 'Social Spike' || event.event_type === 'Competitor Price Change');
+      }).length;
+      const promoClutterIndex = toNum(latestExternal.promo_clutter_index) || 0;
+      const promoIntensity = recentPromos >= 6 || promoClutterIndex >= 0.3 ? 'High' : recentPromos >= 3 || promoClutterIndex >= 0.22 ? 'Moderate' : 'Low';
+      const currentEvent = getPriorityCurrentEvent(filteredEvents);
+      const currentEventConfig = getEventDisplayConfig(currentEvent);
+      const latestCompetitorEvent = [...filteredEvents].filter(event => event.event_type === 'Competitor Price Change').sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0] || null;
+      const latestWeekRows = filteredSkuWeekly.filter(row => (row.week_start || row.date) === latestWeek);
+      const demandLeader = [...latestWeekRows].filter(row => Number.isFinite(toNum(row.social_engagement_score))).sort((a, b) => {
+        const scoreDiff = (toNum(b.social_engagement_score) || 0) - (toNum(a.social_engagement_score) || 0);
+        if (scoreDiff !== 0) return scoreDiff;
+        return (toNum(b.net_units_sold) || 0) - (toNum(a.net_units_sold) || 0);
+      })[0] || null;
+
+      if (gapCallout) {
+        gapCallout.innerHTML = `
+          <div class="step2-current-gap-title">Current Gap</div>
+          <div class="step2-current-gap-week">${formatStep2Date(`${latestWeek}T00:00:00`, { month: 'short', day: 'numeric' })}</div>
+          <div class="step2-current-gap-stack">
+            <div class="step2-current-gap-stat"><span class="step2-current-gap-stat-label" data-tone="mass">Mass</span><strong class="step2-current-gap-stat-value">${Number.isFinite(massDeltaPct) ? `${massDeltaPct >= 0 ? '+' : ''}${massDeltaPct.toFixed(1)}%` : 'N/A'}</strong><span class="step2-current-gap-stat-copy">${latestMassIdx >= 0 ? `${formatSignedCurrency(ourMassSeries[latestMassIdx] - compMassSeries[latestMassIdx])} vs competitor` : selectionLabel}</span></div>
+            <div class="step2-current-gap-stat"><span class="step2-current-gap-stat-label" data-tone="prestige">Prestige</span><strong class="step2-current-gap-stat-value">${Number.isFinite(prestigeDeltaPct) ? `${prestigeDeltaPct >= 0 ? '+' : ''}${prestigeDeltaPct.toFixed(1)}%` : 'N/A'}</strong><span class="step2-current-gap-stat-copy">${latestPrestigeIdx >= 0 ? `${formatSignedCurrency(ourPrestigeSeries[latestPrestigeIdx] - compPrestigeSeries[latestPrestigeIdx])} vs competitor` : selectionLabel}</span></div>
+          </div>
+        `;
+      }
+
+      const competitorMoveText = latestCompetitorEvent ? formatStep2Date(latestCompetitorEvent.date) : 'No direct competitor move';
+      const competitorMoveCopy = latestCompetitorEvent && Number.isFinite(toNum(latestCompetitorEvent.price_before)) && Number.isFinite(toNum(latestCompetitorEvent.price_after)) ? `${formatEventChannelLabel(latestCompetitorEvent.affected_channel)} moved from ${formatCurrency(toNum(latestCompetitorEvent.price_before))} to ${formatCurrency(toNum(latestCompetitorEvent.price_after))}.` : (latestCompetitorEvent?.notes || 'Competitive pricing is currently stable.');
+      compContainer.innerHTML = `
+        <div class="ec-signal-grid">
+          <div class="ec-signal-card"><div class="ec-signal-card-label">Latest Competitor Move</div><div class="ec-signal-card-value ${dominantGap && dominantGap.pct >= 1 ? 'text-danger' : 'text-success'}">${dominantGap ? `${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}%` : 'N/A'}</div><div class="ec-signal-card-sub">${competitorMoveText}</div><div class="ec-signal-card-meta">${competitorMoveCopy}</div></div>
+          <div class="ec-signal-card"><div class="ec-signal-card-label">${compWeeks.length}-Week Seasonal Avg Gap</div><div class="ec-signal-card-stack"><div class="ec-signal-card-line"><span>Mass</span><strong class="${Number.isFinite(massAvgGapValue) && massAvgGapValue >= 0 ? 'text-danger' : 'text-success'}">${Number.isFinite(massAvgGapValue) ? formatSignedCurrency(massAvgGapValue) : 'N/A'}</strong></div><div class="ec-signal-card-line"><span>Prestige</span><strong class="${Number.isFinite(prestigeAvgGapValue) && prestigeAvgGapValue >= 0 ? 'text-danger' : 'text-success'}">${Number.isFinite(prestigeAvgGapValue) ? formatSignedCurrency(prestigeAvgGapValue) : 'N/A'}</strong></div></div><div class="ec-signal-card-meta">${selectionLabel} pricing is typically above competitor in both tiers.</div></div>
+        </div>
+      `;
+
+      const currentEventProductInfo = currentEvent ? getEventProductInfo(currentEvent) : null;
+      const currentEventPromo = currentEvent?.promo_id ? promoMetadata[currentEvent.promo_id] : null;
+      const currentEventSubvalue = !currentEvent ? 'No event selected' : currentEvent.event_type === 'Competitor Price Change' && Number.isFinite(toNum(currentEvent.price_after)) ? `${formatEventChannelLabel(currentEvent.affected_channel)} cut to ${formatCurrency(toNum(currentEvent.price_after))}` : currentEvent.event_type === 'Social Spike' ? `${currentEventProductInfo?.productGroup || selectionLabel} buzz is carrying conversion` : currentEvent.event_type === 'Tentpole' ? `${extractTentpoleHolidayName(currentEvent) || 'Seasonal demand window'} is inside the planning view` : `${currentEventPromo?.campaign_name || 'Promo window'} is active in ${formatEventChannelLabel(currentEvent.affected_channel)}`;
+      const currentEventFootnote = !currentEvent ? selectionLabel : currentEvent.event_type === 'Competitor Price Change' ? `Recommended pivot: defend exposed ${currentEventProductInfo?.label || selectionLabel} only.` : currentEvent.event_type === 'Social Spike' ? 'Recommended pivot: protect margin while creator demand stays supportive.' : currentEvent.event_type === 'Tentpole' ? 'Recommended pivot: align inventory and selective depth by channel.' : 'Recommended pivot: keep the offer narrow to the responsive products and channels.';
+      renderSignalSnapshot({
+        cards: [
+          { tone: 'pricing', icon: 'bi-tag', label: 'Pricing Pressure', value: dominantGap ? `${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}%` : 'N/A', valueClass: dominantGap && dominantGap.pct >= 1 ? 'is-negative' : dominantGap && dominantGap.pct <= -1 ? 'is-positive' : 'is-neutral', subvalue: dominantGap ? `vs competitor (${dominantGap.tier})` : selectionLabel, chip: Number.isFinite(dominantGapChange) ? (dominantGapChange > 0.3 ? 'Gap Widening' : dominantGapChange < -0.3 ? 'Gap Compressing' : 'Gap Stable') : 'Gap Stable', footnote: dominantGap && dominantGap.pct >= 1 ? 'Risk to margin and volume' : 'Pricing position remains manageable' },
+          { tone: 'demand', icon: 'bi-chat-square-heart', label: 'Demand Momentum', headline: Number.isFinite(latestEngagement) && latestEngagement >= 72 ? 'High' : Number.isFinite(latestEngagement) && latestEngagement >= 63 ? 'Solid' : 'Mixed', subvalue: Number.isFinite(latestEngagement) ? `${selectionLabel} engagement ${latestEngagement.toFixed(1)}` : 'Demand trend not available', chip: demandLeader ? 'Demand Leader' : 'Demand Steady', footnote: demandLeader ? `Led by ${getSkuName(demandLeader.sku_id)} in ${CHANNEL_LABELS[demandLeader.sales_channel] || demandLeader.sales_channel}` : `Watching ${selectionLabel}` },
+          { tone: 'promo', icon: 'bi-tags', label: 'Promo Intensity', headline: promoIntensity, subvalue: `${promoEventsInWindow} promo starts in the last 52 weeks`, chip: promoIntensity === 'High' ? 'Tight Market' : promoIntensity === 'Moderate' ? 'Room to Optimize' : 'Promo Light', footnote: `Promo clutter index ${promoClutterIndex.toFixed(3)}` },
+          { tone: 'event', icon: currentEventConfig.icon, label: 'Recent Market Event', headline: currentEvent?.event_type === 'Competitor Price Change' ? 'Competitor active' : currentEvent?.event_type === 'Social Spike' ? 'Buzz rising' : currentEvent?.event_type === 'Tentpole' ? 'Seasonal window' : 'Promo in flight', subvalue: currentEventSubvalue, chip: currentEvent?.event_type === 'Competitor Price Change' ? 'Action Recommended' : currentEvent ? 'Monitor Closely' : 'No Trigger', footnote: currentEventFootnote }
+        ],
+        feedItems: [
+          { icon: 'bi-distribute-horizontal', label: 'Pricing Data', copy: dominantGap ? `${selectionLabel} gap is ${dominantGap.pct >= 0 ? '+' : ''}${dominantGap.pct.toFixed(1)}% versus competitor.` : `Monitoring ${selectionLabel} price position.` },
+          { icon: 'bi-calendar3-event', label: 'Event Data', copy: `${filteredEvents.length} visible signals are shaping the current Step 2 view.` },
+          { icon: 'bi-megaphone', label: 'Marketing/Social Data', copy: `Brand buzz is at ${formatNumber(totalMentions)} mentions and blended with ${selectionLabel.toLowerCase()} engagement.` },
+          { icon: 'bi-bar-chart', label: 'Sales Performance Data', copy: `Latest scoped weekly revenue is ${formatCurrency(latestRevenue)} with engagement at ${Number.isFinite(latestEngagement) ? latestEngagement.toFixed(1) : 'N/A'}.` }
+        ]
+      });
+    } else {
+      compContainer.textContent = 'Insufficient competitive price history for chart rendering.';
+      if (gapCallout) gapCallout.innerHTML = '';
+      renderSignalSnapshot();
+    }
+
+    const demandSeries = buildStep2DemandSeries(filteredSkuWeekly, socialByWeek);
+    const socialLabels = demandSeries.labels;
+    const socialScoreSeries = demandSeries.scoreSeries;
+    const socialElasticitySeries = demandSeries.modifierSeries;
+    const socialWeekKeys = demandSeries.weekKeys;
+    if (socialLabels.length) {
+      if (eventSocialSignalsChart) {
+        eventSocialSignalsChart.data.labels = socialLabels;
+        eventSocialSignalsChart.data.datasets[0].data = socialScoreSeries;
+        eventSocialSignalsChart.data.datasets[1].data = socialElasticitySeries;
+        eventSocialSignalsChart.update();
+      } else if (window.Chart) {
+        const socIsDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const socGridColor = socIsDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.07)';
+        const socTextColor = socIsDark ? 'rgba(226,232,240,0.7)' : '#64748b';
+        eventSocialSignalsChart = new Chart(socialCanvas, {
+          type: 'line',
+          data: {
+            labels: socialLabels,
+            datasets: [
+              { label: 'Social Sentiment', data: socialScoreSeries, borderColor: '#0ea5e9', backgroundColor: socIsDark ? 'rgba(14,165,233,0.12)' : 'rgba(14,165,233,0.08)', fill: true, tension: 0.35, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#0ea5e9', pointHoverRadius: 6, pointHoverBackgroundColor: '#0ea5e9', yAxisID: 'y' },
+              { label: 'Elasticity Modifier', data: socialElasticitySeries, borderColor: '#8b5cf6', backgroundColor: 'transparent', fill: false, tension: 0.35, borderWidth: 2, borderDash: [6, 4], pointRadius: 2.5, pointBackgroundColor: '#8b5cf6', pointHoverRadius: 5, yAxisID: 'y1' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom', labels: { color: socTextColor, font: { size: 11, weight: '500' }, boxWidth: 14, padding: 16, usePointStyle: true, pointStyle: 'circle' } } },
+            scales: {
+              x: { grid: { color: socGridColor, drawBorder: false }, ticks: { color: socTextColor, font: { size: 10 }, maxRotation: 0 } },
+              y: { min: -100, max: 100, grid: { color: socGridColor, drawBorder: false }, ticks: { color: socTextColor, font: { size: 10 }, stepSize: 25 }, title: { display: true, text: 'Social Sentiment (-100 to +100)', color: '#0ea5e9', font: { size: 11, weight: '600' } } },
+              y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: socTextColor, font: { size: 10 }, callback: value => `${value}x` }, title: { display: true, text: 'Elasticity Modifier', color: '#8b5cf6', font: { size: 11, weight: '600' } } }
+            }
+          }
+        });
+      }
+      const latestSocialIdx = findLastFiniteIndex(socialScoreSeries);
+      const prevSocialIdx = latestSocialIdx > 0 ? findLastFiniteIndex(socialScoreSeries.slice(0, latestSocialIdx)) : -1;
+      const latestElasticityIdx = findLastFiniteIndex(socialElasticitySeries);
+      const prevElasticityIdx = latestElasticityIdx > 0 ? findLastFiniteIndex(socialElasticitySeries.slice(0, latestElasticityIdx)) : -1;
+      const socialScoreWoW = latestSocialIdx >= 0 && prevSocialIdx >= 0 ? socialScoreSeries[latestSocialIdx] - socialScoreSeries[prevSocialIdx] : 0;
+      const elasticityWoW = latestElasticityIdx >= 0 && prevElasticityIdx >= 0 ? socialElasticitySeries[latestElasticityIdx] - socialElasticitySeries[prevElasticityIdx] : 0;
+      const latestRow = socialByWeek.get(socialWeekKeys[Math.max(latestSocialIdx, 0)]) || socialSignals[socialSignals.length - 1] || {};
+      const totalMentions = toNum(latestRow.total_social_mentions) || 0;
+      const tiktokMentions = toNum(latestRow.tiktok_mentions) || 0;
+      const instagramMentions = toNum(latestRow.instagram_mentions) || 0;
+      const tiktokPct = totalMentions > 0 ? ((tiktokMentions / totalMentions) * 100).toFixed(0) : '0';
+      const instaPct = totalMentions > 0 ? ((instagramMentions / totalMentions) * 100).toFixed(0) : '0';
+      const finiteScores = socialScoreSeries.filter(Number.isFinite);
+      const peakScore = finiteScores.length ? Math.max(...finiteScores) : 0;
+      const troughScore = finiteScores.length ? Math.min(...finiteScores) : 0;
+      socialContainer.innerHTML = `
+        <div class="d-flex flex-wrap gap-3 mt-2">
+          <div class="ec-signal-card"><div class="ec-signal-card-label">Social Sentiment</div><div class="ec-signal-card-value ${socialScoreWoW >= 2 ? 'text-success' : socialScoreWoW <= -2 ? 'text-danger' : ''}">${latestSocialIdx >= 0 ? formatSignedScoreText(socialScoreSeries[latestSocialIdx]) : 'N/A'}</div><div class="ec-signal-card-sub">${formatSignedPointText(socialScoreWoW)} WoW</div></div>
+          <div class="ec-signal-card"><div class="ec-signal-card-label">Elasticity Modifier</div><div class="ec-signal-card-value ${elasticityWoW < -0.01 ? 'text-success' : elasticityWoW > 0.01 ? 'text-danger' : ''}">${latestElasticityIdx >= 0 ? `${socialElasticitySeries[latestElasticityIdx].toFixed(3)}x` : 'N/A'}</div><div class="ec-signal-card-sub">${elasticityWoW >= 0 ? '+' : ''}${elasticityWoW.toFixed(3)} WoW</div></div>
+          <div class="ec-signal-card"><div class="ec-signal-card-label">Total Mentions</div><div class="ec-signal-card-value">${formatNumber(totalMentions)}</div><div class="ec-signal-card-sub">TikTok ${tiktokPct}% | Insta ${instaPct}%</div></div>
+          <div class="ec-signal-card"><div class="ec-signal-card-label">Season Range</div><div class="ec-signal-card-value">${troughScore.toFixed(0)} to ${peakScore.toFixed(0)}</div><div class="ec-signal-card-sub">Peak ${peakScore.toFixed(1)} | Low ${troughScore.toFixed(1)}</div></div>
+        </div>
+      `;
+    } else {
+      socialContainer.textContent = 'Insufficient social history for chart rendering.';
+    }
+  } catch (error) {
+    console.error('Error rendering Market Signals dashboard:', error);
+    compContainer.textContent = 'Error loading market signals.';
+    socialContainer.textContent = 'Error loading social listening data.';
+    if (gapCallout) gapCallout.innerHTML = '';
+    renderSignalSnapshot();
+  }
+}
+function renderEventTimelineV2Legacy() {
+  const container = document.getElementById('event-timeline');
+  if (!container) return;
+
+  const { startDate, endDate } = getTimelineWindow();
+  const filteredEvents = filterEvents().filter(event => {
+    const eventDate = new Date(event.date);
+    return eventDate >= startDate && eventDate <= endDate;
+  });
+
+  updateEventCountBadge(filteredEvents.length);
+  renderStep2DateRange();
+
+  if (!filteredEvents.length) {
+    container.innerHTML = '<div class="step2-timeline-frame text-center text-muted">No events match the current filters.</div>';
+    renderGuidedStorylineExamplesV2([]);
+    renderEventAnalystSelection(null);
+    return;
+  }
+
+  const totalDays = Math.max(1, Math.floor((endDate - startDate) / DAY_MS));
+  const todayPosition = Math.max(0, Math.min(100, ((CALENDAR_TODAY - startDate) / DAY_MS / totalDays) * 100));
+  const monthMarkers = buildTimelineMonthMarkers(startDate, endDate);
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  const yearSpan = Math.max(1, endYear - startYear);
+  const highlightEvents = buildTimelineHighlights(filteredEvents, 6);
+
+  let html = `
+    <div class="step2-timeline-frame">
+      <div class="step2-timeline-legend">
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#ef4444;"></span>Competitor Price Cut</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#8b5cf6;"></span>Promo</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#3b82f6;"></span>Social Spike</span>
+        <span class="step2-timeline-legend-item"><span class="step2-timeline-legend-dot" style="background:#f59e0b;"></span>Seasonal</span>
+      </div>
+      <div class="step2-timeline-meta">
+        <div><i class="bi bi-clock-history me-1"></i>History: Last 12 Months</div>
+        <div class="step2-timeline-meta-center">Today: ${formatStep2Date(CALENDAR_TODAY)}</div>
+        <div class="text-md-end"><i class="bi bi-calendar2-week me-1"></i>Future: Next 12 Months</div>
+      </div>
+      <div class="step2-timeline-ruler">
+        <div class="step2-timeline-year-row">
+  `;
+
+  for (let i = 0; i <= yearSpan; i += 1) {
+    const year = startYear + i;
+    const position = (i / yearSpan) * 100;
+    html += `<div class="step2-timeline-year" style="left:${position}%;">${year}</div>`;
+  }
+
+  html += `
+        </div>
+        <div class="step2-timeline-month-row">
+          ${monthMarkers.map(marker => `<div class="step2-timeline-month" style="left:${marker.position}%;">${marker.label}</div>`).join('')}
+        </div>
+        <div class="step2-timeline-track">
+          ${monthMarkers.map(marker => `<div class="step2-timeline-guide${marker.isMajor ? ' is-major' : ''}" style="left:${marker.position}%;"></div>`).join('')}
+          <div class="step2-timeline-today" style="left:${todayPosition}%;"><span>Today</span></div>
+          ${filteredEvents.map(event => {
+            const eventDate = new Date(event.date);
+            const position = ((eventDate - startDate) / DAY_MS / totalDays) * 100;
+            const config = getEventDisplayConfig(event);
+            return `<button type="button" class="step2-timeline-dot" data-event-id="${event.event_id}" data-type="${config.type}" style="left:${position}%;"></button>`;
+          }).join('')}
+        </div>
+  `;
+
+  const laneEnds = [-100, -100, -100];
+  html += '<div class="step2-timeline-highlight-row">';
+  highlightEvents.forEach(event => {
+    const eventDate = new Date(event.date);
+    const position = ((eventDate - startDate) / DAY_MS / totalDays) * 100;
+    const config = getEventDisplayConfig(event);
+    const promo = event.promo_id ? promoMetadata[event.promo_id] : null;
+    const productInfo = getEventProductInfo(event);
+    const laneIndex = laneEnds.findIndex(lastEnd => lastEnd + 18 <= position);
+    const resolvedLane = laneIndex >= 0 ? laneIndex : 0;
+    laneEnds[resolvedLane] = position;
+    const top = resolvedLane * 58;
+    html += `
+      <button type="button" class="step2-timeline-highlight" data-event-id="${event.event_id}" data-type="${config.type}" style="left:${position}%; top:${top}px;">
+        <span class="step2-timeline-chip">${formatStep2Date(event.date, { month: 'short', day: 'numeric' })}</span>
+        <div class="step2-timeline-highlight-title">${buildTimelineEventTitle(event, promo, productInfo)}</div>
+        <div class="step2-timeline-highlight-copy">${buildTimelineEventCopy(event, promo, productInfo)}</div>
+        <div class="step2-timeline-highlight-meta">${buildTimelineEventMeta(event, productInfo)}</div>
+      </button>
+    `;
+  });
+  html += '</div></div></div>';
+
+  container.innerHTML = html;
+
+  const selectEvent = eventId => {
+    const selectedEvent = filteredEvents.find(event => event.event_id === eventId);
+    if (!selectedEvent) return;
+    container.querySelectorAll('[data-event-id]').forEach(node => {
+      node.classList.toggle('is-selected', node.dataset.eventId === eventId);
+    });
+    renderEventAnalystSelection(selectedEvent);
+    if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+      window.onEventCalendarEventSelected(selectedEvent);
+    }
+  };
+
+  container.querySelectorAll('.step2-timeline-dot, .step2-timeline-highlight').forEach(node => {
+    node.addEventListener('click', () => selectEvent(node.dataset.eventId));
+  });
+
+  const defaultEvent = getPriorityCurrentEvent(filteredEvents) || highlightEvents[0];
+  if (defaultEvent) {
+    selectEvent(defaultEvent.event_id);
+  }
+
+  renderGuidedStorylineExamplesV2(filteredEvents);
+}
+function renderGuidedStorylineExamplesV2Legacy(filteredEvents = []) {
+  const container = document.getElementById('event-storyline-examples');
+  if (!container) return;
+
+  const visibleEvents = Array.isArray(filteredEvents) ? filteredEvents : [];
+  const visiblePromos = Object.values(promoMetadata || {})
+    .filter(promo => promoMatchesActiveProductFilter(promo))
+    .map(promo => ({ promo, metrics: buildPromoStoryMetrics(promo) }));
+
+  if (!visibleEvents.length && !visiblePromos.length) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+
+  const nearestEvent = predicate => [...visibleEvents]
+    .filter(predicate)
+    .sort((a, b) => Math.abs(new Date(a.date) - CALENDAR_TODAY) - Math.abs(new Date(b.date) - CALENDAR_TODAY))[0];
+  const rankPromos = list => [...list].sort((a, b) => {
+    const revenueDiff = safeNumber(b.metrics.revenue, 0) - safeNumber(a.metrics.revenue, 0);
+    if (revenueDiff !== 0) return revenueDiff;
+    return safeNumber(b.metrics.roi, 0) - safeNumber(a.metrics.roi, 0);
+  });
+  const hasTag = (promo, tag) => (promo?.campaign_tags || []).some(item => String(item).toLowerCase() === tag);
+
+  const competitorEvent = nearestEvent(event => event.event_type === 'Competitor Price Change');
+  const socialEvent = nearestEvent(event => event.event_type === 'Social Spike');
+  const seasonalEvent = nearestEvent(event => event.event_type === 'Tentpole');
+  const usedPromoIds = new Set();
+  const pickPromo = candidates => {
+    const match = candidates.find(item => !usedPromoIds.has(item.promo.promo_id));
+    if (match) usedPromoIds.add(match.promo.promo_id);
+    return match || null;
+  };
+
+  const competitorPromo = pickPromo(rankPromos(visiblePromos.filter(({ promo }) => hasTag(promo, 'competitive') || String(promo.story_summary || '').toLowerCase().includes('competitor'))));
+  const socialPromo = pickPromo(rankPromos(visiblePromos.filter(({ promo }) => hasTag(promo, 'social') || String(promo.story_summary || '').toLowerCase().includes('social'))));
+  const selectivePromo = pickPromo(rankPromos(visiblePromos.filter(({ promo, metrics }) => (promo.eligible_channels || []).some(channel => ['sephora', 'ulta'].includes(String(channel).toLowerCase())) && safeNumber(metrics.discountPct, 99) <= 8)));
+  const cautionPromo = pickPromo([...visiblePromos].filter(({ metrics, promo }) => (metrics.downCount || 0) > 0 || metrics.repeatLossExpected || String(promo.notes || '').toLowerCase().includes('exclude')).sort((a, b) => {
+    const downDiff = (b.metrics.downCount || 0) - (a.metrics.downCount || 0);
+    if (downDiff !== 0) return downDiff;
+    return safeNumber(a.metrics.roi, 99) - safeNumber(b.metrics.roi, 99);
+  }));
+
+  const stories = [
+    competitorPromo ? {
+      tone: 'competitor',
+      badge: 'Competitor Move',
+      title: 'Defend only where the competitor cuts price',
+      copy: `${competitorPromo.promo.campaign_name} protected the exposed mass business, but ${competitorPromo.metrics.worstSku ? `${competitorPromo.metrics.worstSku} still lagged ${competitorPromo.metrics.worstSkuLift >= 0 ? '+' : ''}${competitorPromo.metrics.worstSkuLift.toFixed(1)}%.` : 'the weak SKUs still need to be excluded next cycle.'}`,
+      metaItems: [
+        { label: 'Best Channel', value: competitorPromo.metrics.bestChannel ? `${competitorPromo.metrics.bestChannel}${Number.isFinite(competitorPromo.metrics.bestChannelLift) ? ` (${competitorPromo.metrics.bestChannelLift >= 0 ? '+' : ''}${competitorPromo.metrics.bestChannelLift.toFixed(1)}%)` : ''}` : 'Target / Amazon focus' },
+        { label: 'Projected Impact', value: Number.isFinite(competitorPromo.metrics.revenue) ? formatSignedCurrency(competitorPromo.metrics.revenue) : 'Volume protection' },
+        { label: 'Lesson', value: competitorPromo.metrics.downCount ? `Exclude ${competitorPromo.metrics.downCount} weak SKU(s) from the next defense wave.` : 'Keep the response narrow to exposed SPF only.' }
+      ],
+      eventId: nearestEvent(event => event.promo_id === competitorPromo.promo.promo_id)?.event_id || competitorEvent?.event_id || null
+    } : null,
+    socialPromo ? {
+      tone: 'social',
+      badge: 'Social-Led Hold',
+      title: 'When social momentum is high, stay shallow on discount',
+      copy: `${socialPromo.promo.campaign_name} delivered ${Number.isFinite(socialPromo.metrics.roi) ? `${socialPromo.metrics.roi.toFixed(2)}x ROI` : 'strong returns'} with only ${Number.isFinite(socialPromo.metrics.discountPct) ? `${socialPromo.metrics.discountPct.toFixed(0)}% depth` : 'light depth'}, showing that creator demand can do the conversion work.`,
+      metaItems: [
+        { label: 'Best Channel', value: socialPromo.metrics.bestChannel ? `${socialPromo.metrics.bestChannel}${Number.isFinite(socialPromo.metrics.bestChannelLift) ? ` (${socialPromo.metrics.bestChannelLift >= 0 ? '+' : ''}${socialPromo.metrics.bestChannelLift.toFixed(1)}%)` : ''}` : 'Prestige focus' },
+        { label: 'ROI', value: Number.isFinite(socialPromo.metrics.roi) ? `${socialPromo.metrics.roi.toFixed(2)}x` : 'N/A' },
+        { label: 'Lesson', value: 'Protect price when buzz and prestige conversion are both carrying demand.' }
+      ],
+      eventId: nearestEvent(event => event.promo_id === socialPromo.promo.promo_id)?.event_id || socialEvent?.event_id || null
+    } : null,
+    selectivePromo ? {
+      tone: 'promo',
+      badge: 'Selective Promo',
+      title: 'Prestige should be selective, not broad',
+      copy: `${selectivePromo.promo.campaign_name} is the clearest example of targeted prestige depth. It lifts the responsive products without putting the whole portfolio into markdown.`,
+      metaItems: [
+        { label: 'Best Channel', value: selectivePromo.metrics.bestChannel ? `${selectivePromo.metrics.bestChannel}${Number.isFinite(selectivePromo.metrics.bestChannelLift) ? ` (${selectivePromo.metrics.bestChannelLift >= 0 ? '+' : ''}${selectivePromo.metrics.bestChannelLift.toFixed(1)}%)` : ''}` : 'Sephora / Ulta' },
+        { label: 'Projected Impact', value: Number.isFinite(selectivePromo.metrics.revenue) ? formatSignedCurrency(selectivePromo.metrics.revenue) : 'Selective lift' },
+        { label: 'Lesson', value: Number.isFinite(selectivePromo.metrics.avgUplift) ? `Average uplift ${selectivePromo.metrics.avgUplift >= 0 ? '+' : ''}${selectivePromo.metrics.avgUplift.toFixed(1)}% across the included SKUs.` : 'Use narrow depth on the highest-response prestige products.' }
+      ],
+      eventId: nearestEvent(event => event.promo_id === selectivePromo.promo.promo_id)?.event_id || null
+    } : null,
+    cautionPromo ? {
+      tone: 'caution',
+      badge: 'Caution',
+      title: 'Mixed promo results need tighter SKU selection',
+      copy: `${cautionPromo.promo.campaign_name} created lift, but ${cautionPromo.metrics.worstSku ? `${cautionPromo.metrics.worstSku} still moved ${cautionPromo.metrics.worstSkuLift >= 0 ? '+' : ''}${cautionPromo.metrics.worstSkuLift.toFixed(1)}%.` : 'the weakest SKUs still diluted the result.'} Use it as the exclusion template for the next cycle.`,
+      metaItems: [
+        { label: 'Down SKU', value: cautionPromo.metrics.worstSku || `${cautionPromo.metrics.downCount || 0} weak SKU(s)` },
+        { label: 'Revenue', value: Number.isFinite(cautionPromo.metrics.revenue) ? formatSignedCurrency(cautionPromo.metrics.revenue) : 'Mixed return' },
+        { label: 'Lesson', value: cautionPromo.metrics.repeatLossExpected ? 'Broad promo logic creates repeat-loss risk if you do not exclude the weak products.' : 'Tighten the SKU list before the next wave.' }
+      ],
+      eventId: nearestEvent(event => event.promo_id === cautionPromo.promo.promo_id)?.event_id || seasonalEvent?.event_id || null
+    } : null
+  ].filter(Boolean);
+
+  if (!stories.length) {
+    container.innerHTML = '<div class="text-muted small">No guided examples available for the current product/filter selection.</div>';
+    return;
+  }
+
+  if (window.renderStep2AiStorylines && typeof window.renderStep2AiStorylines === 'function') {
+    window.renderStep2AiStorylines({
+      stories,
+      visibleEvents,
+      selectedScope: {
+        productFilter: getCurrentStep2ProductFilter(),
+        selectionLabel: formatProductSelectionLabel(getCurrentStep2ProductFilter())
+      },
+      signalSnapshot: {
+        storyCount: stories.length,
+        eventCount: visibleEvents.length
+      }
+    });
+    return;
+  }
+
+  container.innerHTML = stories.map(story => `
+    <article class="step2-story-card" data-story-tone="${story.tone}"${story.eventId ? ` data-event-id="${story.eventId}"` : ''}>
+      <div class="step2-story-badge">${story.badge}</div>
+      <div class="step2-story-title">${story.title}</div>
+      <div class="step2-story-copy">${story.copy}</div>
+      <div class="step2-story-meta">
+        ${story.metaItems.map(item => `
+          <div class="step2-story-meta-row">
+            <span class="step2-story-meta-label">${item.label}</span>
+            <span class="step2-story-meta-value">${item.value}</span>
+          </div>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+
+  container.querySelectorAll('[data-event-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const eventId = card.dataset.eventId;
+      document.querySelectorAll('#event-timeline [data-event-id]').forEach(node => {
+        node.classList.toggle('is-selected', node.dataset.eventId === eventId);
+      });
+      const event = visibleEvents.find(item => item.event_id === eventId) || (allEvents || []).find(item => item.event_id === eventId);
+      if (!event) return;
+      renderEventAnalystSelection(event);
+      if (window.onEventCalendarEventSelected && typeof window.onEventCalendarEventSelected === 'function') {
+        window.onEventCalendarEventSelected(event);
+      }
+    });
+  });
 }
