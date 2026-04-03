@@ -581,6 +581,10 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
   if (!currentStateHistoryRows.length || force) {
     currentStateHistoryRows = await loadProductChannelHistory();
   }
+  // Pre-load product catalog for channel drill-down SKU labels
+  if (!currentBusinessOverviewProductCatalog) {
+    try { currentBusinessOverviewProductCatalog = await loadProductCatalog(); } catch (_) { /* loaded later by renderCurrentBusinessOverviewLatestWeek */ }
+  }
   if (!currentStateHistoryRows.length) return;
 
   const productFilter = document.getElementById('history-product-filter');
@@ -608,6 +612,8 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
     productFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     windowFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     if (channelFilter) channelFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
+    const trendLocalWindowFilter = document.getElementById('history-trend-local-window');
+    if (trendLocalWindowFilter) trendLocalWindowFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     if (resetButton) {
       resetButton.addEventListener('click', () => {
         productFilter.value = 'all';
@@ -630,6 +636,7 @@ function renderCurrentStateHistoryDashboard() {
     const num = Number(value);
     return Number.isFinite(num) ? num : 0;
   };
+  const productCatalogMap = currentBusinessOverviewProductCatalog ? buildProductCatalogMap(currentBusinessOverviewProductCatalog) : new Map();
   const productFilter = document.getElementById('history-product-filter');
   const windowFilter = document.getElementById('history-window-filter');
   const channelFilter = document.getElementById('history-channel-filter');
@@ -695,50 +702,43 @@ function renderCurrentStateHistoryDashboard() {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   };
-  // Colored change helper: wraps value in a colored span; positiveIsGood=false inverts logic
-  const setChangeHTML = (id, text, positiveIsGood = true) => {
+  const setHtml = (id, html) => {
     const el = document.getElementById(id);
-    if (!el) return;
-    if (!text || text === '--') { el.textContent = text || '--'; return; }
-    const isPos = text.startsWith('+');
-    const isNeg = /^-[\d]/.test(text);
-    let cls = '';
-    if (isPos) cls = positiveIsGood ? 'text-success' : 'text-danger';
-    else if (isNeg) cls = positiveIsGood ? 'text-danger' : 'text-success';
-    el.innerHTML = cls ? `<span class="${cls} fw-semibold">${text}</span>` : text;
+    if (el) el.innerHTML = html;
   };
-  // Color a KPI value element based on a condition (true=green, false=red, null=neutral)
-  const setValueColor = (id, isGood) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.remove('text-success', 'text-danger', 'text-warning');
-    if (isGood === true) el.classList.add('text-success');
-    else if (isGood === false) el.classList.add('text-danger');
+  const kpiColor = (val, invertGap = false) => {
+    const positive = invertGap ? val <= 0 : val >= 0;
+    return positive ? 'text-success' : 'text-danger';
+  };
+  const kpiArrow = (val, invertGap = false) => {
+    const positive = invertGap ? val <= 0 : val >= 0;
+    return positive ? '<i class="bi bi-arrow-up-short"></i>' : '<i class="bi bi-arrow-down-short"></i>';
   };
 
   setText('history-total-revenue', formatCompactCurrency(current.revenue, 1));
   setText('history-total-units', formatCompactNumber(current.units, 1));
   setText('history-avg-price', formatCurrency(current.ownPrice));
-  // Gap value: positive means we're MORE expensive than competitor → bad (red)
-  const gapText = `${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%`;
-  setText('history-gap', gapText);
-  setValueColor('history-gap', current.gap > 0 ? false : current.gap < 0 ? true : null);
-  // Social value: positive = good (green)
-  const socialText = `${current.social >= 0 ? '+' : ''}${current.social.toFixed(1)}`;
-  setText('history-social', socialText);
-  setValueColor('history-social', current.social >= 0 ? true : false);
+  // Competitor gap: positive = priced above competitor (bad/danger), negative = below (good/success)
+  const gapPct = current.gap * 100;
+  setHtml('history-gap', `<span class="${gapPct > 1 ? 'text-danger' : gapPct < -1 ? 'text-success' : ''}">${gapPct >= 0 ? '+' : ''}${gapPct.toFixed(1)}%</span>`);
+  // Social buzz: higher is better
+  setHtml('history-social', `<span class="${current.social >= 0 ? 'text-success' : 'text-danger'}">${current.social >= 0 ? '+' : ''}${current.social.toFixed(1)}</span>`);
 
-  const revChangeText = hasComparison ? `${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window total';
-  const unitsChangeText = hasComparison ? `${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}% vs prior ${windowWeeks}-week period` : 'Full selected-window volume';
-  const priceChangeText = hasComparison ? `${priceDelta >= 0 ? '+' : ''}${formatCurrency(Math.abs(priceDelta))} vs prior period` : 'Window average';
-  const gapChangeText = hasComparison ? `${formatPercentagePointDelta(gapDelta)} vs prior period` : 'Window average';
-  const socialChangeText = hasComparison ? `${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} pts vs prior period` : 'Window average';
-
-  setChangeHTML('history-revenue-change', revChangeText, true);
-  setChangeHTML('history-units-change', unitsChangeText, true);
-  setText('history-price-change', priceChangeText); // price is neutral
-  setChangeHTML('history-gap-change', gapChangeText, false); // larger gap = bad
-  setChangeHTML('history-social-change', socialChangeText, true);
+  // Change indicators with arrows and colors
+  if (hasComparison) {
+    setHtml('history-revenue-change', `<span class="${kpiColor(revenueDelta)}">${kpiArrow(revenueDelta)} ${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}%</span> vs prior ${windowWeeks}-week period`);
+    setHtml('history-units-change', `<span class="${kpiColor(unitsDelta)}">${kpiArrow(unitsDelta)} ${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}%</span> vs prior ${windowWeeks}-week period`);
+    setHtml('history-price-change', `<span class="${priceDelta >= 0 ? 'text-danger' : 'text-success'}">${priceDelta >= 0 ? '+' : '-'}${formatCurrency(Math.abs(priceDelta))}</span> vs prior period`);
+    // Gap change: increasing gap = bad (danger), decreasing = good (success)
+    setHtml('history-gap-change', `<span class="${gapDelta > 0 ? 'text-danger' : gapDelta < 0 ? 'text-success' : ''}">${formatPercentagePointDelta(gapDelta)}</span> vs prior period`);
+    setHtml('history-social-change', `<span class="${kpiColor(socialDelta)}">${kpiArrow(socialDelta)} ${socialDelta >= 0 ? '+' : ''}${socialDelta.toFixed(1)} pts</span> vs prior period`);
+  } else {
+    setText('history-revenue-change', 'Full selected-window total');
+    setText('history-units-change', 'Full selected-window volume');
+    setText('history-price-change', 'Window average');
+    setText('history-gap-change', 'Window average');
+    setText('history-social-change', 'Window average');
+  }
 
   const riskRevenue = windowScopedRows.reduce((sum, row) => {
     const rowGap = toNumber(row.price_gap_vs_competitor);
@@ -749,8 +749,8 @@ function renderCurrentStateHistoryDashboard() {
     return sum;
   }, 0);
   const riskShare = current.revenue > 0 ? riskRevenue / current.revenue : 0;
-  if (riskRevenueEl) riskRevenueEl.textContent = formatCompactCurrency(riskRevenue, 1);
-  if (riskChangeEl) riskChangeEl.textContent = `${(riskShare * 100).toFixed(0)}% of selected-window revenue exposed to premium pricing with weaker buzz`;
+  if (riskRevenueEl) riskRevenueEl.innerHTML = `<span class="${riskShare > 0.2 ? 'text-danger' : riskShare > 0.1 ? 'text-warning' : 'text-success'}">${formatCompactCurrency(riskRevenue, 1)}</span>`;
+  if (riskChangeEl) riskChangeEl.innerHTML = `<span class="${riskShare > 0.2 ? 'text-danger' : ''}">${(riskShare * 100).toFixed(0)}%</span> of selected-window revenue exposed to premium pricing with weaker buzz`;
 
   const historyChannelMap = (rows) => {
     const map = new Map();
@@ -814,13 +814,13 @@ function renderCurrentStateHistoryDashboard() {
 
   const getChannelAction = (item) => {
     if (item.gap > 2.5) {
-      return { label: 'Run Promotion', cls: 'cbo-channel-btn-danger' };
+      return null;
     }
     if (item.tier === 'prestige' && item.social > 10 && item.gap <= 1.5) {
-      return { label: 'Maintain Price', cls: 'cbo-channel-btn-success' };
+      return null;
     }
     if (item.tier === 'prestige') {
-      return { label: 'Maintain Price', cls: 'cbo-channel-btn-outline' };
+      return null;
     }
     if (item.social > 8 && item.gap <= 0) {
       return { label: 'Leverage Buzz', cls: 'cbo-channel-btn-success' };
@@ -833,7 +833,7 @@ function renderCurrentStateHistoryDashboard() {
       const action = getChannelAction(item);
       return `
       <div class="col-lg-6 col-xl-3">
-          <div class="cbo-channel-card cbo-channel-${item.tier}">
+          <div class="cbo-channel-card cbo-channel-${item.tier}" style="cursor:pointer;" data-channel="${item.channel}" title="Click for detailed ${item.label} breakdown">
             <div class="cbo-channel-card-top">
               <div class="cbo-channel-brand">
                 <span class="cbo-channel-brandmark">
@@ -859,21 +859,196 @@ function renderCurrentStateHistoryDashboard() {
             <span>Avg Price</span>
             <strong>${formatCurrency(item.ownPrice)}</strong>
           </div>
+          ${action ? `
           <div class="cbo-channel-action-row">
             <button class="cbo-channel-action-btn ${action.cls}">${action.label}</button>
+          </div>` : ''}
+          <div class="cbo-channel-actions">
+            <button class="cbo-channel-action-link cbo-channel-drilldown-btn" data-channel="${item.channel}">
+              <i class="bi bi-layers"></i> Details
+            </button>
+            <button class="cbo-channel-action-link cbo-channel-trend-btn" data-channel="${item.channel}">
+              <i class="bi bi-activity"></i> Trend
+            </button>
           </div>
         </div>
       </div>
     `;
     }).join('');
+
+    // Attach drill-down handlers for channel detail buttons
+    channelCardsHost.querySelectorAll('.cbo-channel-drilldown-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const channel = btn.dataset.channel;
+        const channelLabel = KPI_CHANNEL_LABELS[channel] || channel;
+        const channelRows = windowScopedRows.filter(row => String(row.sales_channel || '').toLowerCase() === channel);
+        const prevChannelRows = previousWindowRows.filter(row => String(row.sales_channel || '').toLowerCase() === channel);
+
+        // Build per-SKU breakdown for this channel
+        const skuBreakdown = [...new Set(channelRows.map(r => r.sku_id))].map(skuId => {
+          const skuRows = channelRows.filter(r => r.sku_id === skuId);
+          const prevSkuRows = prevChannelRows.filter(r => r.sku_id === skuId);
+          let rev = 0, units = 0, prevRev = 0, prevUnits = 0;
+          let ownP = 0, compP = 0, socialW = 0, wt = 0;
+          skuRows.forEach(r => {
+            const u = toNumber(r.units_sold);
+            const w = u > 0 ? u : 1;
+            rev += toNumber(r.revenue);
+            units += u;
+            ownP += toNumber(r.own_price) * w;
+            compP += toNumber(r.competitor_price) * w;
+            socialW += getBuzzSentimentScore(r) * w;
+            wt += w;
+          });
+          prevSkuRows.forEach(r => { prevRev += toNumber(r.revenue); prevUnits += toNumber(r.units_sold); });
+          const avgOwn = wt ? ownP / wt : 0;
+          const avgComp = wt ? compP / wt : 0;
+          const gap = avgComp ? ((avgOwn - avgComp) / avgComp) * 100 : 0;
+          return {
+            skuName: getCatalogLabel(productCatalogMap, skuId, skuRows[0]?.sku_name || skuId),
+            revenue: rev,
+            units,
+            revDelta: prevRev > 0 ? ((rev - prevRev) / prevRev) * 100 : 0,
+            ownPrice: avgOwn,
+            compPrice: avgComp,
+            gap,
+            social: wt ? socialW / wt : 0
+          };
+        }).sort((a, b) => b.revenue - a.revenue);
+
+        const modalTitle = document.getElementById('cbo-drilldown-modal-title');
+        const modalBody = document.getElementById('cbo-drilldown-modal-body');
+        if (modalTitle) modalTitle.textContent = `${channelLabel} Channel Detail`;
+        if (modalBody) {
+          const summary = channelSummaries.find(s => s.channel === channel);
+          modalBody.innerHTML = `
+            <div class="row g-3 mb-3">
+              <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Revenue</div><div class="fw-bold">${formatCompactCurrency(summary?.revenue || 0, 1)}</div></div></div>
+              <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Units</div><div class="fw-bold">${formatCompactNumber(summary?.units || 0, 0)}</div></div></div>
+              <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Price Gap</div><div class="fw-bold ${(summary?.gap || 0) > 1 ? 'text-danger' : 'text-success'}">${(summary?.gap || 0) >= 0 ? '+' : ''}${(summary?.gap || 0).toFixed(1)}%</div></div></div>
+              <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Sentiment</div><div class="fw-bold">${(summary?.social || 0) >= 0 ? '+' : ''}${(summary?.social || 0).toFixed(1)}</div></div></div>
+            </div>
+            <h6 class="mb-2">SKU Breakdown on ${channelLabel}</h6>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead><tr>
+                  <th>Product</th><th class="text-end">Revenue</th><th class="text-end">Units</th><th class="text-end">Rev WoW</th><th class="text-end">Our Price</th><th class="text-end">Comp Price</th><th class="text-end">Gap</th><th class="text-end">Social</th>
+                </tr></thead>
+                <tbody>${skuBreakdown.map(r => `<tr>
+                  <td class="fw-semibold">${r.skuName}</td>
+                  <td class="text-end">${formatCompactCurrency(r.revenue, 1)}</td>
+                  <td class="text-end">${formatCompactNumber(r.units, 0)}</td>
+                  <td class="text-end ${r.revDelta >= 0 ? 'text-success' : 'text-danger'}">${r.revDelta >= 0 ? '+' : ''}${r.revDelta.toFixed(1)}%</td>
+                  <td class="text-end">${formatCurrency(r.ownPrice)}</td>
+                  <td class="text-end">${formatCurrency(r.compPrice)}</td>
+                  <td class="text-end ${r.gap > 1 ? 'text-danger' : r.gap < -1 ? 'text-success' : ''}">${r.gap >= 0 ? '+' : ''}${r.gap.toFixed(1)}%</td>
+                  <td class="text-end">${r.social >= 0 ? '+' : ''}${r.social.toFixed(1)}</td>
+                </tr>`).join('')}</tbody>
+              </table>
+            </div>`;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('cbo-drilldown-modal'));
+        modal.show();
+      });
+    });
+
+    // Attach trend chart handlers for channel trend buttons
+    channelCardsHost.querySelectorAll('.cbo-channel-trend-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const channel = btn.dataset.channel;
+        const channelLabel = KPI_CHANNEL_LABELS[channel] || channel;
+
+        // Build weekly revenue data per SKU for this channel
+        const channelHistory = scopedRows.filter(row => String(row.sales_channel || '').toLowerCase() === channel);
+        const weekSet = [...new Set(channelHistory.map(r => String(r.week_start || r.date || '')))].sort();
+        const skuIdsForChannel = [...new Set(channelHistory.map(r => r.sku_id))];
+        const TREND_COLORS = ['#2563eb', '#f97316', '#7c3aed', '#059669', '#dc2626', '#d97706'];
+
+        const datasets = skuIdsForChannel.map((skuId, idx) => {
+          const skuName = getCatalogLabel(productCatalogMap, skuId, skuId);
+          return {
+            label: skuName,
+            data: weekSet.map(wk => {
+              const match = channelHistory.find(r => r.sku_id === skuId && String(r.week_start || r.date || '') === wk);
+              return match ? toNumber(match.revenue) : 0;
+            }),
+            borderColor: TREND_COLORS[idx % TREND_COLORS.length],
+            backgroundColor: TREND_COLORS[idx % TREND_COLORS.length] + '18',
+            borderWidth: 2,
+            tension: 0.25,
+            pointRadius: 1.5
+          };
+        });
+
+        const chartLabels = weekSet.map(wk => {
+          const d = new Date(`${wk}T00:00:00`);
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        const modalTitle = document.getElementById('cbo-drilldown-modal-title');
+        const modalBody = document.getElementById('cbo-drilldown-modal-body');
+        if (modalTitle) modalTitle.textContent = `${channelLabel} Revenue Trend by SKU`;
+        if (modalBody) {
+          modalBody.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small">Revenue trend for ${channelLabel} across all products over the selected window.</span>
+              <select class="form-select form-select-sm" style="width:auto;" id="cbo-trend-window-select">
+                <option value="4">Last 4 weeks</option>
+                <option value="12">Last 12 weeks</option>
+                <option value="26">Last 26 weeks</option>
+                <option value="52" selected>Last 1 year</option>
+              </select>
+            </div>
+            <div style="height:350px;"><canvas id="cbo-channel-trend-canvas"></canvas></div>`;
+
+          const renderTrendChart = (numWeeks) => {
+            const startIdx = Math.max(0, weekSet.length - numWeeks);
+            const slicedLabels = chartLabels.slice(startIdx);
+            const slicedDatasets = datasets.map(ds => ({ ...ds, data: ds.data.slice(startIdx) }));
+            const canvas = document.getElementById('cbo-channel-trend-canvas');
+            if (!canvas || !window.Chart) return;
+            if (canvas._chartInstance) canvas._chartInstance.destroy();
+            canvas._chartInstance = new Chart(canvas, {
+              type: 'line',
+              data: { labels: slicedLabels, datasets: slicedDatasets },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { ticks: { callback: v => formatCompactCurrency(Number(v), 0) } } }
+              }
+            });
+          };
+
+          setTimeout(() => {
+            renderTrendChart(52);
+            const windowSelect = document.getElementById('cbo-trend-window-select');
+            if (windowSelect) {
+              windowSelect.addEventListener('change', () => renderTrendChart(Number(windowSelect.value)));
+            }
+          }, 200);
+        }
+        const modal = new bootstrap.Modal(document.getElementById('cbo-drilldown-modal'));
+        modal.show();
+      });
+    });
   }
 
-  const chartLabels = metrics.weeks.map(row => {
+  // Local trend window filter - builds its own metrics independently of the global lookback
+  const trendLocalWindow = document.getElementById('history-trend-local-window');
+  const trendLocalWeeks = Number(trendLocalWindow?.value || 52);
+  const trendMetrics = buildHistoryWindowMetrics(scopedRows, trendLocalWeeks);
+  const trendWeeksData = trendMetrics.weeks;
+
+  const chartLabels = trendWeeksData.map(row => {
     const date = new Date(`${row.date}T00:00:00`);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      ...(windowWeeks >= 52 ? { year: '2-digit' } : {})
+      ...(trendLocalWeeks >= 52 ? { year: '2-digit' } : {})
     });
   });
 
@@ -903,9 +1078,9 @@ function renderCurrentStateHistoryDashboard() {
           {
             type: 'bar',
             label: 'Revenue',
-            data: metrics.weeks.map(row => Number(row.revenue.toFixed(2))),
-            backgroundColor: 'rgba(59, 130, 246, 0.28)',
-            borderColor: 'rgba(37, 99, 235, 0.6)',
+            data: trendWeeksData.map(row => Number(row.revenue.toFixed(2))),
+            backgroundColor: 'rgba(59, 130, 246, 0.35)',
+            borderColor: 'rgba(37, 99, 235, 0.75)',
             borderWidth: 1,
             borderRadius: 3,
             yAxisID: 'y'
@@ -913,7 +1088,7 @@ function renderCurrentStateHistoryDashboard() {
           {
             type: 'line',
             label: 'Own price',
-            data: metrics.weeks.map(row => Number(row.ownPrice.toFixed(2))),
+            data: trendWeeksData.map(row => Number(row.ownPrice.toFixed(2))),
             borderColor: '#111827',
             backgroundColor: 'rgba(17, 24, 39, 0.06)',
             borderWidth: 2,
@@ -925,7 +1100,7 @@ function renderCurrentStateHistoryDashboard() {
           {
             type: 'line',
             label: 'Competitor gap %',
-            data: metrics.weeks.map(row => Number((row.gap * 100).toFixed(2))),
+            data: trendWeeksData.map(row => Number((row.gap * 100).toFixed(2))),
             borderColor: '#dc2626',
             backgroundColor: 'rgba(220, 38, 38, 0.08)',
             borderDash: [6, 4],
@@ -938,7 +1113,7 @@ function renderCurrentStateHistoryDashboard() {
           {
             type: 'line',
             label: 'Social buzz',
-            data: metrics.weeks.map(row => Number(row.social.toFixed(1))),
+            data: trendWeeksData.map(row => Number(row.social.toFixed(1))),
             borderColor: '#8b5cf6',
             backgroundColor: 'rgba(139, 92, 246, 0.08)',
             borderWidth: 2,
@@ -947,10 +1122,10 @@ function renderCurrentStateHistoryDashboard() {
             tension: 0.3,
             yAxisID: 'y3'
           },
-          ...(metrics.weeks.some(row => row.inventory > 0) ? [{
+          ...(trendWeeksData.some(row => row.inventory > 0) ? [{
             type: 'line',
             label: 'Inventory',
-            data: metrics.weeks.map(row => row.inventory || 0),
+            data: trendWeeksData.map(row => row.inventory || 0),
             borderColor: '#059669',
             backgroundColor: 'rgba(5, 150, 105, 0.06)',
             borderWidth: 2,
@@ -5752,6 +5927,11 @@ async function init() {
 
   // Initialize AI chat widgets on each step
   initializeStepChatWidgets();
+
+  // Initialize Bootstrap tooltips for info icons
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+  }
 }
 
 async function renderCurrentBusinessOverviewLatestWeek() {
@@ -5893,13 +6073,14 @@ async function renderCurrentBusinessOverviewLatestWeek() {
       social: getBuzzSentimentScore(row),
       revenue: toNum(row.revenue)
     };
-  }).sort((a, b) => Math.max(Math.abs(b.move), Math.abs(b.gap)) - Math.max(Math.abs(a.move), Math.abs(a.gap)));
+  }).sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
 
   const significantMoves = competitorRows.filter(row => Math.abs(row.move) >= 0.4 || Math.abs(row.gap) >= 2.5);
   if (competitorCountEl) {
     competitorCountEl.textContent = `${significantMoves.length} significant move${significantMoves.length === 1 ? '' : 's'}`;
   }
-  competitorBodyEl.innerHTML = (significantMoves.slice(0, 4).length ? significantMoves.slice(0, 4) : competitorRows.slice(0, 4)).map(row => `
+  const displayedAlerts = significantMoves.length ? significantMoves : competitorRows;
+  const renderAlertRow = (row) => `
     <tr>
       <td class="fw-semibold">${row.skuName}</td>
       <td>${CHANNEL_LABELS[row.channel] || row.channel}</td>
@@ -5907,7 +6088,38 @@ async function renderCurrentBusinessOverviewLatestWeek() {
       <td class="text-end">${formatCurrency(row.ourPrice)}</td>
       <td class="text-end ${row.gap > 1 ? 'text-danger' : row.gap < -1 ? 'text-success' : ''}">${row.gap >= 0 ? '+' : ''}${row.gap.toFixed(1)}%</td>
     </tr>
-  `).join('');
+  `;
+  competitorBodyEl.innerHTML = displayedAlerts.slice(0, 3).map(renderAlertRow).join('');
+
+  const expandContainer = document.getElementById('step1-competitor-expand-container');
+  const expandBtn = document.getElementById('step1-competitor-expand-btn');
+  if (expandContainer && displayedAlerts.length > 3) {
+    expandContainer.style.display = '';
+    if (expandBtn) {
+      expandBtn.onclick = () => {
+        const modalTitle = document.getElementById('cbo-drilldown-modal-title');
+        const modalBody = document.getElementById('cbo-drilldown-modal-body');
+        if (modalTitle) modalTitle.textContent = `All Competitor Price Alerts (${displayedAlerts.length})`;
+        if (modalBody) {
+          modalBody.innerHTML = `
+            <p class="text-muted small mb-3">Sorted by price gap (highest first). Showing all ${displayedAlerts.length} significant moves for ${latestWeekLabel}.</p>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0 cbo-table">
+                <thead><tr>
+                  <th>Product</th><th>Channel</th><th class="text-end">Competitor</th><th class="text-end">Our Price</th><th class="text-end">Gap</th>
+                </tr></thead>
+                <tbody>${displayedAlerts.map(renderAlertRow).join('')}</tbody>
+              </table>
+            </div>`;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('cbo-drilldown-modal'));
+        modal.show();
+      };
+    }
+  } else if (expandContainer) {
+    expandContainer.style.display = 'none';
+  }
+
   if (competitorNoteEl) {
     competitorNoteEl.textContent = `Current-week view for ${latestWeekLabel}. ${significantMoves.length ? `Most material move: ${significantMoves[0].skuName} on ${CHANNEL_LABELS[significantMoves[0].channel] || significantMoves[0].channel}.` : 'No major week-over-week competitor moves detected.'}`;
   }
@@ -5947,20 +6159,113 @@ async function renderCurrentBusinessOverviewLatestWeek() {
     };
   }).sort((a, b) => b.revenue - a.revenue);
 
-  snapshotBodyEl.innerHTML = skuSnapshot.map(row => `
+  const renderSnapshotRow = (row) => `
     <tr>
       <td class="fw-semibold">${row.skuName}</td>
       <td>${row.topChannel}</td>
+      <td class="text-end">${formatCompactCurrency(row.revenue, 1)}</td>
       <td class="text-end">${formatCompactNumber(row.units, 1)}</td>
       <td class="text-end ${row.unitsDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${fmtPct(row.unitsDeltaPct)}</td>
       <td class="text-end">${formatCurrency(row.ownPrice)}</td>
       <td class="text-end">${formatCurrency(row.compPrice)}</td>
       <td class="text-end ${row.gap > 1 ? 'text-danger' : row.gap < -1 ? 'text-success' : ''}">${row.gap >= 0 ? '+' : ''}${row.gap.toFixed(1)}%</td>
+      <td class="text-end">${fmtSigned(row.social)}</td>
       <td>${row.insight}</td>
     </tr>
-  `).join('');
+  `;
+  snapshotBodyEl.innerHTML = skuSnapshot.slice(0, 3).map(renderSnapshotRow).join('');
+
+  // Build all 24 product-channel combinations for the expand modal
+  const allProductChannelCombos = [];
+  const skuIds = [...new Set(latestRows.map(row => row.sku_id))];
+  skuIds.forEach(skuId => {
+    CHANNELS.forEach(channel => {
+      const row = latestRows.find(r => r.sku_id === skuId && String(r.sales_channel || '').toLowerCase() === channel);
+      if (!row) return;
+      const priorRow = priorRows.find(r => r.sku_id === skuId && String(r.sales_channel || '').toLowerCase() === channel);
+      const units = toNum(row.units_sold);
+      const priorUnits = priorRow ? toNum(priorRow.units_sold) : 0;
+      const unitsDeltaPct = priorUnits > 0 ? ((units - priorUnits) / priorUnits) * 100 : 0;
+      const ownPrice = toNum(row.own_price);
+      const compPrice = toNum(row.competitor_price);
+      const gap = compPrice ? ((ownPrice - compPrice) / compPrice) * 100 : 0;
+      const social = getBuzzSentimentScore(row);
+      const revenue = toNum(row.revenue);
+      let insight = 'Balanced performance across price and demand.';
+      if (gap > 3 && unitsDeltaPct < 0) {
+        insight = 'Volume softening while priced above competition.';
+      } else if (social > 20 && gap <= 1) {
+        insight = 'High buzz with aligned price. Demand capture opportunity.';
+      } else if (unitsDeltaPct > 3 && gap <= 0) {
+        insight = 'Strong momentum with competitive pricing.';
+      } else if (priorRow && toNum(priorRow.competitor_price) - compPrice > 0.4) {
+        insight = 'Competitor cut price this week. Watch conversion closely.';
+      }
+      allProductChannelCombos.push({
+        skuId,
+        skuName: getSkuName(skuId, row.sku_name || skuId),
+        channel: CHANNEL_LABELS[channel] || channel,
+        revenue,
+        units,
+        unitsDeltaPct,
+        ownPrice,
+        compPrice,
+        gap,
+        social,
+        insight
+      });
+    });
+  });
+
+  const snapshotExpandBtn = document.getElementById('step1-snapshot-expand-btn');
+  if (snapshotExpandBtn) {
+    snapshotExpandBtn.onclick = () => {
+      const modalTitle = document.getElementById('cbo-drilldown-modal-title');
+      const modalBody = document.getElementById('cbo-drilldown-modal-body');
+      if (modalTitle) modalTitle.textContent = 'Product Performance Across All Channels';
+      if (modalBody) {
+        // Group by product
+        const grouped = {};
+        allProductChannelCombos.forEach(row => {
+          if (!grouped[row.skuName]) grouped[row.skuName] = [];
+          grouped[row.skuName].push(row);
+        });
+        let tableRows = '';
+        Object.entries(grouped).forEach(([skuName, rows]) => {
+          tableRows += `<tr class="table-light"><td colspan="10" class="fw-bold small text-uppercase" style="letter-spacing:0.5px;padding-top:10px;">${skuName}</td></tr>`;
+          rows.forEach(row => {
+            tableRows += `<tr>
+              <td></td>
+              <td>${row.channel}</td>
+              <td class="text-end">${formatCompactCurrency(row.revenue, 1)}</td>
+              <td class="text-end">${formatCompactNumber(row.units, 0)}</td>
+              <td class="text-end ${row.unitsDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${fmtPct(row.unitsDeltaPct)}</td>
+              <td class="text-end">${formatCurrency(row.ownPrice)}</td>
+              <td class="text-end">${formatCurrency(row.compPrice)}</td>
+              <td class="text-end ${row.gap > 1 ? 'text-danger' : row.gap < -1 ? 'text-success' : ''}">${row.gap >= 0 ? '+' : ''}${row.gap.toFixed(1)}%</td>
+              <td class="text-end">${fmtSigned(row.social)}</td>
+              <td class="small">${row.insight}</td>
+            </tr>`;
+          });
+        });
+        modalBody.innerHTML = `
+          <p class="text-muted small mb-3">All ${allProductChannelCombos.length} product-channel combinations for ${latestWeekLabel}, grouped by product.</p>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 cbo-table">
+              <thead><tr>
+                <th>Product</th><th>Channel</th><th class="text-end">Revenue</th><th class="text-end">Units</th><th class="text-end">WoW</th><th class="text-end">Own Price</th><th class="text-end">Comp Price</th><th class="text-end">Gap</th><th class="text-end">Social Buzz</th><th>Insight</th>
+              </tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>`;
+      }
+      const modal = new bootstrap.Modal(document.getElementById('cbo-drilldown-modal'));
+      modal.show();
+    };
+  }
+
   if (snapshotNoteEl) {
-    snapshotNoteEl.textContent = `Latest-week snapshot for ${latestWeekLabel}. Table respects the current product and channel filters from the overview.`;
+    snapshotNoteEl.textContent = `Showing top 3 of ${skuSnapshot.length} products for ${latestWeekLabel}. Click "Expand All Channels" to see all ${allProductChannelCombos.length} product-channel combinations.`;
   }
 
   const pressuredCompetitorRow = significantMoves.find(row => row.gap > 2) || competitorRows.find(row => row.gap > 2);
@@ -6197,19 +6502,21 @@ async function initializeWeeklyDrilldown() {
     if (productPanelBadge) productPanelBadge.textContent = 'Units sold · WoW change · price gap · buzz';
 
     // KPIs
-    const setKpi = (id, val, deltaText, deltaValue = 0) => {
-      document.getElementById(id).textContent = val;
+    const setKpi = (id, val, deltaText, deltaValue = 0, valueColorClass = '') => {
+      const valEl = document.getElementById(id);
+      if (valEl) valEl.innerHTML = valueColorClass ? `<span class="${valueColorClass}">${val}</span>` : val;
       const wowEl = document.getElementById(id + '-wow');
       if (wowEl) {
         const cls = deltaValue > 0.5 ? 'text-success' : deltaValue < -0.5 ? 'text-danger' : 'text-muted';
-        wowEl.innerHTML = `<span class="${cls}">${deltaText}</span>`;
+        const arrow = deltaValue > 0.5 ? '<i class="bi bi-arrow-up-short"></i>' : deltaValue < -0.5 ? '<i class="bi bi-arrow-down-short"></i>' : '';
+        wowEl.innerHTML = `<span class="${cls}">${arrow}${deltaText}</span>`;
       }
     };
     setKpi('wd-kpi-revenue', fmt$(curr.revenue), `${fmtPct(wowRev)} vs last week`, wowRev);
     setKpi('wd-kpi-units', fmtN(curr.units), `${fmtPct(wowUnits)} vs last week`, wowUnits);
     setKpi('wd-kpi-price', `$${curr.avgPrice.toFixed(2)}`, `${fmtDollarDelta(priceDeltaAbs)} vs last week`, priceDeltaAbs);
-    setKpi('wd-kpi-gap', `${curr.avgGap >= 0 ? '+' : ''}${curr.avgGap.toFixed(1)}%`, `${fmtPts(wowGap)} vs last week`, wowGap);
-    setKpi('wd-kpi-social', fmtSignedScore(curr.avgSocial), `${fmtPts(socialDeltaPts)} vs last week`, socialDeltaPts);
+    setKpi('wd-kpi-gap', `${curr.avgGap >= 0 ? '+' : ''}${curr.avgGap.toFixed(1)}%`, `${fmtPts(wowGap)} vs last week`, wowGap, curr.avgGap > 1 ? 'text-danger' : curr.avgGap < -1 ? 'text-success' : '');
+    setKpi('wd-kpi-social', fmtSignedScore(curr.avgSocial), `${fmtPts(socialDeltaPts)} vs last week`, socialDeltaPts, curr.avgSocial >= 0 ? 'text-success' : 'text-danger');
     setKpi('wd-kpi-margin', `${avgMargin.toFixed(1)}%`, `${fmtPts(avgMargin - prevMargin)} vs last week`, avgMargin - prevMargin);
     if (productPanelBadge) productPanelBadge.textContent = 'Units sold · WoW change · price gap · sentiment';
 

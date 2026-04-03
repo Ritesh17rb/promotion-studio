@@ -238,7 +238,7 @@
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
               <div class="cbo-kpi-icon cbo-kpi-icon-gap"><i class="bi bi-arrow-left-right"></i></div>
-              <div class="cbo-kpi-label">Competitor Gap</div>
+              <div class="cbo-kpi-label">Competitor Gap <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Weighted average price gap vs competitor. Positive means we are priced above the competitor."></i></div>
               <div class="cbo-kpi-value" id="history-gap">--</div>
               <div class="cbo-kpi-change" id="history-gap-change">--</div>
             </div>
@@ -246,7 +246,7 @@
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card">
               <div class="cbo-kpi-icon cbo-kpi-icon-social"><i class="bi bi-megaphone-fill"></i></div>
-              <div class="cbo-kpi-label">Social Buzz</div>
+              <div class="cbo-kpi-label">Social Buzz <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Composite sentiment score from social listening data. Higher values signal stronger consumer interest and demand."></i></div>
               <div class="cbo-kpi-value" id="history-social">--</div>
               <div class="cbo-kpi-change" id="history-social-change">--</div>
             </div>
@@ -254,7 +254,7 @@
           <div class="col-xl-2 col-lg-4 col-md-6">
             <div class="cbo-kpi-card cbo-kpi-risk">
               <div class="cbo-kpi-icon cbo-kpi-icon-risk"><i class="bi bi-exclamation-triangle-fill"></i></div>
-              <div class="cbo-kpi-label">At Risk Revenue</div>
+              <div class="cbo-kpi-label">At Risk Revenue <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Revenue from product-channel combinations where our price is more than 2.5% above competitor AND social buzz is below average, signaling potential demand loss."></i></div>
               <div class="cbo-kpi-value" id="history-risk-revenue">--</div>
               <div class="cbo-kpi-change" id="history-risk-change">--</div>
             </div>
@@ -1308,7 +1308,16 @@
           <div class="wd-panel h-100">
             <div class="wd-panel-header">
               <h6 class="wd-panel-title"><i class="bi bi-graph-up-arrow me-2"></i>Sales Trend &amp; Key Drivers</h6>
-              <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
+                <select class="form-select form-select-sm" style="width:auto;font-size:0.78rem;" id="history-trend-local-window">
+                  <option value="1" selected>1 week</option>
+                  <option value="4">4 weeks</option>
+                  <option value="12">12 weeks</option>
+                  <option value="26">26 weeks</option>
+                  <option value="52">1 year</option>
+                </select>
+              </div>
             </div>
             <div class="small text-muted mb-2" style="padding: 0 1.25rem;">Revenue trend overlaid with own price, competitor gap, and social buzz for the selected scope.</div>
             <div class="chart-container" style="height: 340px; padding: 0 1rem;">
@@ -1344,6 +1353,11 @@
                 </tbody>
               </table>
             </div>
+            <div class="text-center mt-2" id="step1-competitor-expand-container" style="display:none;">
+              <button class="btn btn-sm btn-outline-danger" id="step1-competitor-expand-btn">
+                <i class="bi bi-arrows-fullscreen me-1"></i>View All Alerts
+              </button>
+            </div>
             <div class="cbo-footnote" id="step1-competitor-alerts-note">
               Tracking current-week competitor price pressure across the active assortment.
             </div>
@@ -1356,23 +1370,28 @@
                 <h6 class="cbo-panel-title mb-1"><i class="bi bi-table me-2"></i>Product x Channel Snapshot</h6>
                 <div class="cbo-panel-subtitle">Latest-week SKU view with top channel, unit movement, price position, and operating interpretation.</div>
               </div>
+              <button class="btn btn-sm btn-outline-secondary" id="step1-snapshot-expand-btn" title="Click to view product performance across all channels">
+                <i class="bi bi-arrows-fullscreen me-1"></i>Expand All Channels
+              </button>
             </div>
             <div class="table-responsive">
               <table class="table table-sm align-middle mb-0 cbo-table">
                 <thead>
                   <tr>
                     <th>Product</th>
-                    <th>Top Channel</th>
+                    <th>Top Channel <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="The channel generating the highest revenue for this product in the current week."></i></th>
+                    <th class="text-end">Revenue</th>
                     <th class="text-end">Units</th>
-                    <th class="text-end">WoW</th>
+                    <th class="text-end">WoW <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Week over Week: percentage change in units sold compared to the prior week."></i></th>
                     <th class="text-end">Own Price</th>
-                    <th class="text-end">Comp Price</th>
-                    <th class="text-end">Gap</th>
+                    <th class="text-end">Comp Price <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Competitor price for a similar product in the same channel."></i></th>
+                    <th class="text-end">Gap <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Price gap: how much our price is above (+) or below (-) the competitor price as a percentage."></i></th>
+                    <th class="text-end">Social Buzz <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Social buzz score from social listening data. Higher values indicate stronger consumer sentiment and demand signals."></i></th>
                     <th>Insight</th>
                   </tr>
                 </thead>
                 <tbody id="step1-product-channel-snapshot-body">
-                  <tr><td colspan="8" class="text-center text-muted py-3">Loading latest-week product snapshot...</td></tr>
+                  <tr><td colspan="10" class="text-center text-muted py-3">Loading latest-week product snapshot...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1397,6 +1416,11 @@
             </div>
           </div>
         </div>
+        <!-- Channel Mix Revenue and Channel & Product Price Position tables
+             commented out per review feedback: these columns are now merged into
+             the Product x Channel Snapshot table above, and channel revenue trends
+             are accessible via the "View Trend" button on each channel card. -->
+        <!--
         <div class="col-lg-5">
           <div class="wd-panel h-100">
             <div class="wd-panel-header">
@@ -1443,6 +1467,7 @@
             </div>
           </div>
         </div>
+        -->
       </div>
     </div>
 
@@ -1625,7 +1650,7 @@
         <div class="col-lg-6">
           <div class="wd-panel">
             <div class="wd-panel-header">
-              <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Social Buzz by Product <i class="bi bi-info-circle text-muted" style="cursor:help; font-size:0.75rem;" title="Brand sentiment index from -100 (very negative) to +100 (very positive). Positive sentiment drives demand up; negative sentiment reduces demand. Two bars per product show this week vs last week for comparison."></i></h6>
+              <h6 class="wd-panel-title"><i class="bi bi-megaphone me-2"></i>Social Buzz by Product <i class="bi bi-question-lg cbo-info-hint" data-bs-toggle="tooltip" data-bs-placement="top" title="Brand sentiment index from -100 (very negative) to +100 (very positive). Positive sentiment drives demand up; negative sentiment reduces demand. Two bars per product show this week vs last week for comparison."></i></h6>
               <span class="badge bg-primary-subtle text-primary small">Brand sentiment: <span id="wd-social-index">--</span></span>
             </div>
             <div id="wd-social-bars">
@@ -1706,7 +1731,7 @@
 
         <!-- Word mark -->
         <div class="ld-wordmark">Promotion Studio</div>
-        <div class="ld-sub">Supergoop · Seasonal Intelligence</div>
+        <div class="ld-sub">Supergoop &middot; Seasonal Intelligence</div>
 
         <!-- Typewriter stage label -->
         <div class="ld-stage-wrap">
@@ -4602,6 +4627,21 @@
 
   <!-- Channel Promotions Simulator (Step 1) -->
   <script type="module" src="./js/channel-promo-simulator.js"></script>
+
+  <!-- Shared modal for drill-down views (competitor alerts, product snapshot, channel detail, channel trend) -->
+  <div class="modal fade" id="cbo-drilldown-modal" tabindex="-1" aria-labelledby="cbo-drilldown-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cbo-drilldown-modal-title">Detail</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="cbo-drilldown-modal-body">
+          <!-- Dynamic content injected by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Application Script -->
   <script type="module" src="./js/app.js"></script>
