@@ -41,7 +41,8 @@ import {
   generateScenarioPlanFromText,
   generateEventAnalyst,
   generateBusinessOverviewAnalysis,
-  generateGuidedStorylines
+  generateGuidedStorylines,
+  generateStep2SignalSnapshotRecommendation
 } from './chat.js';
 import { initializeDataViewer } from './data-viewer.js';
 import { renderSegmentKPICards, renderSegmentElasticityHeatmap, render3AxisRadialChart, renderSegmentScatterPlot, exportSVG } from './segment-charts.js';
@@ -106,6 +107,7 @@ let selectedEventForLlm = null;
 let llmBusinessContext = {};
 let step1OverviewAiRequestId = 0;
 let step2StoryAiRequestId = 0;
+let step2SnapshotAiRequestId = 0;
 let eventAnalystAiRequestId = 0;
 let step2LatestAiContext = null;
 
@@ -596,6 +598,160 @@ function buildHistoryWindowMetrics(rows = [], windowWeeks = 52) {
   };
 }
 
+function buildHistoryRiskExplainerContext({
+  riskRows = [],
+  riskRevenue = 0,
+  riskShare = 0,
+  totalRevenue = 0,
+  avgSocial = 0,
+  selectedLabel = 'All Products',
+  selectedChannel = 'all',
+  effectiveWindowWeeks = 52,
+  windowStart = null,
+  windowEnd = null,
+  productCatalogMap = new Map()
+} = {}) {
+  const grouped = new Map();
+  riskRows.forEach(row => {
+    const skuId = String(row.sku_id || '');
+    const channel = String(row.sales_channel || '').toLowerCase();
+    const key = `${skuId}__${channel}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        skuId,
+        skuName: row.sku_name || skuId,
+        channel,
+        revenue: 0,
+        units: 0,
+        gapWeighted: 0,
+        socialWeighted: 0,
+        weight: 0,
+        weeks: new Set()
+      });
+    }
+    const entry = grouped.get(key);
+    const units = Number(row.units_sold);
+    const weight = Number.isFinite(units) && units > 0 ? units : 1;
+    entry.revenue += Number(row.revenue) || 0;
+    entry.units += Number.isFinite(units) ? units : 0;
+    entry.gapWeighted += (Number(row.price_gap_vs_competitor) || 0) * weight;
+    entry.socialWeighted += getBuzzSentimentScore(row) * weight;
+    entry.weight += weight;
+    entry.weeks.add(String(row.week_start || row.date || ''));
+  });
+
+  const breakdown = [...grouped.values()]
+    .map(entry => ({
+      skuName: getCatalogLabel(productCatalogMap, entry.skuId, entry.skuName || entry.skuId),
+      channelLabel: KPI_CHANNEL_LABELS[entry.channel] || entry.channel || 'Unknown',
+      revenue: entry.revenue,
+      units: entry.units,
+      avgGapPct: entry.weight > 0 ? (entry.gapWeighted / entry.weight) * 100 : 0,
+      avgSocial: entry.weight > 0 ? entry.socialWeighted / entry.weight : 0,
+      flaggedWeeks: entry.weeks.size
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  const channelLabel = selectedChannel === 'all'
+    ? 'All Channels'
+    : (KPI_CHANNEL_LABELS[selectedChannel] || selectedChannel);
+  const windowLabel = formatHistoryPeriodLabel(effectiveWindowWeeks);
+  const dateRangeLabel = formatHistoryWindowDateRange(windowStart, windowEnd) || 'Date range unavailable';
+  const signedScore = avgSocial >= 0 ? `+${avgSocial.toFixed(1)}` : avgSocial.toFixed(1);
+  const topContributors = breakdown.slice(0, 2).map(item => `${item.skuName} on ${item.channelLabel} (${formatCompactCurrency(item.revenue, 1)})`);
+
+  let aiSummary = `No revenue is currently flagged. No rows in ${selectedLabel} across ${channelLabel} are above the 2.5% competitor gap threshold while also sitting below the selected-window buzz average of ${signedScore}.`;
+  if (riskRows.length) {
+    aiSummary = `${formatCompactCurrency(riskRevenue, 1)} is flagged because ${breakdown.length} product-channel combinations across ${riskRows.length} included rows were priced more than 2.5% above competitor while buzz trailed the selected-window average of ${signedScore}.`;
+    if (topContributors.length) {
+      aiSummary += ` Largest exposure comes from ${topContributors.join(' and ')}.`;
+    }
+  }
+
+  return {
+    aiSummary,
+    breakdown,
+    channelLabel,
+    dateRangeLabel,
+    displayValue: formatCompactCurrency(riskRevenue, 1),
+    effectiveWindowWeeks,
+    riskRevenue,
+    riskRowsCount: riskRows.length,
+    riskShare,
+    selectedLabel,
+    signedScore,
+    totalRevenue,
+    windowLabel
+  };
+}
+
+function openHistoryRiskExplainerModal(context = {}) {
+  const modalTitle = document.getElementById('cbo-drilldown-modal-title');
+  const modalBody = document.getElementById('cbo-drilldown-modal-body');
+  if (!modalBody) return;
+
+  const breakdownRows = Array.isArray(context.breakdown) ? context.breakdown : [];
+  if (modalTitle) modalTitle.textContent = 'At Risk Revenue Breakdown';
+
+  modalBody.innerHTML = `
+    <div class="cbo-risk-ai-callout">
+      <div class="small text-uppercase text-muted mb-2">AI Transparency Summary</div>
+      <div class="fw-semibold">${escapeHtml(context.aiSummary || 'No explanation available.')}</div>
+    </div>
+
+    <div class="mb-3">
+      <span class="cbo-risk-chip"><i class="bi bi-box-seam"></i>${escapeHtml(context.selectedLabel || 'All Products')}</span>
+      <span class="cbo-risk-chip"><i class="bi bi-shop"></i>${escapeHtml(context.channelLabel || 'All Channels')}</span>
+      <span class="cbo-risk-chip"><i class="bi bi-calendar-week"></i>${escapeHtml(context.windowLabel || '')}</span>
+      <span class="cbo-risk-chip"><i class="bi bi-calendar-range"></i>${escapeHtml(context.dateRangeLabel || '')}</span>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">At Risk Revenue</div><div class="fw-bold">${escapeHtml(context.displayValue || '$0')}</div><div class="small text-muted">${escapeHtml(formatCurrency(context.riskRevenue || 0))} raw</div></div></div>
+      <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Selected Revenue</div><div class="fw-bold">${escapeHtml(formatCompactCurrency(context.totalRevenue || 0, 1))}</div><div class="small text-muted">${escapeHtml(formatCurrency(context.totalRevenue || 0))} raw</div></div></div>
+      <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Risk Share</div><div class="fw-bold">${((context.riskShare || 0) * 100).toFixed(1)}%</div><div class="small text-muted">${escapeHtml(formatCurrency(context.riskRevenue || 0))} / ${escapeHtml(formatCurrency(context.totalRevenue || 0))}</div></div></div>
+      <div class="col-sm-3"><div class="p-2 rounded bg-light text-center"><div class="small text-muted">Buzz Cutoff</div><div class="fw-bold">${escapeHtml(context.signedScore || '0.0')}</div><div class="small text-muted">selected-window avg</div></div></div>
+    </div>
+
+    <div class="rounded-3 p-3 bg-body-tertiary mb-3">
+      <div class="fw-semibold mb-2">How this is calculated</div>
+      <div class="small mb-1">Include a row when competitor gap is <strong>above 2.5%</strong> and buzz is <strong>below the selected-window average</strong>.</div>
+      <div class="small mb-1"><strong>At Risk Revenue</strong> = sum of revenue from included rows.</div>
+      <div class="small"><strong>Risk Share</strong> = At Risk Revenue / selected-window revenue.</div>
+    </div>
+
+    <h6 class="mb-2">Included Product-Channel Rows</h6>
+    <div class="small text-muted mb-2">${breakdownRows.length} product-channel combinations are contributing to this KPI across ${context.riskRowsCount || 0} included rows in the selected window.</div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Channel</th>
+            <th class="text-end">Included Revenue</th>
+            <th class="text-end">Avg Gap</th>
+            <th class="text-end">Avg Buzz</th>
+            <th class="text-end">Flagged Weeks</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${breakdownRows.length ? breakdownRows.map(row => `<tr>
+            <td class="fw-semibold">${escapeHtml(row.skuName)}</td>
+            <td>${escapeHtml(row.channelLabel)}</td>
+            <td class="text-end">${escapeHtml(formatCompactCurrency(row.revenue, 1))}</td>
+            <td class="text-end ${row.avgGapPct > 2.5 ? 'text-danger' : ''}">${row.avgGapPct >= 0 ? '+' : ''}${row.avgGapPct.toFixed(1)}%</td>
+            <td class="text-end">${row.avgSocial >= 0 ? '+' : ''}${row.avgSocial.toFixed(1)}</td>
+            <td class="text-end">${formatCompactNumber(row.flaggedWeeks, 0)}</td>
+          </tr>`).join('') : '<tr><td colspan="6" class="text-center text-muted">No rows meet the risk rule in this selection.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const modal = new bootstrap.Modal(document.getElementById('cbo-drilldown-modal'));
+  modal.show();
+}
+
 async function initializeCurrentStateHistoryDashboard(force = false) {
   const section = document.getElementById('current-state-history-section');
   if (!section) return;
@@ -727,6 +883,7 @@ function renderCurrentStateHistoryDashboard() {
   const channelSummaryNoteEl = document.getElementById('history-channel-summary-note');
   const riskRevenueEl = document.getElementById('history-risk-revenue');
   const riskChangeEl = document.getElementById('history-risk-change');
+  const riskExplainBtn = document.getElementById('history-risk-explain-btn');
   const aiSummaryEl = document.getElementById('history-ai-summary');
   const aiUpdatedEl = document.getElementById('history-ai-updated');
   const channelNoteEl = document.getElementById('history-channel-note');
@@ -798,17 +955,36 @@ function renderCurrentStateHistoryDashboard() {
     setText('history-social-change', 'Window average');
   }
 
-  const riskRevenue = windowScopedRows.reduce((sum, row) => {
+  const riskGapThreshold = 0.025;
+  const riskRows = windowScopedRows.filter(row => {
     const rowGap = toNumber(row.price_gap_vs_competitor);
     const rowSocial = getBuzzSentimentScore(row);
-    if (rowGap > 0.025 && rowSocial < current.social) {
-      return sum + toNumber(row.revenue);
-    }
-    return sum;
-  }, 0);
+    return rowGap > riskGapThreshold && rowSocial < current.social;
+  });
+  const riskRevenue = riskRows.reduce((sum, row) => sum + toNumber(row.revenue), 0);
   const riskShare = current.revenue > 0 ? riskRevenue / current.revenue : 0;
   if (riskRevenueEl) riskRevenueEl.innerHTML = `<span class="${riskShare > 0.2 ? 'text-danger' : riskShare > 0.1 ? 'text-warning' : 'text-success'}">${formatCompactCurrency(riskRevenue, 1)}</span>`;
   if (riskChangeEl) riskChangeEl.innerHTML = `<span class="${riskShare > 0.2 ? 'text-danger' : ''}">${(riskShare * 100).toFixed(0)}%</span> of selected-window revenue exposed to premium pricing with weaker buzz`;
+  if (riskExplainBtn) {
+    const riskContext = buildHistoryRiskExplainerContext({
+      riskRows,
+      riskRevenue,
+      riskShare,
+      totalRevenue: current.revenue,
+      avgSocial: current.social,
+      selectedLabel,
+      selectedChannel,
+      effectiveWindowWeeks,
+      windowStart,
+      windowEnd,
+      productCatalogMap
+    });
+    riskExplainBtn.disabled = !windowScopedRows.length;
+    riskExplainBtn.onclick = (event) => {
+      event.preventDefault();
+      openHistoryRiskExplainerModal(riskContext);
+    };
+  }
 
   const historyChannelMap = (rows) => {
     const map = new Map();
@@ -4151,6 +4327,125 @@ async function renderStep2AiStorylines({ stories, visibleEvents, selectedScope, 
   }
 }
 
+function getStep2SnapshotCardByTone(tone) {
+  return document.querySelector(`#step2-snapshot-grid .step2-snapshot-card-item[data-tone="${tone}"]`);
+}
+
+function removeStep2SnapshotAiNotes() {
+  document.querySelectorAll('.step2-snapshot-ai-note').forEach(el => el.remove());
+}
+
+function setStep2SnapshotAiNote(tone, html) {
+  const card = getStep2SnapshotCardByTone(tone);
+  if (!card) return;
+  let noteEl = card.querySelector('.step2-snapshot-ai-note');
+  if (!noteEl) {
+    noteEl = document.createElement('div');
+    noteEl.className = 'step2-snapshot-ai-note';
+    card.appendChild(noteEl);
+  }
+  noteEl.innerHTML = html;
+}
+
+function renderStep2SnapshotAiLoadingState() {
+  const loadingMarkup = `
+    <div class="step2-snapshot-ai-shell step2-snapshot-ai-shell-loading">
+      <div class="ai-loading-mark" aria-hidden="true">
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+        <span class="ai-loading-dot"></span>
+      </div>
+      <div>
+        <div class="step2-snapshot-ai-label">AI Recommendation</div>
+        <div class="step2-snapshot-ai-copy">Evaluating the current event across pricing, demand, and promo context.</div>
+      </div>
+    </div>
+  `;
+  ['pricing', 'demand', 'promo'].forEach(tone => setStep2SnapshotAiNote(tone, loadingMarkup));
+}
+
+function normalizeStep2SnapshotRecommendation(recommendation, fallbackRecommendation = '') {
+  const clean = (value) => String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^["'`]+|["'`]+$/g, '');
+
+  const fallback = clean(fallbackRecommendation);
+  let normalized = clean(recommendation);
+  if (!normalized) return fallback;
+
+  normalized = /^recommended pivot:/i.test(normalized)
+    ? normalized.replace(/^recommended pivot:\s*/i, 'Recommended pivot: ')
+    : `Recommended pivot: ${normalized}`;
+
+  const danglingEndingPattern = /\b(?:on|in|at|by|to|for|with|from|of|and|or|the|a|an|while|across|against|into|through)\.?$/i;
+  if (danglingEndingPattern.test(normalized) && fallback) return fallback;
+
+  if (!/[.!?]$/.test(normalized)) normalized = `${normalized}.`;
+  return normalized;
+}
+
+function renderStep2SnapshotAiRecommendation(recommendation, { source = 'AI Recommendation', includeEventCard = false, fallbackRecommendation = '' } = {}) {
+  const resolvedRecommendation = normalizeStep2SnapshotRecommendation(recommendation, fallbackRecommendation);
+  const safeRecommendation = escapeHtml(resolvedRecommendation || fallbackRecommendation || '');
+  const safeSource = escapeHtml(source);
+  const markup = `
+    <div class="step2-snapshot-ai-shell">
+      <div class="step2-snapshot-ai-label">${safeSource}</div>
+      <div class="step2-snapshot-ai-copy">${safeRecommendation}</div>
+    </div>
+  `;
+  ['pricing', 'demand', 'promo'].forEach(tone => setStep2SnapshotAiNote(tone, markup));
+  if (includeEventCard) {
+    setStep2SnapshotAiNote('event', markup);
+  }
+}
+
+async function renderStep2SignalSnapshotAi({ event, fallbackRecommendation, selectedScope, signalSnapshot }) {
+  const requestId = ++step2SnapshotAiRequestId;
+  removeStep2SnapshotAiNotes();
+
+  if (!event || !fallbackRecommendation) {
+    return;
+  }
+
+  renderStep2SnapshotAiLoadingState();
+
+  const ready = await getLlmReady();
+  if (requestId !== step2SnapshotAiRequestId) return;
+
+  if (!ready) {
+    renderStep2SnapshotAiRecommendation(fallbackRecommendation, {
+      source: 'Recommendation',
+      fallbackRecommendation
+    });
+    return;
+  }
+
+  try {
+    const result = await generateStep2SignalSnapshotRecommendation({
+      event,
+      selectedScope,
+      signalSnapshot,
+      fallbackRecommendation,
+      businessContext: llmBusinessContext
+    });
+    if (requestId !== step2SnapshotAiRequestId) return;
+
+    const recommendation = String(result?.recommendation || '').trim() || fallbackRecommendation;
+    renderStep2SnapshotAiRecommendation(recommendation, {
+      includeEventCard: false,
+      fallbackRecommendation
+    });
+  } catch {
+    if (requestId !== step2SnapshotAiRequestId) return;
+    renderStep2SnapshotAiRecommendation(fallbackRecommendation, {
+      source: 'Recommendation',
+      fallbackRecommendation
+    });
+  }
+}
+
 function getLivePromoSnapshotSafe() {
   return (
     window.getChannelPromoSnapshot && typeof window.getChannelPromoSnapshot === 'function'
@@ -6330,6 +6625,7 @@ async function init() {
   window.renderCurrentBusinessOverviewLatestWeek = renderCurrentBusinessOverviewLatestWeek;
   window.initializeWeeklyDrilldown = initializeWeeklyDrilldown;
   window.renderStep2AiStorylines = renderStep2AiStorylines;
+  window.renderStep2SignalSnapshotAi = renderStep2SignalSnapshotAi;
   // Make loadData available globally so it can be called when navigating to step 1
   window.loadAppData = loadData;
   window.dataLoaded = false;

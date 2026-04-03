@@ -1354,3 +1354,37 @@ Do not fabricate metrics. Use only the provided event and context.`;
   return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.2, maxTokens: 700 });
 }
 
+export async function generateStep2SignalSnapshotRecommendation(payload = {}) {
+  const event = payload.event || null;
+  if (!event) throw new Error('No event provided');
+  const businessContext = payload.businessContext || dataContext?.businessContext || {};
+
+  const systemPrompt = `You are the AI signal interpreter for the Step 2 market snapshot cards in the Supergoop Seasonal Promotion Studio.
+Return ONLY valid JSON with schema:
+{
+  "recommendation": "string <= 180 chars"
+}
+
+Rules:
+- Write one concise recommendation that can appear on the Pricing Pressure, Demand Momentum, Promo Intensity, and Recent Market Event cards.
+- Use the app's business language: defend selectively, protect margin, creator demand, inventory readiness, selective depth by channel.
+- Make it action-oriented and specific to the provided event and signal snapshot.
+- Do not fabricate metrics, dates, or channels.
+- Start with "Recommended pivot:"`;
+
+  const userPrompt = JSON.stringify({
+    selected_event: event,
+    selected_scope: payload.selectedScope || null,
+    signal_snapshot: payload.signalSnapshot || null,
+    fallback_recommendation: payload.fallbackRecommendation || '',
+    application_context: {
+      competitorSignals: businessContext.competitorSignals || null,
+      socialSignal: businessContext.socialSignal || null,
+      currentSeasonWeek: businessContext.currentSeasonWeek || null,
+      seasonWeeks: businessContext.seasonWeeks || null
+    }
+  });
+
+  return requestStructuredJson({ systemPrompt, userPrompt, temperature: 0.15, maxTokens: 200 });
+}
+

@@ -1531,6 +1531,12 @@ function renderSignalSnapshot({ cards = [], feedItems = [] } = {}) {
   `).join('');
 }
 
+function renderSignalSnapshotAiRecommendation(payload = null) {
+  if (window.renderStep2SignalSnapshotAi && typeof window.renderStep2SignalSnapshotAi === 'function') {
+    window.renderStep2SignalSnapshotAi(payload || {});
+  }
+}
+
 async function renderMarketSignalsDashboard() {
   const compContainer = document.getElementById('market-signals-competitive');
   const socialContainer = document.getElementById('market-signals-social');
@@ -2003,6 +2009,7 @@ async function renderMarketSignalsDashboardV2() {
       socialContainer.textContent = 'Social listening data not available.';
       if (gapCallout) gapCallout.innerHTML = '';
       renderSignalSnapshot();
+      renderSignalSnapshotAiRecommendation();
       return;
     }
 
@@ -2342,7 +2349,6 @@ async function renderMarketSignalsDashboardV2() {
             : currentEvent.event_type === 'Tentpole'
               ? 'Recommended pivot: align inventory and selective depth by channel.'
               : 'Recommended pivot: keep the offer narrow to the responsive products and channels.';
-
       renderSignalSnapshot({
         cards: [
           {
@@ -2406,10 +2412,30 @@ async function renderMarketSignalsDashboardV2() {
           }
         ]
       });
+      renderSignalSnapshotAiRecommendation({
+        event: currentEvent,
+        fallbackRecommendation: currentEventFootnote,
+        selectedScope: {
+          productFilter: getCurrentStep2ProductFilter(),
+          selectionLabel
+        },
+        signalSnapshot: {
+          dominantGapPct: dominantGap?.pct ?? null,
+          dominantGapTier: dominantGap?.tier || null,
+          dominantGapChange: Number.isFinite(dominantGapChange) ? dominantGapChange : null,
+          latestEngagement: Number.isFinite(latestEngagement) ? latestEngagement : null,
+          demandLeaderSku: demandLeader?.sku_id || null,
+          demandLeaderChannel: demandLeader?.sales_channel || null,
+          promoIntensity,
+          promoEventsInWindow,
+          promoClutterIndex: Number.isFinite(promoClutterIndex) ? promoClutterIndex : null
+        }
+      });
 
     } else {
       compContainer.textContent = 'Insufficient competitive price history for chart rendering.';
       renderSignalSnapshot();
+      renderSignalSnapshotAiRecommendation();
     }
 
     const socialLabels = [];
@@ -2562,6 +2588,7 @@ async function renderMarketSignalsDashboardV2() {
     compContainer.textContent = 'Error loading market signals.';
     socialContainer.textContent = 'Error loading social listening data.';
     renderSignalSnapshot();
+    renderSignalSnapshotAiRecommendation();
   }
 }
 
@@ -5933,6 +5960,7 @@ async function renderMarketSignalsDashboardV2Legacy() {
       socialContainer.textContent = 'Social listening data not available.';
       if (gapCallout) gapCallout.innerHTML = '';
       renderSignalSnapshot();
+      renderSignalSnapshotAiRecommendation();
       return;
     }
 
@@ -6154,10 +6182,30 @@ async function renderMarketSignalsDashboardV2Legacy() {
           { icon: 'bi-bar-chart', label: 'Sales Performance Data', copy: `Latest scoped weekly revenue is ${formatCurrency(latestRevenue)} with engagement at ${Number.isFinite(latestEngagement) ? latestEngagement.toFixed(1) : 'N/A'}.` }
         ]
       });
+      renderSignalSnapshotAiRecommendation({
+        event: currentEvent,
+        fallbackRecommendation: currentEventFootnote,
+        selectedScope: {
+          productFilter: getCurrentStep2ProductFilter(),
+          selectionLabel
+        },
+        signalSnapshot: {
+          dominantGapPct: dominantGap?.pct ?? null,
+          dominantGapTier: dominantGap?.tier || null,
+          dominantGapChange: Number.isFinite(dominantGapChange) ? dominantGapChange : null,
+          latestEngagement: Number.isFinite(latestEngagement) ? latestEngagement : null,
+          demandLeaderSku: demandLeader?.sku_id || null,
+          demandLeaderChannel: demandLeader?.sales_channel || null,
+          promoIntensity,
+          promoEventsInWindow,
+          promoClutterIndex: Number.isFinite(promoClutterIndex) ? promoClutterIndex : null
+        }
+      });
     } else {
       compContainer.textContent = 'Insufficient competitive price history for chart rendering.';
       if (gapCallout) gapCallout.innerHTML = '';
       renderSignalSnapshot();
+      renderSignalSnapshotAiRecommendation();
     }
 
     const demandSeries = buildStep2DemandSeries(filteredSkuWeekly, socialByWeek);
@@ -6229,6 +6277,7 @@ async function renderMarketSignalsDashboardV2Legacy() {
     socialContainer.textContent = 'Error loading social listening data.';
     if (gapCallout) gapCallout.innerHTML = '';
     renderSignalSnapshot();
+    renderSignalSnapshotAiRecommendation();
   }
 }
 function renderEventTimelineV2Legacy() {
