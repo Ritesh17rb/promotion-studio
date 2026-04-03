@@ -88,6 +88,7 @@ let currentStateHistoryRows = [];
 let currentStateHistoryBound = false;
 let currentStateHistoryChart = null;
 let currentStateChannelMixChart = null;
+let currentStateLastGlobalProductSelection = null;
 let currentBusinessOverviewSocialSignals = [];
 let currentBusinessOverviewProductCatalog = null;
 let step2SkuImpactChart = null;
@@ -449,9 +450,8 @@ function destroyChartInstance(chartRef) {
 }
 
 function formatHistoryPeriodLabel(windowWeeks) {
-  if (windowWeeks >= 52) return 'last 52 weeks';
-  if (windowWeeks >= 26) return 'last 26 weeks';
-  if (windowWeeks >= 13) return 'last 13 weeks';
+  if (windowWeeks <= 1) return 'last 1 week';
+  if (windowWeeks === 52) return 'last 1 year';
   return `last ${windowWeeks} weeks`;
 }
 
@@ -601,14 +601,21 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
     const products = [...new Map(
       currentStateHistoryRows.map(row => [row.sku_id, { sku_id: row.sku_id, sku_name: row.sku_name }])
     ).values()].sort((a, b) => String(a.sku_name).localeCompare(String(b.sku_name)));
-    productFilter.innerHTML = [
+    const productOptions = [
       '<option value="all">All Products</option>',
       ...productGroups.map(group => `<option value="group:${group}">${formatProductGroupLabel(group)}</option>`),
       ...products.map(row => `<option value="${row.sku_id}">${row.sku_name}</option>`)
     ].join('');
+    productFilter.innerHTML = productOptions;
 
     const channelFilter = document.getElementById('history-channel-filter');
+    const trendProductFilter = document.getElementById('history-trend-product-filter');
     const resetButton = document.getElementById('history-reset-filters');
+    if (trendProductFilter) {
+      trendProductFilter.innerHTML = productOptions;
+      trendProductFilter.value = productFilter.value || 'all';
+      trendProductFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
+    }
     productFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     windowFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
     if (channelFilter) channelFilter.addEventListener('change', () => renderCurrentStateHistoryDashboard());
@@ -618,7 +625,9 @@ async function initializeCurrentStateHistoryDashboard(force = false) {
       resetButton.addEventListener('click', () => {
         productFilter.value = 'all';
         if (channelFilter) channelFilter.value = 'all';
-        windowFilter.value = '1';
+        if (trendProductFilter) trendProductFilter.value = 'all';
+        windowFilter.value = '52';
+        if (trendLocalWindowFilter) trendLocalWindowFilter.value = '52';
         renderCurrentStateHistoryDashboard();
       });
     }
@@ -640,12 +649,17 @@ function renderCurrentStateHistoryDashboard() {
   const productFilter = document.getElementById('history-product-filter');
   const windowFilter = document.getElementById('history-window-filter');
   const channelFilter = document.getElementById('history-channel-filter');
+  const trendProductFilter = document.getElementById('history-trend-product-filter');
   const selectedProduct = productFilter?.value || 'all';
   const windowWeeks = Number(windowFilter?.value || 1);
   const selectedChannel = channelFilter?.value || 'all';
   const selectedGroup = selectedProduct.startsWith('group:')
     ? selectedProduct.replace('group:', '').trim().toLowerCase()
     : null;
+  if (trendProductFilter && currentStateLastGlobalProductSelection !== selectedProduct) {
+    trendProductFilter.value = selectedProduct;
+    currentStateLastGlobalProductSelection = selectedProduct;
+  }
 
   const scopedRows = currentStateHistoryRows.filter(row => {
     const productMatch = selectedProduct === 'all' ? true
@@ -656,15 +670,32 @@ function renderCurrentStateHistoryDashboard() {
     return productMatch && channelMatch;
   });
   const metrics = buildHistoryWindowMetrics(scopedRows, windowWeeks);
+  const effectiveWindowWeeks = metrics.weeks.length || windowWeeks;
   const windowDateSet = new Set(metrics.weeks.map(row => String(row.date)));
   const previousDateSet = new Set((metrics.previousWeeks || []).map(row => String(row.date)));
   const windowScopedRows = scopedRows.filter(row => windowDateSet.has(String(row.week_start || row.date || '')));
   const previousWindowRows = scopedRows.filter(row => previousDateSet.has(String(row.week_start || row.date || '')));
-  const selectedLabel = selectedProduct === 'all'
-    ? 'All Products'
-    : (selectedGroup ? formatProductGroupLabel(selectedGroup) : (scopedRows[0]?.sku_name || selectedProduct));
+  const resolveScopeLabel = (productValue, groupValue, rowsForScope) => (
+    productValue === 'all'
+      ? 'All Products'
+      : (groupValue ? formatProductGroupLabel(groupValue) : (rowsForScope[0]?.sku_name || productValue))
+  );
+  const selectedLabel = resolveScopeLabel(selectedProduct, selectedGroup, scopedRows);
   const windowStart = metrics.weeks[0]?.date || null;
   const windowEnd = metrics.weeks[metrics.weeks.length - 1]?.date || null;
+  const selectedTrendProduct = trendProductFilter?.value || selectedProduct;
+  const selectedTrendGroup = selectedTrendProduct.startsWith('group:')
+    ? selectedTrendProduct.replace('group:', '').trim().toLowerCase()
+    : null;
+  const trendScopedRows = currentStateHistoryRows.filter(row => {
+    const productMatch = selectedTrendProduct === 'all' ? true
+      : selectedTrendGroup ? String(row.product_group || '').toLowerCase() === selectedTrendGroup
+      : row.sku_id === selectedTrendProduct;
+    const channelMatch = selectedChannel === 'all' ? true
+      : String(row.sales_channel || '').toLowerCase() === selectedChannel;
+    return productMatch && channelMatch;
+  });
+  const trendSelectedLabel = resolveScopeLabel(selectedTrendProduct, selectedTrendGroup, trendScopedRows);
 
   const historyNoteEl = document.getElementById('history-selection-note');
   const trendBadgeEl = document.getElementById('history-trend-badge');
@@ -680,13 +711,13 @@ function renderCurrentStateHistoryDashboard() {
   const tableNoteEl = document.getElementById('history-table-note');
 
   if (historyNoteEl) {
-    const dateRangeText = windowStart && windowEnd ? `${windowStart} to ${windowEnd}` : formatHistoryPeriodLabel(windowWeeks);
-    historyNoteEl.textContent = `${selectedLabel} across ${formatHistoryPeriodLabel(windowWeeks)} (${dateRangeText}).`;
+    const dateRangeText = windowStart && windowEnd ? `${windowStart} to ${windowEnd}` : formatHistoryPeriodLabel(effectiveWindowWeeks);
+    historyNoteEl.textContent = `${selectedLabel} across ${formatHistoryPeriodLabel(effectiveWindowWeeks)} (${dateRangeText}).`;
   }
-  if (trendBadgeEl) trendBadgeEl.textContent = selectedLabel;
-  if (snapshotTitleEl) snapshotTitleEl.innerHTML = `<i class="bi bi-moon-stars-fill me-2"></i>Business Snapshot (${formatHistoryPeriodLabel(windowWeeks)})`;
+  if (trendBadgeEl) trendBadgeEl.textContent = trendSelectedLabel;
+  if (snapshotTitleEl) snapshotTitleEl.innerHTML = `<i class="bi bi-moon-stars-fill me-2"></i>Business Snapshot (${formatHistoryPeriodLabel(effectiveWindowWeeks)})`;
   if (rangeChipEl) {
-    rangeChipEl.innerHTML = `<i class="bi bi-calendar-week me-2"></i>${formatHistoryPeriodLabel(windowWeeks)} • ${windowStart && windowEnd ? `${windowStart} – ${windowEnd}` : 'Date range unavailable'}`;
+    rangeChipEl.innerHTML = `<i class="bi bi-calendar-week me-2"></i>${formatHistoryPeriodLabel(effectiveWindowWeeks)} • ${windowStart && windowEnd ? `${windowStart} – ${windowEnd}` : 'Date range unavailable'}`;
   }
 
   const current = metrics.current;
@@ -726,8 +757,8 @@ function renderCurrentStateHistoryDashboard() {
 
   // Change indicators with arrows and colors
   if (hasComparison) {
-    setHtml('history-revenue-change', `<span class="${kpiColor(revenueDelta)}">${kpiArrow(revenueDelta)} ${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}%</span> vs prior ${windowWeeks}-week period`);
-    setHtml('history-units-change', `<span class="${kpiColor(unitsDelta)}">${kpiArrow(unitsDelta)} ${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}%</span> vs prior ${windowWeeks}-week period`);
+    setHtml('history-revenue-change', `<span class="${kpiColor(revenueDelta)}">${kpiArrow(revenueDelta)} ${revenueDelta >= 0 ? '+' : ''}${(revenueDelta * 100).toFixed(1)}%</span> vs prior ${effectiveWindowWeeks}-week period`);
+    setHtml('history-units-change', `<span class="${kpiColor(unitsDelta)}">${kpiArrow(unitsDelta)} ${unitsDelta >= 0 ? '+' : ''}${(unitsDelta * 100).toFixed(1)}%</span> vs prior ${effectiveWindowWeeks}-week period`);
     setHtml('history-price-change', `<span class="${priceDelta >= 0 ? 'text-danger' : 'text-success'}">${priceDelta >= 0 ? '+' : '-'}${formatCurrency(Math.abs(priceDelta))}</span> vs prior period`);
     // Gap change: increasing gap = bad (danger), decreasing = good (success)
     setHtml('history-gap-change', `<span class="${gapDelta > 0 ? 'text-danger' : gapDelta < 0 ? 'text-success' : ''}">${formatPercentagePointDelta(gapDelta)}</span> vs prior period`);
@@ -825,7 +856,7 @@ function renderCurrentStateHistoryDashboard() {
     if (item.social > 8 && item.gap <= 0) {
       return { label: 'Leverage Buzz', cls: 'cbo-channel-btn-success' };
     }
-    return { label: 'Continue Support', cls: 'cbo-channel-btn-primary' };
+    return null;
   };
 
   if (channelCardsHost) {
@@ -1040,15 +1071,16 @@ function renderCurrentStateHistoryDashboard() {
   // Local trend window filter - builds its own metrics independently of the global lookback
   const trendLocalWindow = document.getElementById('history-trend-local-window');
   const trendLocalWeeks = Number(trendLocalWindow?.value || 52);
-  const trendMetrics = buildHistoryWindowMetrics(scopedRows, trendLocalWeeks);
+  const trendMetrics = buildHistoryWindowMetrics(trendScopedRows, trendLocalWeeks);
   const trendWeeksData = trendMetrics.weeks;
+  const effectiveTrendLocalWeeks = trendWeeksData.length || trendLocalWeeks;
 
   const chartLabels = trendWeeksData.map(row => {
     const date = new Date(`${row.date}T00:00:00`);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      ...(trendLocalWeeks >= 52 ? { year: '2-digit' } : {})
+      ...(effectiveTrendLocalWeeks >= 52 ? { year: '2-digit' } : {})
     });
   });
 
@@ -1058,7 +1090,7 @@ function renderCurrentStateHistoryDashboard() {
     const label = d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      ...(windowWeeks >= 52 ? { year: '2-digit' } : {})
+      ...(effectiveTrendLocalWeeks >= 52 ? { year: '2-digit' } : {})
     });
     return { ...evt, chartLabel: label };
   }).filter(evt => chartLabels.includes(evt.chartLabel));
@@ -1288,9 +1320,17 @@ function renderCurrentStateHistoryDashboard() {
     .filter(row => row.social >= 20 && row.gap < 0)
     .sort((a, b) => b.social - a.social)[0];
   if (trendNoteEl) {
-    const baseNote = `${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(windowWeeks)}. Revenue is moving ${revenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(revenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(current.ownPrice)} and competitor gap sits at ${current.gap >= 0 ? '+' : ''}${(current.gap * 100).toFixed(1)}%.`;
-    const opportunityNote = opportunityWeek
-      ? ` Strongest pricing opportunity in the selected view: ${opportunityWeek.date} had ${opportunityWeek.social >= 0 ? '+' : ''}${opportunityWeek.social.toFixed(1)} sentiment while we were ${Math.abs(opportunityWeek.gap * 100).toFixed(1)}% below competitor, which supports a hold-price or lighter-promo story.`
+    const trendCurrent = trendMetrics.current;
+    const trendPrevious = trendMetrics.previous;
+    const trendRevenueDelta = trendPrevious.revenue > 0 ? (trendCurrent.revenue - trendPrevious.revenue) / trendPrevious.revenue : 0;
+    const opportunityTrendWeek = [...trendWeeksData]
+      .filter(row => row.social >= 20 && row.gap < 0)
+      .sort((a, b) => b.social - a.social)[0];
+    const trendWindowStart = trendWeeksData[0]?.date || null;
+    const trendWindowEnd = trendWeeksData[trendWeeksData.length - 1]?.date || null;
+    const baseNote = `${trendSelectedLabel} generated ${formatCompactCurrency(trendCurrent.revenue, 1)} across ${formatHistoryPeriodLabel(effectiveTrendLocalWeeks)}${trendWindowStart && trendWindowEnd ? ` (${trendWindowStart} to ${trendWindowEnd})` : ''}. Revenue is moving ${trendRevenueDelta >= 0 ? 'up' : 'down'} ${Math.abs(trendRevenueDelta * 100).toFixed(1)}% versus the prior period while average own price is ${formatCurrency(trendCurrent.ownPrice)} and competitor gap sits at ${trendCurrent.gap >= 0 ? '+' : ''}${(trendCurrent.gap * 100).toFixed(1)}%.`;
+    const opportunityNote = opportunityTrendWeek
+      ? ` Strongest pricing opportunity in the selected trend view: ${opportunityTrendWeek.date} had ${opportunityTrendWeek.social >= 0 ? '+' : ''}${opportunityTrendWeek.social.toFixed(1)} sentiment while we were ${Math.abs(opportunityTrendWeek.gap * 100).toFixed(1)}% below competitor, which supports a hold-price or lighter-promo story.`
       : '';
     trendNoteEl.textContent = `${baseNote}${opportunityNote}`;
   }
@@ -1307,7 +1347,7 @@ function renderCurrentStateHistoryDashboard() {
       .filter(item => item.tier === 'prestige' && item.revenueDeltaPct >= 0)
       .map(item => item.label);
     const aiParts = [];
-    aiParts.push(`${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(windowWeeks)}.`);
+    aiParts.push(`${selectedLabel} generated ${formatCompactCurrency(current.revenue, 1)} across ${formatHistoryPeriodLabel(effectiveWindowWeeks)}.`);
     if (mostPressured && mostPressured.gap > 2) {
       aiParts.push(`${mostPressured.label} is showing the most pricing pressure at ${mostPressured.gap >= 0 ? '+' : ''}${mostPressured.gap.toFixed(1)}% versus competitor.`);
     }
@@ -6384,7 +6424,7 @@ async function renderCurrentBusinessOverviewLatestWeek() {
     aiSummaryEl.textContent = narrative.join(' ');
   }
   if (aiUpdatedEl) {
-    aiUpdatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${latestWeekLabel}${latestSocialRow ? ` • Social index ${fmtSigned(getBuzzSentimentScore(latestSocialRow))}` : ''}`;
+    aiUpdatedEl.innerHTML = `<i class="bi bi-clock-history me-1"></i>Updated: ${latestWeekLabel}`;
   }
 }
 

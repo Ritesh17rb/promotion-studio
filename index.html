@@ -189,8 +189,8 @@
           <div class="col-lg-3">
             <label class="form-label fw-semibold small text-uppercase mb-1" for="history-window-filter">Lookback Window</label>
             <select id="history-window-filter" class="form-select">
-              <option value="1" selected>Last 1 Week</option>
-              <option value="52">Last 1 Year</option>
+              <option value="1">Last 1 Week</option>
+              <option value="52" selected>Last 1 Year</option>
               <option value="26">Last 26 Weeks</option>
               <option value="13">Last 13 Weeks</option>
               <option value="7">Current Season (Last 7 Weeks)</option>
@@ -1309,13 +1309,15 @@
             <div class="wd-panel-header">
               <h6 class="wd-panel-title"><i class="bi bi-graph-up-arrow me-2"></i>Sales Trend &amp; Key Drivers</h6>
               <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-primary-subtle text-primary small" id="history-trend-badge">All Products</span>
+                <select class="form-select form-select-sm" style="width:auto;font-size:0.78rem;min-width:180px;" id="history-trend-product-filter">
+                  <option value="all">All Products</option>
+                </select>
                 <select class="form-select form-select-sm" style="width:auto;font-size:0.78rem;" id="history-trend-local-window">
-                  <option value="1" selected>1 week</option>
+                  <option value="1">1 week</option>
                   <option value="4">4 weeks</option>
                   <option value="12">12 weeks</option>
                   <option value="26">26 weeks</option>
-                  <option value="52">1 year</option>
+                  <option value="52" selected>1 year</option>
                 </select>
               </div>
             </div>
