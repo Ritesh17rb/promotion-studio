@@ -5899,6 +5899,22 @@ body.app-loading-step #load-data-section .glass-card {
   line-height: 1.55;
 }
 
+.cbo-summary-single {
+  line-height: 1.55;
+}
+
+.cbo-summary-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cbo-summary-list li {
+  margin: 0;
+  line-height: 1.5;
+}
+
 .cbo-summary-updated {
   font-size: 0.78rem;
   font-weight: 700;
@@ -5978,6 +5994,21 @@ body.app-loading-step #load-data-section .glass-card {
 .cbo-channel-card-top,
 .cbo-channel-metric-row {
   justify-content: space-between;
+}
+
+.cbo-channel-metric-row {
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cbo-channel-metric-stack {
+  text-align: right;
+}
+
+.cbo-channel-metric-sub {
+  font-size: 0.71rem;
+  font-weight: 700;
+  margin-top: 0.12rem;
 }
 
 .cbo-channel-card-top {

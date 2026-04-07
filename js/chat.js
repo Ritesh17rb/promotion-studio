@@ -1244,7 +1244,7 @@ Return ONLY valid JSON with schema:
 
 Rules:
 - Ground every point in the provided data only.
-- Keep the business summary executive-ready and specific.
+- Keep the business summary executive-ready, specific, and written as 2-3 short bullet-ready sentences.
 - Prefer 2-3 issues and 2-3 actions.
 - Mention exact channels, products, price gaps, social signals, and revenue exposure when present.
 - Do not fabricate metrics or dates.

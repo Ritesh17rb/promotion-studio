@@ -1,168 +1,163 @@
-# Promotion Studio - Dashboard Changes Plan
+# Supergoop Demo Plan
 
-Based on the review meeting between Avantika and Ritesh on Apr 2, 2026.
+Based on `meeting_transcript.md` from Apr 3, 2026. This supersedes the older Step 1-only note set and captures what Ritesh Aggarwal appears to want from the Supergoop demo.
 
----
+## Intent
 
-## Context
+Ritesh is not asking for more charts. He wants a more credible and easier-to-demo product story:
 
-The dashboard (Step 1 / Business Snapshot screen) shows a store/category manager where they are performing well and where they are losing money. The current version has hardcoded values, redundant tables, and lacks drill-down capabilities. The changes below aim to make it data-driven, remove redundancy, and add interactivity.
+- Start from real data, or at least make the data foundation obvious early, so the demo does not feel like mocked HTML.
+- Keep the first business screen action-oriented for a busy operator: summary first, actions second, evidence below.
+- Make promotion decisions feel grounded in elasticity, past promo evidence, competitor pricing, and social demand.
+- Keep the experience simple enough to demo quickly, but deep enough that trust can be built through drill-downs.
+- Use AI as an assistant across the journey, not only as a final-screen chat.
+- Stay focused on promotions for now; a longer-term price-setting layer can come later.
 
----
+## Requested Changes
 
-## Change 1: Drill-Down Modals on Channel Performance Cards
+### 1. Put the data foundation back into the story
 
-**What:** When a user clicks on a channel card (e.g., Amazon, Sephora, Target), open a modal/popup showing detailed information for that channel.
+- Show the underlying dataset(s) early and explicitly.
+- Make it clear that every downstream chart, recommendation, and AI response is grounded in those tables.
+- The user should understand that the system is using real SKU x channel, competitor, social, and seasonal data.
+not
+### 2. Keep Current Business Overview as the first real operating screen
 
-**Why:** The cards currently show summary metrics (price gap, sentiment, etc.) but no way to explore further. For example, the Amazon card says "competitor price is $28 vs our $33" but doesn't show the full picture of what happened.
+- After grounding the user in data, land them on a business-facing overview.
+- The question this screen should answer is: "How is the business doing right now, and what do I need to do?"
 
-**Details:**
-- Each channel card gets a clickable state (cursor pointer, hover effect)
-- On click, open a modal showing:
-  - Detailed competitor vs own price breakdown per SKU
-  - Revenue impact numbers
-  - Trend of the price gap over time
-  - Contextual AI-generated insight for that specific channel
-- Apply the same drill-down pattern to ALL card types (business snapshot cards, competitive alerts, etc.)
+### 3. Make the AI business summary easier to scan
 
----
+- Replace long paragraph-style summary treatment with short bullets or bullet-like statements.
+- The user should be able to extract the key point in a few seconds.
 
-## Change 2: Integrate Channel Revenue Trend into Channel Cards (Remove Separate Chart)
+### 4. Move Recommended Next Actions higher on the screen
 
-**What:** Remove the standalone "Channel Mix and Revenue" chart section. Instead, add a "View Trend" button on each channel performance card that opens a popup with the revenue trend graph.
+- Place actions directly below the AI business summary.
+- Details, issues, charts, and tables should support the actions, not compete with them.
 
-**Why:** The separate chart section is redundant with the channel performance cards. Combining them reduces scrolling and keeps context together.
+### 5. Make Recommended Next Actions synthesize the whole screen
 
-**Details:**
-- Remove/comment out the "Channel Mix and Revenue" chart section (do NOT delete code, just comment out)
-- On each channel card, add a button (e.g., "View Revenue Trend")
-- On click, show a popup with:
-  - Revenue trend over weeks/days for that specific channel
-  - Breakdown by SKU (up to 6 lines, one per product)
-  - Appropriate chart representation (line chart or similar)
-- The popup should have its own local time filter
+- Actions should reflect the combined reading from channel performance, pricing gaps, social buzz, competitor pressure, and product snapshot.
+- They should not feel like one-to-one restatements of a single chart.
 
----
+### 6. Keep issues and evidence below the action layer
 
-## Change 3: Local Time Filter / Slider for Trend Sections
+- Top Issues & Opportunities still matter, but they should behave like supporting evidence.
+- The details should answer "why is the system recommending this?" after the action is already clear.
 
-**What:** Add a dedicated time-range filter (slider or dropdown) for sections that show trend data, defaulting to "Last 1 Year".
+### 7. Tighten metric consistency and definitions
 
-**Why:** Currently, the global "Last 1 Week" filter causes trend charts to show a single data point, which is meaningless. Users also have to scroll back to the top to change the global filter, which is inconvenient.
+- Cross-check that the same metric means the same thing everywhere.
+- Remove or fix any mismatch between card values, summaries, and supporting detail.
+- Make it obvious how to interpret metrics like competitor gap, social buzz, and at-risk revenue.
 
-**Details:**
-- Add a compact filter (slider or dropdown) directly within/near the trend chart sections
-- Default value: "Last 1 Year"
-- Options: Last 1 Week, Last 2 Weeks, Last 1 Month, Last 3 Months, Last 6 Months, Last 1 Year
-- This filter operates independently of the global lookback window filter at the top
-- Should be easily accessible without scrolling to the top
+### 8. Add clearer period-over-period context on channel cards
 
----
+- Revenue change is not enough.
+- Also show change vs prior period for:
+  - average own price
+  - competitor gap
+  - social buzz / sentiment
+- The user should be able to infer why channel revenue moved.
 
-## Change 4: Competitive Price Alerts - Sorting & Expand
+### 9. Preserve channel drill-down and trend analysis
 
-**What:** Sort competitive price alerts by price gap (descending) and show only the top 3 by default with an expand option to see the full list.
+- Channel cards should support deeper inspection.
+- Revenue trend, competitor pricing trend, and social trend all matter.
+- These drill-downs should remain readable and directly relevant to the selected channel.
 
-**Why:** Currently showing "24 significant moves" as a hardcoded number with no clear logic for what's displayed. The manager needs to see the most critical gaps first.
+### 10. Use social buzz in context, not as an isolated score
 
-**Details:**
-- Sort the competitor price alerts data by price gap percentage in descending order (highest gap first)
-- Display only the top 3 alerts by default on the card
-- Add an expand icon/button on the card
-- On expand, show a popup/modal with the complete sorted list (all 24 or however many exist)
-- The "24 significant moves" count must be dynamically calculated from actual data, not hardcoded
+- Actions should interpret buzz relative to its scale and pricing context.
+- Example intent from the meeting:
+  - mid-range buzz can justify light promotion
+  - very high buzz may justify holding price or even testing price up
 
----
+### 11. Reframe the broader story flow
 
-## Change 5: Product & Channel Snapshot - Consolidation & Expansion
+Ritesh's intended narrative appears to be:
 
-**What:** Merge the "Channel and Product Pricing Position" table INTO the "Product & Channel Snapshot" table, then remove the pricing position table entirely. Show top 3 rows with expand.
+1. Data foundation / evidence of what the system is built on
+2. Current business performance
+3. Elasticity logic that explains why promo decisions work
+4. Past promotion performance / learnings
+5. Forward-looking optimization / scenario work
+6. AI assistance throughout and full chat when needed
 
-**Why:** Both tables show overlapping information (product, channel, units, pricing). Consolidating removes redundancy and gives one unified view.
+### 12. Bring AI assistance closer to each screen
 
-**Details:**
-- Add the following columns to the Product & Channel Snapshot table:
-  - **Revenue** column (from the pricing position table)
-  - **Social Buzz** column (from the pricing position table)
-- The table now contains: Product, Top Channel, Revenue, Units, Own Price, Competitor Price, Gap, Social Buzz, WoW Change, Operating Interpretation
-- Show only top 3 rows by default
-- Add expand icon to see all 6 SKUs (or all products in dataset)
-- Remove/comment out the "Channel and Product Pricing Position" table entirely
+- Do not force the user to wait until the final chat screen to ask questions.
+- Each major screen should be able to answer "what am I seeing here?" and "what should I do?"
 
----
+### 13. Longer-term extension: separate pricing from promotion
 
-## Change 6: Cross-Channel View on Expand (Product & Channel Snapshot)
+- Promotion is the short-term lever.
+- Base price is the slower-moving 3-6 month lever.
+- Finish the promotion story first, then add a more explicit long-term pricing layer later.
 
-**What:** When expanding the Product & Channel Snapshot, show all product-channel combinations (6 products x 4 channels = 24 rows), grouped by product.
+## Current Repo Status vs Transcript
 
-**Why:** Currently only the top-performing channel per SKU is shown. A store manager may want to see how "Unseen Sunscreen SPF" performs on ALL channels, not just the top one.
+### Already aligned or partially aligned
 
-**Details:**
-- On expand, show all 24 combinations grouped by product:
-  - Unseen Sunscreen SPF → Target, Amazon, Sephora, Mass (all 4 channels)
-  - Glow Screen SPF 44 → Target, Amazon, Sephora, Mass (all 4 channels)
-  - ... (repeat for all 6 SKUs)
-- Add a tooltip on the expand button: "Click to view product performance across all channels"
-- Optionally add a filter within the expanded view to filter by specific product or channel
+- Current Business Overview already exists as the primary business-facing screen.
+- Competitive alerts are already sorted and truncated with expand behavior.
+- Product x Channel Snapshot already consolidates pricing-position information and supports an expanded all-channel view.
+- Channel drill-down modals and revenue trend popups already exist.
+- Tooltips already explain several domain terms.
+- Step-scoped AI widgets already exist on some screens.
 
----
+### Still missing or weak
 
-## Change 7: Info (i) Tooltips for Terminology
+- The data foundation is present in the codebase but not clearly leading the demo story.
+- The Step 1 AI summary is still rendered like a paragraph block.
+- Recommended Next Actions are still too low in the visual hierarchy.
+- The action block can still read as chart-by-chart restatement instead of full-screen synthesis.
+- Current Business Overview channel cards still need stronger "what changed vs prior period" context beyond revenue.
+- The overall step/story ordering is still not fully aligned to the desired narrative.
 
-**What:** Add info icon buttons next to abbreviations and domain-specific terms.
+## Execution Plan
 
-**Why:** Not all users will understand terms like "WoW" (Week over Week), "Social Buzz", "At-Risk Revenue", etc. This improves accessibility without cluttering the UI.
+### Phase 1: Step 1 polish for the next demo pass
 
-**Details:**
-- Add a small (i) icon next to terms such as:
-  - WoW (Week over Week)
-  - Social Buzz
-  - At-Risk Revenue
-  - Competitor Gap
-  - Operating Interpretation
-  - Any other non-obvious metric
-- On click/hover, show a tooltip or small popover with a plain-language definition
-- Keep definitions concise (1-2 sentences)
+- [x] Rewrite this plan from the meeting transcript with intent, explicit asks, and repo-status mapping.
+- [x] Move Recommended Next Actions directly below the AI business summary.
+- [x] Render the AI business summary as quick-scan bullet points instead of a dense paragraph.
+- [x] Add prior-period delta context to channel-card price, competitor gap, and social buzz.
+- [ ] Tighten the action generator so the three actions represent the whole screen, not isolated widgets.
 
----
+### Phase 2: Restore trust in the data story
 
-## Change 8: Remove All Hardcoded Values
+- [ ] Expose the Data Explorer / data foundation earlier in the visible step sequence.
+- [ ] Add explicit "this screen is powered by these datasets" framing near the start of the flow.
+- [ ] Ensure AI responses on early screens cite the same datasets the UI is using.
 
-**What:** Replace every hardcoded value in the dashboard with data-driven values sourced from the actual dataset tables.
+### Phase 3: Re-sequence the promotion narrative
 
-**Why:** Hardcoded values cause inconsistencies (e.g., units shown in one section don't match another). For the demo to be credible, all numbers must come from a single source of truth.
+- [ ] Reorder or relabel the visible journey so the story becomes:
+  - data foundation
+  - current business overview
+  - elasticity
+  - historical promotion learnings
+  - future optimization
+  - AI copilot
+- [ ] Audit step labels, modal step map, and hero navigation so they tell the same story.
 
-**Details:**
-- Audit every metric displayed on the dashboard:
-  - Revenue figures
-  - Unit counts
-  - Price values (own and competitor)
-  - Gap percentages
-  - Social buzz scores
-  - Competitive price alert counts ("24 significant moves")
-  - AI-generated insight text references to specific numbers
-- Ensure all values are pulled from the underlying data tables/dataset
-- Cross-verify that the same metric shown in multiple places is consistent
-- Data should align with the storyline being presented
+### Phase 4: Strengthen action quality
 
----
+- [ ] Improve the Step 1 action logic to combine:
+  - revenue movement
+  - competitor pressure
+  - social momentum
+  - channel role (mass vs prestige)
+  - product-level pressure / opportunity
+- [ ] Encode clearer thresholds for when high buzz means "promote lightly" versus "hold price" versus "price up test".
 
-## Priority / Execution Order
+### Phase 5: Extend AI across the journey
 
-1. **Remove hardcoded values** (Change 8) - foundational, everything else depends on real data
-2. **Merge tables** (Change 5) - structural change, simplifies the layout
-3. **Competitive alerts sorting** (Change 4) - quick win, improves usability
-4. **Drill-down modals on cards** (Change 1) - high impact feature
-5. **Channel revenue trend integration** (Change 2) - depends on drill-down modal pattern
-6. **Cross-channel expand view** (Change 6) - extends Change 5
-7. **Info tooltips** (Change 7) - polish, can be done anytime
-8. **Local time filter** (Change 3) - independent, can be done in parallel
+- [ ] Audit every major screen for an embedded AI helper.
+- [ ] Add or refine screen-level prompts so users can ask contextual questions without switching to the final chat screen.
 
----
+## Immediate Build Focus
 
-## Notes
-
-- **Do not delete code** for removed sections - comment it out instead
-- Second screen (Step 2 - Simulation) feedback is pending from Avantika (expected by Apr 3 first half)
-- Demo call scheduled for Apr 3 to show these changes to stakeholders
-- Data is not yet finalized - Ritesh needs to work on making data realistic and consistent
+The right short-term move is to finish the Step 1 behavior and hierarchy first. That is the screen Ritesh is already reacting to positively, and it is the fastest path to a stronger Monday demo.

@@ -1026,19 +1026,27 @@ function renderCurrentStateHistoryDashboard() {
       const currentRevenue = currentRow?.revenue || 0;
       const previousRevenue = previousRow?.revenue || 0;
       const units = currentRow?.units || 0;
+      const previousUnits = previousRow?.units || 0;
       const gap = currentRow?.units > 0 ? ((currentRow.gapWeighted || 0) / currentRow.units) * 100 : 0;
+      const previousGap = previousRow?.units > 0 ? ((previousRow.gapWeighted || 0) / previousRow.units) * 100 : 0;
       const social = currentRow?.units > 0 ? (currentRow.socialWeighted || 0) / currentRow.units : 0;
+      const previousSocial = previousRow?.units > 0 ? (previousRow.socialWeighted || 0) / previousRow.units : 0;
       const revenueDeltaPct = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
       const ownPrice = currentRow?.units > 0 ? (currentRow.ownPriceWeighted || 0) / currentRow.units : 0;
+      const previousOwnPrice = previousRow?.units > 0 ? (previousRow.ownPriceWeighted || 0) / previousRow.units : 0;
       return {
         channel,
         label: KPI_CHANNEL_LABELS[channel] || channel,
         revenue: currentRevenue,
         revenueDeltaPct,
         gap,
+        gapDelta: gap - previousGap,
         social,
+        socialDelta: social - previousSocial,
         units,
         ownPrice,
+        ownPriceDelta: ownPrice - previousOwnPrice,
+        hasPriorPeriod: previousRevenue > 0 || previousUnits > 0,
         tier: (channel === 'sephora' || channel === 'ulta') ? 'prestige' : 'mass',
         logoSrc: CURRENT_BUSINESS_OVERVIEW_CHANNEL_LOGOS[channel] || ''
       };
@@ -1062,9 +1070,16 @@ function renderCurrentStateHistoryDashboard() {
     return null;
   };
 
+  const formatCurrencyDelta = (value) => `${value >= 0 ? '+' : '-'}${formatCurrency(Math.abs(value))}`;
+  const formatSignedPoints = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)} pts`;
+
   if (channelCardsHost) {
     channelCardsHost.innerHTML = channelSummaries.map(item => {
       const action = getChannelAction(item);
+      const priceDeltaClass = item.ownPriceDelta > 0.02 ? 'text-danger' : item.ownPriceDelta < -0.02 ? 'text-success' : 'text-muted';
+      const gapDeltaClass = item.gapDelta > 0.1 ? 'text-danger' : item.gapDelta < -0.1 ? 'text-success' : 'text-muted';
+      const socialDeltaClass = item.socialDelta > 0.2 ? 'text-success' : item.socialDelta < -0.2 ? 'text-danger' : 'text-muted';
+      const noPriorText = 'Window average';
       return `
       <div class="col-lg-6 col-xl-3">
           <div class="cbo-channel-card cbo-channel-${item.tier}" style="cursor:pointer;" data-channel="${item.channel}" title="Click for detailed ${item.label} breakdown">
@@ -1083,15 +1098,24 @@ function renderCurrentStateHistoryDashboard() {
           <div class="cbo-channel-growth ${item.revenueDeltaPct >= 0 ? 'text-success' : 'text-danger'}">${item.revenueDeltaPct >= 0 ? '+' : ''}${item.revenueDeltaPct.toFixed(1)}% <span class="cbo-channel-growth-label">vs prior period</span></div>
           <div class="cbo-channel-metric-row">
             <span>Price Gap</span>
-            <strong class="${item.gap > 1 ? 'text-danger' : 'text-success'}">${item.gap >= 0 ? '+' : ''}${item.gap.toFixed(1)}%</strong>
+            <div class="cbo-channel-metric-stack">
+              <strong class="${item.gap > 1 ? 'text-danger' : 'text-success'}">${item.gap >= 0 ? '+' : ''}${item.gap.toFixed(1)}%</strong>
+              <div class="cbo-channel-metric-sub ${gapDeltaClass}">${item.hasPriorPeriod ? `${formatPercentagePointDelta(item.gapDelta / 100)} vs prior` : noPriorText}</div>
+            </div>
           </div>
           <div class="cbo-channel-metric-row">
             <span>Sentiment</span>
-            <strong class="${item.social >= 0 ? 'text-success' : 'text-danger'}">${item.social >= 0 ? '+' : ''}${item.social.toFixed(1)}</strong>
+            <div class="cbo-channel-metric-stack">
+              <strong class="${item.social >= 0 ? 'text-success' : 'text-danger'}">${item.social >= 0 ? '+' : ''}${item.social.toFixed(1)}</strong>
+              <div class="cbo-channel-metric-sub ${socialDeltaClass}">${item.hasPriorPeriod ? `${formatSignedPoints(item.socialDelta)} vs prior` : noPriorText}</div>
+            </div>
           </div>
           <div class="cbo-channel-metric-row">
             <span>Avg Price</span>
-            <strong>${formatCurrency(item.ownPrice)}</strong>
+            <div class="cbo-channel-metric-stack">
+              <strong>${formatCurrency(item.ownPrice)}</strong>
+              <div class="cbo-channel-metric-sub ${priceDeltaClass}">${item.hasPriorPeriod ? `${formatCurrencyDelta(item.ownPriceDelta)} vs prior` : noPriorText}</div>
+            </div>
           </div>
           ${action ? `
           <div class="cbo-channel-action-row">
@@ -4011,6 +4035,49 @@ function renderAiLoadingBlock(label = 'AI is analyzing the current view...') {
   `;
 }
 
+function normalizeStep1SummaryItems(summary = '') {
+  const text = String(summary || '')
+    .replace(/\r/g, '\n')
+    .trim();
+  if (!text) return [];
+
+  const explicitBullets = text
+    .split(/\n+/)
+    .map(line => line.replace(/^[\u2022\-*]+\s*/, '').trim())
+    .filter(Boolean);
+  if (explicitBullets.length > 1) {
+    return explicitBullets.slice(0, 3);
+  }
+
+  return text
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9$])/)
+    .map(line => line.replace(/^[\u2022\-*]+\s*/, '').trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
+function renderStep1AiSummary(summary = '') {
+  const summaryEl = document.getElementById('history-ai-summary');
+  if (!summaryEl) return;
+
+  const items = normalizeStep1SummaryItems(summary);
+  if (!items.length) {
+    summaryEl.textContent = 'No executive summary is available for the current selection.';
+    return;
+  }
+
+  if (items.length === 1) {
+    summaryEl.innerHTML = `<div class="cbo-summary-single">${escapeHtml(items[0])}</div>`;
+    return;
+  }
+
+  summaryEl.innerHTML = `
+    <ul class="cbo-summary-list">
+      ${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+    </ul>
+  `;
+}
+
 function renderStep1AiLoadingState() {
   const summaryEl = document.getElementById('history-ai-summary');
   const issuesEl = document.getElementById('step1-top-issues-list');
@@ -4234,7 +4301,7 @@ async function runStep1OverviewAiAnalysis({ payload, fallbackSummary, fallbackIs
   if (requestId !== step1OverviewAiRequestId) return;
 
   if (!ready) {
-    if (summaryEl) summaryEl.textContent = fallbackSummary;
+    renderStep1AiSummary(fallbackSummary);
     renderStep1AiIssueCards(fallbackIssues);
     renderStep1AiActions(fallbackActions);
     if (actionsNoteEl) actionsNoteEl.textContent = `Rules-based analysis for ${latestWeekLabel}. Connect an LLM to enable live AI analysis.`;
@@ -4248,9 +4315,7 @@ async function runStep1OverviewAiAnalysis({ payload, fallbackSummary, fallbackIs
     });
     if (requestId !== step1OverviewAiRequestId) return;
 
-    if (summaryEl) {
-      summaryEl.textContent = result.summary || fallbackSummary;
-    }
+    renderStep1AiSummary(result.summary || fallbackSummary);
     renderStep1AiIssueCards((result.top_issues || []).map(item => ({
       tone: normalizeAiTone(item.tone, 'info'),
       title: item.title,
@@ -4265,7 +4330,7 @@ async function runStep1OverviewAiAnalysis({ payload, fallbackSummary, fallbackIs
     if (actionsNoteEl) actionsNoteEl.textContent = `AI-generated from the ${latestWeekLabel} operating readout and the current filter selection.`;
   } catch (error) {
     if (requestId !== step1OverviewAiRequestId) return;
-    if (summaryEl) summaryEl.textContent = fallbackSummary;
+    renderStep1AiSummary(fallbackSummary);
     renderStep1AiIssueCards(fallbackIssues);
     renderStep1AiActions(fallbackActions);
     if (actionsNoteEl) actionsNoteEl.textContent = `Fell back to rules-based analysis for ${latestWeekLabel} because AI analysis failed: ${error.message}`;
